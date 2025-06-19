@@ -38,39 +38,38 @@ export namespace Database {
     } = {}
 
     while (true) {
-      console.log(cursor.after.slice(0, 32))
       const tlv = TLV.readOrThrow(cursor)
 
-      if (tlv.type === 0x00)
+      if (tlv.type === 0)
         break
 
-      if (tlv.type === 0x02) {
+      if (tlv.type === 2) {
         headers.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.bytes.get())
         continue
       }
 
-      if (tlv.type === 0x03) {
+      if (tlv.type === 3) {
         headers.compression = Readable.readFromBytesOrThrow(Compression, tlv.bytes.get())
         continue
       }
 
-      if (tlv.type === 0x04) {
+      if (tlv.type === 4) {
         headers.seed = tlv.bytes
         continue
       }
 
-      if (tlv.type === 0x05) {
+      if (tlv.type === 5) {
         headers.iv = tlv.bytes
         continue
       }
 
-      if (tlv.type === 0x11) {
-        Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+      if (tlv.type === 8) {
+        headers.custom = tlv.bytes
         continue
       }
 
-      if (tlv.type === 0x08) {
-        headers.custom = tlv.bytes
+      if (tlv.type === 11) {
+        Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
         continue
       }
 
@@ -188,6 +187,8 @@ export namespace Dictionary {
 
     if (major !== 1)
       throw new Error()
+
+    console.log(cursor.after)
 
     cursor.readOrThrow(cursor.remaining)
   }
