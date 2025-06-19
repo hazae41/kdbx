@@ -29,12 +29,38 @@ export namespace Database {
     if (major !== 4)
       throw new Error()
 
-    const headers: {
+    const headers = Headers.readOrThrow(cursor)
+
+    console.log("Headers", headers)
+
+    return
+  }
+
+}
+
+export class Headers {
+
+  constructor(
+    readonly cipher: Cipher,
+    readonly compression: Compression,
+    readonly seed: Copiable,
+    readonly iv: Copiable,
+    readonly kdf: Dictionary,
+    readonly custom?: Dictionary
+  ) { }
+
+}
+
+export namespace Headers {
+
+  export function readOrThrow(cursor: Cursor) {
+    const fields: {
       cipher?: Cipher,
       compression?: Compression
       seed?: Copiable
       iv?: Copiable
-      custom?: Copiable
+      kdf?: Dictionary
+      custom?: Dictionary
     } = {}
 
     while (true) {
@@ -44,42 +70,60 @@ export namespace Database {
         break
 
       if (tlv.type === 2) {
-        headers.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.bytes.get())
+        fields.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.bytes.get())
         continue
       }
 
       if (tlv.type === 3) {
-        headers.compression = Readable.readFromBytesOrThrow(Compression, tlv.bytes.get())
+        fields.compression = Readable.readFromBytesOrThrow(Compression, tlv.bytes.get())
         continue
       }
 
       if (tlv.type === 4) {
-        headers.seed = tlv.bytes
+        fields.seed = tlv.bytes
         continue
       }
 
-      if (tlv.type === 5) {
-        headers.iv = tlv.bytes
-        continue
-      }
-
-      if (tlv.type === 8) {
-        headers.custom = tlv.bytes
+      if (tlv.type === 7) {
+        fields.iv = tlv.bytes
         continue
       }
 
       if (tlv.type === 11) {
-        Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        fields.kdf = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
         continue
       }
 
-      console.log(tlv)
+      if (tlv.type === 12) {
+        fields.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        continue
+      }
+
+      throw new Error()
     }
 
-    // console.log(Buffer.from(cursor.after.slice(0, 32)).toString("hex"))
+    if (fields.cipher == null)
+      throw new Error()
+    if (fields.compression == null)
+      throw new Error()
+    if (fields.seed == null)
+      throw new Error()
+    if (fields.iv == null)
+      throw new Error()
+    if (fields.kdf == null)
+      throw new Error()
 
-    return
+    const { cipher, compression, seed, iv, kdf, custom } = fields
+    return new Headers(cipher, compression, seed, iv, kdf, custom)
   }
+}
+
+export class KdfParameters {
+
+  constructor(
+    readonly algorithm: string,
+
+  )
 
 }
 
@@ -93,8 +137,17 @@ export class Cipher {
 
 export namespace Cipher {
 
-  export const Aes256 = new Cipher("31c1f2e6-bf71-4350-be58-05216afc5aff")
+  export const Aes128Cbc = new Cipher("61ab05a1-9464-41c3-8d74-3a563df8dd35")
+
+  export const Aes256Cbc = new Cipher("31c1f2e6-bf71-4350-be58-05216afc5aff")
+
+  export const TwoFishCbc = new Cipher("ad68f29f-576f-4bb9-a36a-d47af965346c")
+
   export const ChaCha20 = new Cipher("d6038a2b-8b6f-4cb5-a524-339a31dbb59a")
+
+}
+
+export namespace Cipher {
 
   export function readOrThrow(cursor: Cursor) {
     const bytes = cursor.readOrThrow(16)
@@ -108,8 +161,8 @@ export namespace Cipher {
 
     const uuid = [a, b, c, d, e].join("-")
 
-    if (uuid === Aes256.uuid)
-      return Aes256
+    if (uuid === Aes256Cbc.uuid)
+      return Aes256Cbc
     if (uuid === ChaCha20.uuid)
       return ChaCha20
 
@@ -175,7 +228,9 @@ export class Seed {
 
 export class Dictionary {
 
-  constructor() { }
+  constructor(
+    readonly value: { [key: string]: X }
+  ) { }
 
 }
 
@@ -188,9 +243,207 @@ export namespace Dictionary {
     if (major !== 1)
       throw new Error()
 
-    console.log(cursor.after)
+    const dictionary: { [key: string]: X } = {}
 
-    cursor.readOrThrow(cursor.remaining)
+    while (true) {
+      const type = cursor.readUint8OrThrow()
+
+      if (type === 0)
+        break
+
+      const klength = cursor.readUint32OrThrow(true)
+      const kstring = cursor.readUtf8OrThrow(klength)
+
+      const vlength = cursor.readUint32OrThrow(true)
+      const vbytes = new Uncopied(cursor.readOrThrow(vlength))
+
+      if (type === UInt32.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(UInt32, vbytes.get())
+        continue
+      }
+
+      if (type === UInt64.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(UInt64, vbytes.get())
+        continue
+      }
+
+      if (type === Boolean.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Boolean, vbytes.get())
+        continue
+      }
+
+      if (type === Int32.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Int32, vbytes.get())
+        continue
+      }
+
+      if (type === Int64.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Int64, vbytes.get())
+        continue
+      }
+
+      if (type === String.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(String, vbytes.get())
+        continue
+      }
+
+      if (type === Bytes.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Bytes, vbytes.get())
+        continue
+      }
+
+      throw new Error()
+    }
+
+    return new Dictionary(dictionary)
+  }
+
+}
+
+export type X =
+  | UInt32
+  | UInt64
+  | Boolean
+  | Int32
+  | Int64
+  | String
+  | Bytes
+
+export class UInt32 {
+
+  constructor(
+    readonly value: number
+  ) { }
+
+}
+
+export namespace UInt32 {
+
+  export const type = 0x04
+
+  export function readOrThrow(cursor: Cursor) {
+    return new UInt32(cursor.readUint32OrThrow(true))
+  }
+
+}
+
+export class UInt64 {
+
+  constructor(
+    readonly value: bigint
+  ) { }
+
+}
+
+export namespace UInt64 {
+
+  export const type = 0x05
+
+  export function readOrThrow(cursor: Cursor) {
+    return new UInt64(cursor.readUint64OrThrow(true))
+  }
+
+}
+
+export class Boolean {
+
+  constructor(
+    readonly value: boolean
+  ) { }
+
+}
+
+export namespace Boolean {
+
+  export const type = 0x08
+
+  export function readOrThrow(cursor: Cursor) {
+    const value = cursor.readUint8OrThrow()
+
+    if (value !== 0 && value !== 1)
+      throw new Error()
+
+    return new Boolean(value === 1)
+  }
+
+}
+
+export class Int32 {
+
+  constructor(
+    readonly value: number
+  ) { }
+
+}
+
+export namespace Int32 {
+
+  export const type = 0x0C
+
+  export function readOrThrow(cursor: Cursor) {
+    const uint = cursor.readUint32OrThrow(true)
+
+    const int = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
+
+    return new Int32(int)
+  }
+
+}
+
+export class Int64 {
+
+  constructor(
+    readonly value: bigint
+  ) { }
+
+}
+
+export namespace Int64 {
+
+  export const type = 0x0D
+
+  export function readOrThrow(cursor: Cursor) {
+    const uint = cursor.readUint64OrThrow(true)
+
+    const int = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
+
+    return new Int64(int)
+  }
+
+}
+
+export class String {
+
+  constructor(
+    readonly value: string
+  ) { }
+
+}
+
+export namespace String {
+
+  export const type = 0x18
+
+  export function readOrThrow(cursor: Cursor) {
+    return new String(cursor.readUtf8OrThrow(cursor.remaining))
+  }
+
+}
+
+export class Bytes {
+
+  constructor(
+    readonly value: Copiable
+  ) { }
+
+}
+
+export namespace Bytes {
+
+  export const type = 0x42
+
+  export function readOrThrow(cursor: Cursor) {
+    return new Bytes(new Uncopied(cursor.readOrThrow(cursor.remaining)))
   }
 
 }
