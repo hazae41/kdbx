@@ -1,11 +1,13 @@
-export type Copiable =
-  | Uncopied
-  | Copied
+import type { Uint8Array } from "@hazae41/bytes"
 
-export class Uncopied {
+export type Copiable<T extends number = number> =
+  | Uncopied<T>
+  | Copied<T>
+
+export class Uncopied<T extends number = number> {
 
   constructor(
-    readonly value: Uint8Array
+    readonly value: Uint8Array<T>
   ) { }
 
   get() {
@@ -18,10 +20,10 @@ export class Uncopied {
 
 }
 
-export class Copied {
+export class Copied<T extends number = number> {
 
   constructor(
-    readonly value: Uint8Array
+    readonly value: Uint8Array<T>
   ) { }
 
   get() {

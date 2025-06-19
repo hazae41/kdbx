@@ -8,7 +8,11 @@ export class Database {
 
   constructor() { }
 
-  static readOrThrow(cursor: Cursor) {
+}
+
+export namespace Database {
+
+  export function readOrThrow(cursor: Cursor) {
     const alpha = cursor.readUint32OrThrow(true)
 
     if (alpha !== 0x9AA2D903)
@@ -28,9 +32,13 @@ export class Database {
     const headers: {
       cipher?: Cipher,
       compression?: Compression
+      seed?: Copiable
+      iv?: Copiable
+      custom?: Copiable
     } = {}
 
     while (true) {
+      console.log(cursor.after.slice(0, 32))
       const tlv = TLV.readOrThrow(cursor)
 
       if (tlv.type === 0x00)
@@ -46,10 +54,30 @@ export class Database {
         continue
       }
 
+      if (tlv.type === 0x04) {
+        headers.seed = tlv.bytes
+        continue
+      }
+
+      if (tlv.type === 0x05) {
+        headers.iv = tlv.bytes
+        continue
+      }
+
+      if (tlv.type === 0x11) {
+        Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        continue
+      }
+
+      if (tlv.type === 0x08) {
+        headers.custom = tlv.bytes
+        continue
+      }
+
       console.log(tlv)
     }
 
-    console.log(Buffer.from(cursor.after.slice(0, 32)).toString("hex"))
+    // console.log(Buffer.from(cursor.after.slice(0, 32)).toString("hex"))
 
     return
   }
@@ -130,6 +158,38 @@ export class TLV {
     const bytes = new Uncopied(cursor.readOrThrow(length))
 
     return new TLV(type, bytes)
+  }
+
+}
+
+export class Seed {
+
+  constructor(
+    readonly bytes: Copiable<32>
+  ) { }
+
+  static readOrThrow(cursor: Cursor) {
+    return new Seed(new Uncopied(cursor.readOrThrow(32)))
+  }
+
+}
+
+export class Dictionary {
+
+  constructor() { }
+
+}
+
+export namespace Dictionary {
+
+  export function readOrThrow(cursor: Cursor) {
+    const minor = cursor.readUint8OrThrow()
+    const major = cursor.readUint8OrThrow()
+
+    if (major !== 1)
+      throw new Error()
+
+    cursor.readOrThrow(cursor.remaining)
   }
 
 }
