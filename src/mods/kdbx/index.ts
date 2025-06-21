@@ -90,7 +90,18 @@ export namespace Headers {
       }
 
       if (tlv.type === 11) {
-        fields.kdf = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+
+        if (dictionary.value["$UUID"] instanceof Bytes === false)
+          throw new Error()
+
+        const algorithm = StringAsUuid.from(dictionary.value["$UUID"].value.get())
+
+        if (algorithm !== AesKdfParameters.algorithm)
+          throw new Error()
+
+        fields.kdf = dictionary
+
         continue
       }
 
@@ -118,12 +129,18 @@ export namespace Headers {
   }
 }
 
-export class KdfParameters {
+export class AesKdfParameters {
 
   constructor(
-    readonly algorithm: string,
+    readonly rounds: number,
+    readonly seed: Copiable<32>,
+  ) { }
 
-  )
+}
+
+export namespace AesKdfParameters {
+
+  export const algorithm = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
 
 }
 
@@ -151,15 +168,7 @@ export namespace Cipher {
 
   export function readOrThrow(cursor: Cursor) {
     const bytes = cursor.readOrThrow(16)
-    const base16 = Buffer.from(bytes).toString("hex") // todo use wasm
-
-    const a = base16.slice(0, 8)
-    const b = base16.slice(8, 12)
-    const c = base16.slice(12, 16)
-    const d = base16.slice(16, 20)
-    const e = base16.slice(20, 32)
-
-    const uuid = [a, b, c, d, e].join("-")
+    const uuid = StringAsUuid.from(bytes)
 
     if (uuid === Aes256Cbc.uuid)
       return Aes256Cbc
@@ -444,6 +453,38 @@ export namespace Bytes {
 
   export function readOrThrow(cursor: Cursor) {
     return new Bytes(new Uncopied(cursor.readOrThrow(cursor.remaining)))
+  }
+
+}
+
+export namespace StringAsUuid {
+
+  export function from(bytes: Uint8Array) {
+    const base16 = Buffer.from(bytes).toString("hex") // todo use wasm
+
+    const a = base16.slice(0, 8)
+    const b = base16.slice(8, 12)
+    const c = base16.slice(12, 16)
+    const d = base16.slice(16, 20)
+    const e = base16.slice(20, 32)
+
+    return [a, b, c, d, e].join("-")
+  }
+
+}
+
+export namespace BytesAsUuid {
+
+  export function from(string: string) {
+    const a = string.slice(0, 8)
+    const b = string.slice(8, 12)
+    const c = string.slice(12, 16)
+    const d = string.slice(16, 20)
+    const e = string.slice(20, 32)
+
+    const base16 = [a, b, c, d, e].join("")
+
+    return Buffer.from(base16, "hex")
   }
 
 }
