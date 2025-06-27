@@ -11,6 +11,21 @@ export class Database {
     readonly body: Block[]
   ) { }
 
+  async decryptOrThrow(cryptor: AesCbcCryptor) {
+    const length = this.body.reduce((a, b) => a + b.data.get().length, 0)
+    const cursor = new Cursor(new Uint8Array(length))
+
+    for (const block of this.body) {
+      const decrypted = await cryptor.decryptOrThrow(block.data.get())
+
+      cursor.writeOrThrow(new Uint8Array(decrypted))
+
+      continue
+    }
+
+    return cursor.bytes
+  }
+
 }
 
 export class Head {
@@ -31,12 +46,46 @@ export class Version {
 
 }
 
+export class AesCbcCryptor {
+
+  constructor(
+    readonly alg: AesCbcParams,
+    readonly key: CryptoKey
+  ) { }
+
+  async decryptOrThrow(cipherbytes: Uint8Array) {
+    return await crypto.subtle.decrypt(this.alg, this.key, cipherbytes)
+  }
+
+}
+
+export namespace AesCbcCryptor {
+
+  export async function importOrThrow(database: Database, master: Uint8Array) {
+    const alg = { name: "AES-CBC", iv: database.head.headers.data.value.iv.get() }
+    const key = await crypto.subtle.importKey("raw", master, { name: "AES-CBC" }, false, ["decrypt"])
+
+    return new AesCbcCryptor(alg, key)
+  }
+
+}
+
 export class Block {
 
   constructor(
     readonly hmac: Copiable<32>,
     readonly data: Copiable
   ) { }
+
+}
+
+export class Payload {
+
+  constructor(
+    readonly head: {},
+    readonly body: Copiable
+  ) { }
+
 
 }
 

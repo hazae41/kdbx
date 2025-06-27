@@ -2,7 +2,7 @@ import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm";
 import { Cursor } from "@hazae41/cursor";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
-import { Argon2dKdfParameters, Database } from "./index.js";
+import { AesCbcCryptor, Argon2dKdfParameters, Database } from "./index.js";
 
 function equals(a: Uint8Array, b: Uint8Array): boolean {
   return Buffer.compare(a, b) === 0;
@@ -44,12 +44,9 @@ preMasterKey.set(derivedMemoryPointer.bytes, masterSeedCopiable.get().length);
 const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKey)
 const masterKeyBytes = new Uint8Array(masterKeyBuffer);
 
-const decryptionKey = await crypto.subtle.importKey("raw", masterKeyBytes, { name: "AES-CBC" }, false, ["decrypt"])
-const decryptionAlgorithm = { name: "AES-CBC", iv: database.head.headers.data.value.iv.get() }
+const cryptor = await AesCbcCryptor.importOrThrow(database, masterKeyBytes)
 
-const decryptedBuffer = await crypto.subtle.decrypt(decryptionAlgorithm, decryptionKey, database.body[0].data.get());
-const decryptedBytes = new Uint8Array(decryptedBuffer);
-
+const decryptedBytes = await database.decryptOrThrow(cryptor)
 const dezippedBytes = gunzipSync(decryptedBytes);
 
 console.log(dezippedBytes.toString("utf-8"));
