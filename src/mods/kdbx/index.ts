@@ -7,8 +7,37 @@ export { };
 export class Database {
 
   constructor(
-    readonly headers: Headers
+    readonly headers: Headers,
+    readonly data: Copiable,
+    readonly blocks: Block[]
   ) { }
+
+}
+
+export class Block {
+
+  constructor(
+    readonly id: number,
+    readonly hmac: Copiable<32>,
+    readonly data: Copiable
+  ) { }
+
+}
+
+export namespace Block {
+
+  export function readOrThrow(cursor: Cursor) {
+    const id = cursor.readUint32OrThrow(true)
+
+    const hmac = new Uncopied(cursor.readOrThrow(32))
+    console.log(hmac)
+
+    const length = cursor.readUint32OrThrow(true)
+    console.log(length)
+    const data = new Uncopied(cursor.readOrThrow(length))
+
+    return new Block(id, hmac, data)
+  }
 
 }
 
@@ -33,9 +62,28 @@ export namespace Database {
 
     const headers = Headers.readOrThrow(cursor)
 
-    console.log("Headers", headers)
+    cursor.offset += 32 // headers hash
+    cursor.offset += 32 // headers hmac
 
-    return new Database(headers)
+    cursor.offset += 36
+
+    console.log(cursor.after.subarray(0, 1024))
+
+    const blocks = new Array<Block>()
+
+    // while (true) {
+    //   const block = Block.readOrThrow(cursor)
+
+    //   if (block.data.get().length === 0)
+    //     break
+
+    //   blocks.push(block)
+
+    //   continue
+    // }
+    const data = new Uncopied(cursor.readOrThrow(cursor.remaining - 4))
+
+    return new Database(headers, data, blocks)
   }
 
 }
