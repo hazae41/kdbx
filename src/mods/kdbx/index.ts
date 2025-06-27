@@ -45,7 +45,7 @@ export class Headers {
     readonly compression: Compression,
     readonly seed: Copiable,
     readonly iv: Copiable,
-    readonly kdf: Dictionary,
+    readonly kdf: KdfParameters,
     readonly custom?: Dictionary
   ) { }
 
@@ -59,7 +59,7 @@ export namespace Headers {
       compression?: Compression
       seed?: Copiable
       iv?: Copiable
-      kdf?: AesKdfParameters
+      kdf?: KdfParameters
       custom?: Dictionary
     } = {}
 
@@ -101,7 +101,6 @@ export namespace Headers {
           throw new Error()
 
         if ($UUID === AesKdfParameters.$UUID) {
-
           if (dictionary.value["R"] instanceof UInt32 === false)
             throw new Error()
           const rounds = dictionary.value["R"].value
@@ -111,14 +110,61 @@ export namespace Headers {
           const seed = dictionary.value["S"].value as Copiable<32>
 
           fields.kdf = new AesKdfParameters(rounds, seed)
+
+          continue
         }
 
         if ($UUID === Argon2dKdfParameters.$UUID) {
+          if (dictionary.value["S"] instanceof Bytes === false)
+            throw new Error()
+          const salt = dictionary.value["S"].value as Copiable<32>
 
+          if (dictionary.value["P"] instanceof UInt32 === false)
+            throw new Error()
+          const parallelism = dictionary.value["P"].value
+
+
+          if (dictionary.value["M"] instanceof UInt64 === false)
+            throw new Error()
+          const memory = dictionary.value["M"].value
+
+          if (dictionary.value["I"] instanceof UInt64 === false)
+            throw new Error()
+          const iterations = dictionary.value["I"].value
+
+          if (dictionary.value["V"] instanceof UInt32 === false)
+            throw new Error()
+          const version = dictionary.value["V"].value as Argon2Version
+
+          fields.kdf = new Argon2dKdfParameters(salt, parallelism, memory, iterations, version)
+
+          continue
         }
 
         if ($UUID === Argon2idKdfParameters.$UUID) {
+          if (dictionary.value["S"] instanceof Bytes === false)
+            throw new Error()
+          const salt = dictionary.value["S"].value as Copiable<32>
 
+          if (dictionary.value["P"] instanceof UInt32 === false)
+            throw new Error()
+          const parallelism = dictionary.value["P"].value
+
+          if (dictionary.value["M"] instanceof UInt64 === false)
+            throw new Error()
+          const memory = dictionary.value["M"].value
+
+          if (dictionary.value["I"] instanceof UInt64 === false)
+            throw new Error()
+          const iterations = dictionary.value["I"].value
+
+          if (dictionary.value["V"] instanceof UInt32 === false)
+            throw new Error()
+          const version = dictionary.value["V"].value as Argon2Version
+
+          fields.kdf = new Argon2idKdfParameters(salt, parallelism, memory, iterations, version)
+
+          continue
         }
 
         throw new Error()
@@ -157,6 +203,11 @@ export class AesKdfParameters {
 
 }
 
+export type KdfParameters =
+  | AesKdfParameters
+  | Argon2dKdfParameters
+  | Argon2idKdfParameters
+
 export namespace AesKdfParameters {
 
   export const $UUID = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
@@ -170,8 +221,8 @@ export class Argon2dKdfParameters {
   constructor(
     readonly salt: Copiable<32>,
     readonly parallelism: number,
-    readonly memory: number,
-    readonly iterations: number,
+    readonly memory: bigint,
+    readonly iterations: bigint,
     readonly version: Argon2Version,
   ) { }
 
@@ -188,8 +239,8 @@ export class Argon2idKdfParameters {
   constructor(
     readonly salt: Copiable<32>,
     readonly parallelism: number,
-    readonly memory: number,
-    readonly iterations: number,
+    readonly memory: bigint,
+    readonly iterations: bigint,
     readonly version: Argon2Version,
   ) { }
 
