@@ -59,7 +59,7 @@ export namespace Headers {
       compression?: Compression
       seed?: Copiable
       iv?: Copiable
-      kdf?: Dictionary
+      kdf?: AesKdfParameters
       custom?: Dictionary
     } = {}
 
@@ -95,14 +95,33 @@ export namespace Headers {
         if (dictionary.value["$UUID"] instanceof Bytes === false)
           throw new Error()
 
-        const algorithm = StringAsUuid.from(dictionary.value["$UUID"].value.get())
+        const $UUID = StringAsUuid.from(dictionary.value["$UUID"].value.get())
 
-        if (algorithm !== AesKdfParameters.algorithm)
+        if (![AesKdfParameters.$UUID, Argon2dKdfParameters.$UUID, Argon2idKdfParameters.$UUID].includes($UUID))
           throw new Error()
 
-        fields.kdf = dictionary
+        if ($UUID === AesKdfParameters.$UUID) {
 
-        continue
+          if (dictionary.value["R"] instanceof UInt32 === false)
+            throw new Error()
+          const rounds = dictionary.value["R"].value
+
+          if (dictionary.value["S"] instanceof Bytes === false)
+            throw new Error()
+          const seed = dictionary.value["S"].value as Copiable<32>
+
+          fields.kdf = new AesKdfParameters(rounds, seed)
+        }
+
+        if ($UUID === Argon2dKdfParameters.$UUID) {
+
+        }
+
+        if ($UUID === Argon2idKdfParameters.$UUID) {
+
+        }
+
+        throw new Error()
       }
 
       if (tlv.type === 12) {
@@ -140,7 +159,45 @@ export class AesKdfParameters {
 
 export namespace AesKdfParameters {
 
-  export const algorithm = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
+  export const $UUID = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
+
+}
+
+export type Argon2Version = 0x10 | 0x13
+
+export class Argon2dKdfParameters {
+
+  constructor(
+    readonly salt: Copiable<32>,
+    readonly parallelism: number,
+    readonly memory: number,
+    readonly iterations: number,
+    readonly version: Argon2Version,
+  ) { }
+
+}
+
+export namespace Argon2dKdfParameters {
+
+  export const $UUID = "ef636ddf-8c29-444b-91f7-a9a403e30a0c"
+
+}
+
+export class Argon2idKdfParameters {
+
+  constructor(
+    readonly salt: Copiable<32>,
+    readonly parallelism: number,
+    readonly memory: number,
+    readonly iterations: number,
+    readonly version: Argon2Version,
+  ) { }
+
+}
+
+export namespace Argon2idKdfParameters {
+
+  export const $UUID = "9e298b19-56db-4773-b23d-fc3ec6f0a1e6"
 
 }
 
