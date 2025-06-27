@@ -7,9 +7,26 @@ export { };
 export class Database {
 
   constructor(
-    readonly headers: Headers,
-    readonly data: Copiable,
-    readonly blocks: Block[]
+    readonly head: Head,
+    readonly body: Block[]
+  ) { }
+
+}
+
+export class Head {
+
+  constructor(
+    readonly version: Version,
+    readonly headers: HeadersWithHashAndHmac,
+  ) { }
+
+}
+
+export class Version {
+
+  constructor(
+    readonly major: number,
+    readonly minor: number,
   ) { }
 
 }
@@ -17,7 +34,6 @@ export class Database {
 export class Block {
 
   constructor(
-    readonly id: number,
     readonly hmac: Copiable<32>,
     readonly data: Copiable
   ) { }
@@ -27,16 +43,11 @@ export class Block {
 export namespace Block {
 
   export function readOrThrow(cursor: Cursor) {
-    const id = cursor.readUint32OrThrow(true)
-
     const hmac = new Uncopied(cursor.readOrThrow(32))
-    console.log(hmac)
+    const size = cursor.readUint32OrThrow(true)
+    const data = new Uncopied(cursor.readOrThrow(size))
 
-    const length = cursor.readUint32OrThrow(true)
-    console.log(length)
-    const data = new Uncopied(cursor.readOrThrow(length))
-
-    return new Block(id, hmac, data)
+    return new Block(hmac, data)
   }
 
 }
@@ -44,6 +55,8 @@ export namespace Block {
 export namespace Database {
 
   export function readOrThrow(cursor: Cursor) {
+    const start = cursor.offset
+
     const alpha = cursor.readUint32OrThrow(true)
 
     if (alpha !== 0x9AA2D903)
@@ -57,34 +70,56 @@ export namespace Database {
     const minor = cursor.readUint16OrThrow(true)
     const major = cursor.readUint16OrThrow(true)
 
+    const version = new Version(major, minor)
+
     if (major !== 4)
       throw new Error()
 
-    const headers = Headers.readOrThrow(cursor)
+    const value = Headers.readOrThrow(cursor)
+    const bytes = new Uncopied(cursor.bytes.subarray(start, cursor.offset))
 
-    cursor.offset += 32 // headers hash
-    cursor.offset += 32 // headers hmac
+    const data = new HeadersWithBytes(value, bytes)
+    const hash = new Uncopied(cursor.readOrThrow(32))
+    const hmac = new Uncopied(cursor.readOrThrow(32))
 
-    cursor.offset += 36
+    const headers = new HeadersWithHashAndHmac(data, hash, hmac)
 
-    console.log(cursor.after.subarray(0, 1024))
+    const body = new Array<Block>()
 
-    const blocks = new Array<Block>()
+    while (true) {
+      const block = Block.readOrThrow(cursor)
 
-    // while (true) {
-    //   const block = Block.readOrThrow(cursor)
+      if (block.data.get().length === 0)
+        break
 
-    //   if (block.data.get().length === 0)
-    //     break
+      body.push(block)
 
-    //   blocks.push(block)
+      continue
+    }
 
-    //   continue
-    // }
-    const data = new Uncopied(cursor.readOrThrow(cursor.remaining - 4))
+    const head = new Head(version, headers)
 
-    return new Database(headers, data, blocks)
+    return new Database(head, body)
   }
+
+}
+
+export class HeadersWithHashAndHmac {
+
+  constructor(
+    readonly data: HeadersWithBytes,
+    readonly hash: Copiable<32>,
+    readonly hmac: Copiable<32>
+  ) { }
+
+}
+
+export class HeadersWithBytes {
+
+  constructor(
+    readonly value: Headers,
+    readonly bytes: Copiable,
+  ) { }
 
 }
 
