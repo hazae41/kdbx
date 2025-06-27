@@ -56,6 +56,7 @@
     "unit-tested"
   ],
   "dependencies": {
+    "@hazae41/argon2.wasm": "^1.0.3",
     "@hazae41/base16": "^1.1.1",
     "@hazae41/binary": "^1.3.5",
     "@hazae41/bytes": "^1.2.11",

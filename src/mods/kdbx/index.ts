@@ -6,7 +6,9 @@ export { };
 
 export class Database {
 
-  constructor() { }
+  constructor(
+    readonly headers: Headers
+  ) { }
 
 }
 
@@ -33,7 +35,7 @@ export namespace Database {
 
     console.log("Headers", headers)
 
-    return
+    return new Database(headers)
   }
 
 }
