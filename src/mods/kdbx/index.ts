@@ -1,8 +1,9 @@
 import { Readable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
-import { Copiable } from "@hazae41/uncopy";
+import { Copiable, Uncopied } from "@hazae41/uncopy";
 import { TLV } from "libs/tlv/index.js";
-import { Compression } from "./header/outer/index.js";
+import { StringAsUuid } from "libs/uuid/index.js";
+import { Cipher, Compression } from "./header/outer/index.js";
 
 export { };
 
@@ -84,9 +85,9 @@ export class Block {
 export namespace Block {
 
   export function readOrThrow(cursor: Cursor) {
-    const hmac = new Uncopied(cursor.readOrThrow(32))
+    const hmac = cursor.readOrThrow(32)
     const size = cursor.readUint32OrThrow(true)
-    const data = new Uncopied(cursor.readOrThrow(size))
+    const data = cursor.readOrThrow(size)
 
     return new Block(hmac, data)
   }
@@ -120,8 +121,8 @@ export namespace Database {
     const bytes = new Uncopied(cursor.bytes.subarray(start, cursor.offset))
 
     const data = new HeadersWithBytes(value, bytes)
-    const hash = new Uncopied(cursor.readOrThrow(32))
-    const hmac = new Uncopied(cursor.readOrThrow(32))
+    const hash = cursor.readOrThrow(32)
+    const hmac = cursor.readOrThrow(32)
 
     const headers = new HeadersWithHashAndHmac(data, hash, hmac)
 
@@ -385,7 +386,7 @@ export class Seed {
   ) { }
 
   static readOrThrow(cursor: Cursor) {
-    return new Seed(new Uncopied(cursor.readOrThrow(32)))
+    return new Seed(cursor.readOrThrow(32))
   }
 
 }
@@ -419,7 +420,7 @@ export namespace Dictionary {
       const kstring = cursor.readUtf8OrThrow(klength)
 
       const vlength = cursor.readUint32OrThrow(true)
-      const vbytes = new Uncopied(cursor.readOrThrow(vlength))
+      const vbytes = cursor.readOrThrow(vlength)
 
       if (type === UInt32.type) {
         dictionary[kstring] = Readable.readFromBytesOrThrow(UInt32, vbytes.get())
@@ -607,7 +608,7 @@ export namespace Bytes {
   export const type = 0x42
 
   export function readOrThrow(cursor: Cursor) {
-    return new Bytes(new Uncopied(cursor.readOrThrow(cursor.remaining)))
+    return new Bytes(cursor.readOrThrow(cursor.remaining))
   }
 
 }

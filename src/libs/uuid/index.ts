@@ -27,7 +27,9 @@ export namespace BytesAsUuid {
 
     const base16 = [a, b, c, d, e].join("")
 
-    return Base16.get().getOrThrow().decodeOrThrow(base16)
+    using memory = Base16.get().getOrThrow().decodeOrThrow(base16)
+
+    return new Uint8Array(memory.bytes)
   }
 
 }
