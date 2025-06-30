@@ -2,7 +2,7 @@ import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm";
 import { Cursor } from "@hazae41/cursor";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
-import { InnerHeader } from "./header/inner/index.js";
+import { InnerHeader } from "./headers/inner/index.js";
 import { AesCbcCryptor, Argon2dKdfParameters, Database } from "./index.js";
 
 function equals(a: Uint8Array, b: Uint8Array): boolean {
