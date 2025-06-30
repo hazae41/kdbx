@@ -1,9 +1,9 @@
-export * from "./dictionary/index.js";
-export * from "./headers/index.js";
+export * from "./dictionary/index.js"
+export * from "./headers/index.js"
 
-import { Cursor } from "@hazae41/cursor";
-import { Copiable, Uncopied } from "@hazae41/uncopy";
-import { Headers, HeadersWithBytes, HeadersWithHashAndHmac } from "./headers/outer/index.js";
+import { Cursor } from "@hazae41/cursor"
+import { Copiable, Uncopied } from "@hazae41/uncopy"
+import { Headers, HeadersWithBytes, HeadersWithHashAndHmac } from "./headers/outer/index.js"
 
 export class Database {
 

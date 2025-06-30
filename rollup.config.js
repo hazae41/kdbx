@@ -1,6 +1,6 @@
-import ts from "@rollup/plugin-typescript";
-import dts from "rollup-plugin-dts";
-import externals from "rollup-plugin-node-externals";
+import ts from "@rollup/plugin-typescript"
+import dts from "rollup-plugin-dts"
+import externals from "rollup-plugin-node-externals"
 
 export const config = [
   {

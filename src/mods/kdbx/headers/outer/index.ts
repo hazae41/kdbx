@@ -1,14 +1,14 @@
-export * from "./cipher/index.js";
-export * from "./compression/index.js";
+export * from "./cipher/index.js"
+export * from "./compression/index.js"
 
-import { Readable } from "@hazae41/binary";
-import { Cursor } from "@hazae41/cursor";
-import { Copiable } from "@hazae41/uncopy";
-import { TLV } from "libs/tlv/index.js";
-import { StringAsUuid } from "libs/uuid/index.js";
-import { Bytes, Dictionary, UInt32, UInt64 } from "mods/kdbx/dictionary/index.js";
-import { Cipher } from "./cipher/index.js";
-import { Compression } from "./compression/index.js";
+import { Readable } from "@hazae41/binary"
+import { Cursor } from "@hazae41/cursor"
+import { Copiable } from "@hazae41/uncopy"
+import { TLV } from "libs/tlv/index.js"
+import { StringAsUuid } from "libs/uuid/index.js"
+import { Bytes, Dictionary, UInt32, UInt64 } from "mods/kdbx/dictionary/index.js"
+import { Cipher } from "./cipher/index.js"
+import { Compression } from "./compression/index.js"
 
 export class HeadersWithHashAndHmac {
 
