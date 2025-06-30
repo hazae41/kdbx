@@ -56,4 +56,4 @@ const body = cursor.after
 
 const text = new TextDecoder("utf-8").decode(body);
 
-console.log(`@${text}@`);
+console.log(text);
