@@ -1,5 +1,6 @@
 import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm"
 import { Cursor } from "@hazae41/cursor"
+import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { readFileSync } from "node:fs"
 import { KdfParameters } from "./headers/outer/index.js"
 import { AesCbcCryptor, Database, Inner } from "./index.js"
@@ -22,6 +23,27 @@ async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
     throw new Error()
 
   return result.value
+}
+
+function format(text: string, tab: string = "  ") {
+  let result = ""
+  let indent = 0
+
+  const nodes = text.split(/>\s*</)
+
+  for (const node of nodes) {
+    if (node.match(/^\/\w/))
+      indent--
+
+    result += tab.repeat(indent) + '<' + node + '>\r\n';
+
+    if (node.match(/^<?\w[^>]*[^\/]$/))
+      indent++
+
+    continue
+  }
+
+  return result.slice(1, result.length - 3);
 }
 
 await Argon2.initBundled()
@@ -66,9 +88,14 @@ const decryptedBytes = await database.decryptOrThrow(cryptor)
 const dezippedBytes = await unzip(decryptedBytes)
 
 const cursor = new Cursor(dezippedBytes)
+
 const head = Inner.Headers.readOrThrow(cursor)
+console.log(head)
+
 const body = cursor.after
-
 const text = new TextDecoder("utf-8").decode(body)
+console.log(format(text))
 
-console.log(head, text)
+const xml = new DOMParser().parseFromString(text, "text/xml")
+xml.getElementById
+console.log(format(new XMLSerializer().serializeToString(xml as any)))
