@@ -97,5 +97,19 @@ const text = new TextDecoder("utf-8").decode(body)
 console.log(format(text))
 
 const xml = new DOMParser().parseFromString(text, "text/xml")
-xml.getElementById
+
+function rename(node: Node, oldName: string, newName: string) {
+  if (node.nodeName === "Value") {
+    if (node.textContent === oldName)
+      node.textContent = newName
+    return
+  }
+
+  for (let i = 0; i < node.childNodes.length; i++)
+    rename(node.childNodes[i], oldName, newName)
+  return
+}
+
+rename(xml as any, "nom d'utilisateur", "lol")
+
 console.log(format(new XMLSerializer().serializeToString(xml as any)))
