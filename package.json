@@ -19,7 +19,6 @@
   "scripts": {
     "build": "rimraf dist && rollup -c",
     "test": "node ./dist/test/index.test.mjs",
-    "prepare": "npm run build"
   },
   "devDependencies": {
     "@hazae41/phobos": "^1.0.10",
