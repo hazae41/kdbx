@@ -1,13 +1,13 @@
 import { Cursor } from "@hazae41/cursor"
 import { TLV } from "libs/tlv/index.js"
 
-export class InnerHeader {
+export class InnerHeaders {
 
   constructor() { }
 
 }
 
-export namespace InnerHeader {
+export namespace InnerHeaders {
 
   export function readOrThrow(cursor: Cursor) {
     while (true) {
@@ -20,7 +20,7 @@ export namespace InnerHeader {
       continue
     }
 
-    return new InnerHeader()
+    return new InnerHeaders()
   }
 
 }
