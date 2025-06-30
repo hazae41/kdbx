@@ -2,7 +2,7 @@ import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm";
 import { Cursor } from "@hazae41/cursor";
 import { readFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
-import { AesCbcCryptor, Argon2dKdfParameters, Database } from "./index.js";
+import { AesCbcCryptor, Argon2dKdfParameters, Database, InnerHeaders } from "./index.js";
 
 function equals(a: Uint8Array, b: Uint8Array): boolean {
   return Buffer.compare(a, b) === 0;
@@ -49,4 +49,10 @@ const cryptor = await AesCbcCryptor.importOrThrow(database, masterKeyBytes)
 const decryptedBytes = await database.decryptOrThrow(cryptor)
 const dezippedBytes = gunzipSync(decryptedBytes);
 
-console.log(dezippedBytes.toString("utf-8"));
+const cursor = new Cursor(dezippedBytes);
+const head = InnerHeaders.readOrThrow(cursor);
+const body = cursor.after
+
+const text = new TextDecoder("utf-8").decode(body);
+
+console.log(`@${text}@`);

@@ -1,6 +1,8 @@
 import { Readable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
-import { Copiable, Uncopied } from "libs/copy/index.js";
+import { Copiable } from "@hazae41/uncopy";
+import { TLV } from "libs/tlv/index.js";
+import { Compression } from "./header/outer/index.js";
 
 export { };
 
@@ -76,16 +78,6 @@ export class Block {
     readonly hmac: Copiable<32>,
     readonly data: Copiable
   ) { }
-
-}
-
-export class Payload {
-
-  constructor(
-    readonly head: {},
-    readonly body: Copiable
-  ) { }
-
 
 }
 
@@ -386,85 +378,6 @@ export namespace Argon2idKdfParameters {
 
 }
 
-export class Cipher {
-
-  constructor(
-    readonly uuid: string
-  ) { }
-
-}
-
-export namespace Cipher {
-
-  export const Aes128Cbc = new Cipher("61ab05a1-9464-41c3-8d74-3a563df8dd35")
-
-  export const Aes256Cbc = new Cipher("31c1f2e6-bf71-4350-be58-05216afc5aff")
-
-  export const TwoFishCbc = new Cipher("ad68f29f-576f-4bb9-a36a-d47af965346c")
-
-  export const ChaCha20 = new Cipher("d6038a2b-8b6f-4cb5-a524-339a31dbb59a")
-
-}
-
-export namespace Cipher {
-
-  export function readOrThrow(cursor: Cursor) {
-    const bytes = cursor.readOrThrow(16)
-    const uuid = StringAsUuid.from(bytes)
-
-    if (uuid === Aes256Cbc.uuid)
-      return Aes256Cbc
-    if (uuid === ChaCha20.uuid)
-      return ChaCha20
-
-    throw new Error()
-  }
-
-}
-
-export class Compression {
-
-  constructor(
-    readonly type: number
-  ) { }
-
-}
-
-export namespace Compression {
-
-  export const None = new Compression(0x00)
-  export const Gzip = new Compression(0x01)
-
-  export function readOrThrow(cursor: Cursor) {
-    const value = cursor.readUint32OrThrow(true)
-
-    if (value === None.type)
-      return None
-    if (value === Gzip.type)
-      return Gzip
-
-    throw new Error()
-  }
-
-}
-
-export class TLV {
-
-  constructor(
-    readonly type: number,
-    readonly bytes: Copiable
-  ) { }
-
-  static readOrThrow(cursor: Cursor) {
-    const type = cursor.readUint8OrThrow()
-    const length = cursor.readUint32OrThrow(true)
-    const bytes = new Uncopied(cursor.readOrThrow(length))
-
-    return new TLV(type, bytes)
-  }
-
-}
-
 export class Seed {
 
   constructor(
@@ -695,38 +608,6 @@ export namespace Bytes {
 
   export function readOrThrow(cursor: Cursor) {
     return new Bytes(new Uncopied(cursor.readOrThrow(cursor.remaining)))
-  }
-
-}
-
-export namespace StringAsUuid {
-
-  export function from(bytes: Uint8Array) {
-    const base16 = Buffer.from(bytes).toString("hex") // todo use wasm
-
-    const a = base16.slice(0, 8)
-    const b = base16.slice(8, 12)
-    const c = base16.slice(12, 16)
-    const d = base16.slice(16, 20)
-    const e = base16.slice(20, 32)
-
-    return [a, b, c, d, e].join("-")
-  }
-
-}
-
-export namespace BytesAsUuid {
-
-  export function from(string: string) {
-    const a = string.slice(0, 8)
-    const b = string.slice(8, 12)
-    const c = string.slice(12, 16)
-    const d = string.slice(16, 20)
-    const e = string.slice(20, 32)
-
-    const base16 = [a, b, c, d, e].join("")
-
-    return Buffer.from(base16, "hex")
   }
 
 }
