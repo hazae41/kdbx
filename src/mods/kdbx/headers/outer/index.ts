@@ -31,7 +31,7 @@ export class HeadersWithHashAndHmac {
     preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
 
     const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
-    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"])
+    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["verify"])
 
     const hmacBytes = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKeyCrypto, this.data.bytes.get()))
 
