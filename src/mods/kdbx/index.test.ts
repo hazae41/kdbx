@@ -57,14 +57,14 @@ function rename(node: Node, oldName: string, newName: string) {
 
 await Argon2.initBundled()
 
+globalThis.DOMParser = DOMParser as any
+globalThis.XMLSerializer = XMLSerializer as any
+
 const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
 const decrypted = await encrypted.decryptOrThrow(encrypted.deriveOrThrow(composite))
 
-const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
-const xml = new DOMParser().parseFromString(raw, "text/xml")
+rename(decrypted.body.content as any, "nom d'utilisateur", "lol")
 
-rename(xml as any, "nom d'utilisateur", "lol")
-
-console.log(format(new XMLSerializer().serializeToString(xml as any)))
+console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))

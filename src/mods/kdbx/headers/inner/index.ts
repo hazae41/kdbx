@@ -7,7 +7,7 @@ export class HeadersAndContent {
 
   constructor(
     readonly headers: Headers,
-    readonly content: Copiable
+    readonly content: Document
   ) { }
 
 }
@@ -18,7 +18,10 @@ export namespace HeadersAndContent {
     const headers = Headers.readOrThrow(cursor)
     const content = cursor.readOrThrow(cursor.remaining)
 
-    return new HeadersAndContent(headers, content)
+    const raw = new TextDecoder().decode(content.get())
+    const xml = new DOMParser().parseFromString(raw, "text/xml")
+
+    return new HeadersAndContent(headers, xml)
   }
 
 }
