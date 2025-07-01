@@ -18,8 +18,8 @@ export class PasswordKey {
   ) { }
 
   static async digestOrThrow(password: Uint8Array) {
-    const buffer = await crypto.subtle.digest("SHA-256", password)
-    const bytes = new Uint8Array(buffer) as Uint8Array<32>
+    const array = await crypto.subtle.digest("SHA-256", password)
+    const bytes = new Uint8Array(array) as Uint8Array<32>
 
     return new PasswordKey(new Copied(bytes))
   }
@@ -33,8 +33,8 @@ export class CompositeKey {
   ) { }
 
   static async digestOrThrow(password: PasswordKey) {
-    const buffer = await crypto.subtle.digest("SHA-256", password.bytes.get())
-    const bytes = new Uint8Array(buffer) as Uint8Array<32>
+    const array = await crypto.subtle.digest("SHA-256", password.bytes.get())
+    const bytes = new Uint8Array(array) as Uint8Array<32>
 
     return new CompositeKey(new Copied(bytes))
   }
