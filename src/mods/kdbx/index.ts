@@ -5,47 +5,93 @@ import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Copiable } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
+import { Inner } from "./headers/index.js"
 import { VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { HmacKey } from "./hmac/index.js"
 
-export class Database {
+export class HeadersAndContent {
 
   constructor(
-    readonly head: VersionAndHeadersWithHashAndHmac,
-    readonly body: BlockWithIndex[]
+    readonly headers: Inner.Headers,
+    readonly content: Uint8Array
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<32>) {
-    const result = await this.head.verifyOrThrow(masterHmacKeyBytes)
+}
 
-    if (result !== true)
-      throw new Error()
+export namespace Database {
 
-    for (const block of this.body) {
-      const result = await block.verifyOrThrow(masterHmacKeyBytes)
+  export class Decrypted {
+
+    constructor(
+      readonly head: VersionAndHeadersWithHashAndHmac,
+      readonly body: Uint8Array
+    ) { }
+
+  }
+
+  export class Encrypted {
+
+    constructor(
+      readonly head: VersionAndHeadersWithHashAndHmac,
+      readonly body: BlockWithIndex[]
+    ) { }
+
+    async verifyOrThrow(masterHmacKeyBytes: Uint8Array<32>) {
+      const result = await this.head.verifyOrThrow(masterHmacKeyBytes)
 
       if (result !== true)
         throw new Error()
 
-      continue
+      for (const block of this.body) {
+        const result = await block.verifyOrThrow(masterHmacKeyBytes)
+
+        if (result !== true)
+          throw new Error()
+
+        continue
+      }
+
+      return true
     }
 
-    return true
+    async decryptOrThrow(cryptor: AesCbcCryptor) {
+      const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
+      const cursor = new Cursor(new Uint8Array(length))
+
+      for (const block of this.body) {
+        const decrypted = await cryptor.decryptOrThrow(block.block.data.get())
+
+        cursor.writeOrThrow(new Uint8Array(decrypted))
+
+        continue
+      }
+
+      return cursor.bytes
+    }
+
   }
 
-  async decryptOrThrow(cryptor: AesCbcCryptor) {
-    const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
-    const cursor = new Cursor(new Uint8Array(length))
+  export namespace Encrypted {
 
-    for (const block of this.body) {
-      const decrypted = await cryptor.decryptOrThrow(block.block.data.get())
+    export function readOrThrow(cursor: Cursor) {
+      const head = VersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
 
-      cursor.writeOrThrow(new Uint8Array(decrypted))
+      const body = new Array<BlockWithIndex>()
 
-      continue
+      for (let index = 0n; true; index++) {
+        const block = Block.readOrThrow(cursor)
+
+        if (block.data.get().length === 0)
+          break
+
+        body.push(new BlockWithIndex(index, block))
+
+        continue
+      }
+
+      return new Encrypted(head, body)
     }
 
-    return cursor.bytes
   }
 
 }
@@ -65,7 +111,7 @@ export class AesCbcCryptor {
 
 export namespace AesCbcCryptor {
 
-  export async function importOrThrow(database: Database, master: Uint8Array) {
+  export async function importOrThrow(database: Database.Encrypted, master: Uint8Array) {
     const alg = { name: "AES-CBC", iv: database.head.data.value.headers.iv.get() }
     const key = await crypto.subtle.importKey("raw", master, { name: "AES-CBC" }, false, ["decrypt"])
 
@@ -134,29 +180,6 @@ export namespace Block {
     const data = cursor.readOrThrow(size)
 
     return new Block(hmac, data)
-  }
-
-}
-
-export namespace Database {
-
-  export function readOrThrow(cursor: Cursor) {
-    const head = VersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
-
-    const body = new Array<BlockWithIndex>()
-
-    for (let index = 0n; true; index++) {
-      const block = Block.readOrThrow(cursor)
-
-      if (block.data.get().length === 0)
-        break
-
-      body.push(new BlockWithIndex(index, block))
-
-      continue
-    }
-
-    return new Database(head, body)
   }
 
 }

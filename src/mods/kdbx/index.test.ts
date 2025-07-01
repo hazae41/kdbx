@@ -47,7 +47,7 @@ await Argon2.initBundled()
 
 const bytes = readFileSync("./local/test.kdbx")
 
-const database = Database.readOrThrow(new Cursor(bytes))
+const database = Database.Encrypted.readOrThrow(new Cursor(bytes))
 
 if (database.head.data.value.headers.kdf instanceof KdfParameters.Argon2d === false)
   throw new Error()
