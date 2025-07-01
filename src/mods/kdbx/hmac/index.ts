@@ -1,6 +1,7 @@
 import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
+import { Copiable, Uncopied } from "@hazae41/uncopy"
+import { Uint8Array } from "libs/bytes/index.js"
 
 export class PreHmacKey {
 
@@ -35,8 +36,8 @@ export class HmacKey {
     readonly key: CryptoKey
   ) { }
 
-  static async digestOrThrow(index: bigint, major: Copiable<32>) {
-    const struct = new PreHmacKey(index, major)
+  static async digestOrThrow(index: bigint, major: Uint8Array<32>) {
+    const struct = new PreHmacKey(index, new Uncopied(major))
     const digest = await struct.digestOrThrow()
 
     return digest

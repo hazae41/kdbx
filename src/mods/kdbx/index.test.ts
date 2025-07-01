@@ -1,6 +1,7 @@
 import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm"
 import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
+import { Uint8Array } from "libs/bytes/index.js"
 import { readFileSync } from "node:fs"
 import { KdfParameters } from "./headers/outer/index.js"
 import { AesCbcCryptor, Database, Inner } from "./index.js"
@@ -48,7 +49,7 @@ const bytes = readFileSync("./local/test.kdbx")
 
 const database = Database.readOrThrow(new Cursor(bytes))
 
-if (database.head.headers.data.value.kdf instanceof KdfParameters.Argon2d === false)
+if (database.head.data.value.headers.kdf instanceof KdfParameters.Argon2d === false)
   throw new Error()
 
 const passwordString = "test"
@@ -58,12 +59,12 @@ const passwordHashBuffer = await crypto.subtle.digest("SHA-256", passwordBytes)
 const compositeKeyBuffer = await crypto.subtle.digest("SHA-256", passwordHashBuffer)
 const compositeKeyBytes = new Uint8Array(compositeKeyBuffer)
 
-const { version, iterations, parallelism, memory, salt } = database.head.headers.data.value.kdf
+const { version, iterations, parallelism, memory, salt } = database.head.data.value.headers.kdf
 
 const deriverPointer = new Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
 const derivedMemoryPointer = deriverPointer.derive(new Memory(compositeKeyBytes), new Memory(salt.get()))
 
-const masterSeedCopiable = database.head.headers.data.value.seed
+const masterSeedCopiable = database.head.data.value.headers.seed
 
 const preMasterKey = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length)
 
@@ -82,7 +83,7 @@ preMasterHmacKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
 preMasterHmacKeyCursor.writeUint8OrThrow(1)
 
 const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKey)
-const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer)
+const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<32>
 
 await database.verifyOrThrow(masterHmacKeyBytes)
 

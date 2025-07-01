@@ -12,22 +12,32 @@ import { HmacKey } from "mods/kdbx/hmac/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
-export class HeadersWithHashAndHmac {
+export class Version {
 
   constructor(
-    readonly data: HeadersWithBytes,
+    readonly major: number,
+    readonly minor: number,
+  ) { }
+
+}
+
+
+export class VersionAndHeadersWithHashAndHmac {
+
+  constructor(
+    readonly data: VersionAndHeadersWithBytes,
     readonly hash: Copiable<32>,
     readonly hmac: Copiable<32>
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array): Promise<true> {
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<32>): Promise<true> {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
 
     if (!Bytes.equals(hash, this.hash.get()))
       throw new Error()
 
     const index = 0xFFFFFFFFFFFFFFFFn
-    const major = new Uncopied(masterHmacKeyBytes as Uint8Array<32>)
+    const major = masterHmacKeyBytes
 
     const key = await HmacKey.digestOrThrow(index, major)
 
@@ -41,12 +51,74 @@ export class HeadersWithHashAndHmac {
 
 }
 
-export class HeadersWithBytes {
+export namespace VersionAndHeadersWithHashAndHmac {
+
+  export function readOrThrow(cursor: Cursor) {
+    const data = VersionAndHeadersWithBytes.readOrThrow(cursor)
+    const hash = cursor.readOrThrow(32)
+    const hmac = cursor.readOrThrow(32)
+
+    return new VersionAndHeadersWithHashAndHmac(data, hash, hmac)
+  }
+
+}
+
+export class VersionAndHeadersWithBytes {
 
   constructor(
-    readonly value: Headers,
+    readonly value: VersionAndHeaders,
     readonly bytes: Copiable,
   ) { }
+
+}
+
+export namespace VersionAndHeadersWithBytes {
+
+  export function readOrThrow(cursor: Cursor) {
+    const start = cursor.offset
+
+    const value = VersionAndHeaders.readOrThrow(cursor)
+    const bytes = new Uncopied(cursor.bytes.subarray(start, cursor.offset))
+
+    return new VersionAndHeadersWithBytes(value, bytes)
+  }
+
+}
+
+export class VersionAndHeaders {
+
+  constructor(
+    readonly version: Version,
+    readonly headers: Headers
+  ) { }
+
+}
+
+export namespace VersionAndHeaders {
+
+  export function readOrThrow(cursor: Cursor) {
+    const alpha = cursor.readUint32OrThrow(true)
+
+    if (alpha !== 0x9AA2D903)
+      throw new Error()
+
+    const beta = cursor.readUint32OrThrow(true)
+
+    if (beta !== 0xB54BFB67)
+      throw new Error()
+
+    const minor = cursor.readUint16OrThrow(true)
+    const major = cursor.readUint16OrThrow(true)
+
+    const version = new Version(major, minor)
+
+    if (major !== 4)
+      throw new Error()
+
+    const headers = Headers.readOrThrow(cursor)
+
+    return new VersionAndHeaders(version, headers)
+  }
 
 }
 
