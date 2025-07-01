@@ -1,6 +1,7 @@
 export * from "./dictionary/index.js"
 export * from "./headers/index.js"
 
+import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Copiable, Uncopied } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
@@ -95,6 +96,24 @@ export namespace AesCbcCryptor {
 
 }
 
+export class BlockWithIndexPreHmacData {
+
+  constructor(
+    readonly block: BlockWithIndex,
+  ) { }
+
+  sizeOrThrow() {
+    return 8 + 4 + this.block.block.data.get().length
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeUint64OrThrow(this.block.index, true)
+    cursor.writeUint32OrThrow(this.block.block.data.get().length, true)
+    cursor.writeOrThrow(this.block.block.data.get())
+  }
+
+}
+
 export class BlockWithIndex {
 
   constructor(
@@ -103,15 +122,14 @@ export class BlockWithIndex {
   ) { }
 
   async verifyOrThrow(masterHmacKeyBytes: Uint8Array) {
-    const key = await HmacKey.importOrThrow(this.index, new Uncopied(masterHmacKeyBytes as Uint8Array<32>))
+    const index = this.index
+    const major = new Uncopied(masterHmacKeyBytes as Uint8Array<32>)
 
-    const preHmacBytes = new Uint8Array(8 + 4 + this.block.data.get().length)
-    const preHmacCursor = new Cursor(preHmacBytes)
-    preHmacCursor.writeUint64OrThrow(this.index, true)
-    preHmacCursor.writeUint32OrThrow(this.block.data.get().length, true)
-    preHmacCursor.writeOrThrow(this.block.data.get())
+    const key = await HmacKey.digestOrThrow(index, major)
 
-    const result = await key.verifyOrThrow(preHmacBytes, this.block.hmac.get())
+    const data = Writable.writeToBytesOrThrow(new BlockWithIndexPreHmacData(this))
+
+    const result = await key.verifyOrThrow(data, this.block.hmac.get())
 
     if (result !== true)
       throw new Error()

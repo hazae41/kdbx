@@ -27,9 +27,9 @@ export class HeadersWithHashAndHmac {
       throw new Error()
 
     const index = 0xFFFFFFFFFFFFFFFFn
-    const bytes = new Uncopied(masterHmacKeyBytes as Uint8Array<32>)
+    const major = new Uncopied(masterHmacKeyBytes as Uint8Array<32>)
 
-    const key = await HmacKey.importOrThrow(index, bytes)
+    const key = await HmacKey.digestOrThrow(index, major)
 
     const result = await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
 

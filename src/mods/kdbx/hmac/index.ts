@@ -6,16 +6,16 @@ export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly bytes: Copiable<32>,
+    readonly major: Copiable<32>,
   ) { }
 
   sizeOrThrow() {
-    return 8 + this.bytes.get().length
+    return 8 + this.major.get().length
   }
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeUint64OrThrow(this.index, true)
-    cursor.writeOrThrow(this.bytes.get())
+    cursor.writeOrThrow(this.major.get())
   }
 
   async digestOrThrow() {
@@ -35,8 +35,8 @@ export class HmacKey {
     readonly key: CryptoKey
   ) { }
 
-  static async importOrThrow(index: bigint, bytes: Copiable<32>) {
-    const struct = new PreHmacKey(index, bytes)
+  static async digestOrThrow(index: bigint, major: Copiable<32>) {
+    const struct = new PreHmacKey(index, major)
     const digest = await struct.digestOrThrow()
 
     return digest
