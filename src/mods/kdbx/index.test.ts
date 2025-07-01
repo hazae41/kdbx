@@ -42,20 +42,6 @@ function format(text: string, tab: string = "  ") {
   return result.slice(1, result.length - 3);
 }
 
-await Argon2.initBundled()
-
-const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
-
-const passwordString = "test"
-const passwordBytes = new TextEncoder().encode(passwordString)
-
-const decrypted = await encrypted.decryptOrThrow(passwordBytes)
-
-const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
-console.log(format(raw))
-
-const xml = new DOMParser().parseFromString(raw, "text/xml")
-
 function rename(node: Node, oldName: string, newName: string) {
   if (node.nodeName === "Value") {
     if (node.textContent === oldName)
@@ -67,6 +53,19 @@ function rename(node: Node, oldName: string, newName: string) {
     rename(node.childNodes[i], oldName, newName)
   return
 }
+
+
+await Argon2.initBundled()
+
+const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
+
+const passwordString = "test"
+const passwordBytes = new TextEncoder().encode(passwordString)
+
+const decrypted = await encrypted.decryptOrThrow(passwordBytes)
+
+const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
+const xml = new DOMParser().parseFromString(raw, "text/xml")
 
 rename(xml as any, "nom d'utilisateur", "lol")
 
