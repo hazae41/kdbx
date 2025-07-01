@@ -7,7 +7,7 @@ import { Copiable, Copied } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
-import { Cipher, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { Cipher, MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
@@ -131,7 +131,7 @@ export namespace Database {
   export class Decrypted {
 
     constructor(
-      readonly head: Outer.VersionAndHeadersWithHashAndHmac,
+      readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
       readonly body: Inner.HeadersAndContent
     ) { }
 
@@ -140,7 +140,7 @@ export namespace Database {
   export class Encrypted {
 
     constructor(
-      readonly head: Outer.VersionAndHeadersWithHashAndHmac,
+      readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
       readonly body: BlockWithIndex[]
     ) { }
 
@@ -186,7 +186,7 @@ export namespace Database {
   export namespace Encrypted {
 
     export function readOrThrow(cursor: Cursor) {
-      const head = VersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
+      const head = MagicAndVersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
 
       const body = new Array<BlockWithIndex>()
 

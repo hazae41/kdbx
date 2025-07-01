@@ -2,7 +2,7 @@ export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Readable } from "@hazae41/binary"
+import { Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Copiable, Copied, Uncopied } from "@hazae41/uncopy"
 import { Bytes, Uint8Array } from "libs/bytes/index.js"
@@ -21,16 +21,39 @@ export class Version {
     readonly minor: number,
   ) { }
 
+  sizeOrThrow() {
+    return 2 + 2
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeUint16OrThrow(this.major, true)
+    cursor.writeUint16OrThrow(this.minor, true)
+  }
+
 }
 
 
-export class VersionAndHeadersWithHashAndHmac {
+export class MagicAndVersionAndHeadersWithHashAndHmac {
 
   constructor(
-    readonly data: VersionAndHeadersWithBytes,
+    readonly data: MagicAndVersionAndHeadersWithBytes,
     readonly hash: Copiable<32>,
     readonly hmac: Copiable<32>
   ) { }
+
+  static async computeOrThrow(value: MagicAndVersionAndHeaders, master: HmacMasterKey) {
+    const data = MagicAndVersionAndHeadersWithBytes.computeOrThrow(value)
+
+    const index = 0xFFFFFFFFFFFFFFFFn
+    const major = master.bytes
+
+    const key = await new PreHmacKey(index, major).digestOrThrow()
+
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.get())) as Uint8Array<32>
+    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.get())) as Uint8Array<32>
+
+    return new MagicAndVersionAndHeadersWithHashAndHmac(data, new Copied(hash), new Copied(hmac))
+  }
 
   async verifyOrThrow(master: HmacMasterKey) {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
@@ -46,52 +69,88 @@ export class VersionAndHeadersWithHashAndHmac {
     await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
   }
 
-}
+  sizeOrThrow() {
+    return this.data.sizeOrThrow() + 32 + 32
+  }
 
-export namespace VersionAndHeadersWithHashAndHmac {
+  writeOrThrow(cursor: Cursor) {
+    this.data.writeOrThrow(cursor)
 
-  export function readOrThrow(cursor: Cursor) {
-    const data = VersionAndHeadersWithBytes.readOrThrow(cursor)
-    const hash = cursor.readOrThrow(32)
-    const hmac = cursor.readOrThrow(32)
-
-    return new VersionAndHeadersWithHashAndHmac(data, hash, hmac)
+    cursor.writeOrThrow(this.hash.get())
+    cursor.writeOrThrow(this.hmac.get())
   }
 
 }
 
-export class VersionAndHeadersWithBytes {
+export namespace MagicAndVersionAndHeadersWithHashAndHmac {
 
-  constructor(
-    readonly value: VersionAndHeaders,
-    readonly bytes: Copiable,
-  ) { }
+  export function readOrThrow(cursor: Cursor) {
+    const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
+    const hash = cursor.readOrThrow(32)
+    const hmac = cursor.readOrThrow(32)
+
+    return new MagicAndVersionAndHeadersWithHashAndHmac(data, hash, hmac)
+  }
 
 }
 
-export namespace VersionAndHeadersWithBytes {
+export class MagicAndVersionAndHeadersWithBytes {
+
+  constructor(
+    readonly value: MagicAndVersionAndHeaders,
+    readonly bytes: Copiable,
+  ) { }
+
+  static computeOrThrow(value: MagicAndVersionAndHeaders) {
+    const bytes = new Copied(Writable.writeToBytesOrThrow(value))
+    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
+  }
+
+  sizeOrThrow() {
+    return this.bytes.get().length
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.bytes.get())
+  }
+
+}
+
+export namespace MagicAndVersionAndHeadersWithBytes {
 
   export function readOrThrow(cursor: Cursor) {
     const start = cursor.offset
 
-    const value = VersionAndHeaders.readOrThrow(cursor)
+    const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
     const bytes = new Uncopied(cursor.bytes.subarray(start, cursor.offset))
 
-    return new VersionAndHeadersWithBytes(value, bytes)
+    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
 }
 
-export class VersionAndHeaders {
+export class MagicAndVersionAndHeaders {
 
   constructor(
     readonly version: Version,
     readonly headers: Headers
   ) { }
 
+  sizeOrThrow() {
+    return 4 + 4 + this.version.sizeOrThrow() + this.headers.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeUint32OrThrow(0x9AA2D903, true)
+    cursor.writeUint32OrThrow(0xB54BFB67, true)
+
+    this.version.writeOrThrow(cursor)
+    this.headers.writeOrThrow(cursor)
+  }
+
 }
 
-export namespace VersionAndHeaders {
+export namespace MagicAndVersionAndHeaders {
 
   export function readOrThrow(cursor: Cursor) {
     const alpha = cursor.readUint32OrThrow(true)
@@ -114,7 +173,7 @@ export namespace VersionAndHeaders {
 
     const headers = Headers.readOrThrow(cursor)
 
-    return new VersionAndHeaders(version, headers)
+    return new MagicAndVersionAndHeaders(version, headers)
   }
 
 }
@@ -129,6 +188,14 @@ export class Headers {
     readonly kdf: KdfParameters,
     readonly custom?: Dictionary
   ) { }
+
+  sizeOrThrow(): number {
+    throw new Error("Not implemented")
+  }
+
+  writeOrThrow(cursor: Cursor): void {
+    throw new Error("Not implemented")
+  }
 
 }
 
