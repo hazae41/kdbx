@@ -79,6 +79,10 @@ export namespace Database {
       readonly body: BlockWithIndex[]
     ) { }
 
+    deriveOrThrow(composite: CompositeKey) {
+      return this.head.data.value.headers.kdf.deriveOrThrow(composite)
+    }
+
     async decryptOrThrow(derived: DerivedKey) {
       const masterSeedCopiable = this.head.data.value.headers.seed
 
