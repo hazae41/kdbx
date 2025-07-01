@@ -3,7 +3,9 @@ export * from "./headers/index.js"
 
 import { Cursor } from "@hazae41/cursor"
 import { Copiable, Uncopied } from "@hazae41/uncopy"
+import { Uint8Array } from "libs/bytes/index.js"
 import { Headers, HeadersWithBytes, HeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { HmacKey } from "./hmac/index.js"
 
 export class Database {
 
@@ -101,13 +103,7 @@ export class BlockWithIndex {
   ) { }
 
   async verifyOrThrow(masterHmacKeyBytes: Uint8Array) {
-    const preHmacKeyBytes = new Uint8Array(8 + masterHmacKeyBytes.length)
-    const preHmacKeyCursor = new Cursor(preHmacKeyBytes)
-    preHmacKeyCursor.writeUint64OrThrow(this.index, true)
-    preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
-
-    const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
-    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["verify"])
+    const key = await HmacKey.importOrThrow(this.index, new Uncopied(masterHmacKeyBytes as Uint8Array<32>))
 
     const preHmacBytes = new Uint8Array(8 + 4 + this.block.data.get().length)
     const preHmacCursor = new Cursor(preHmacBytes)
@@ -115,7 +111,7 @@ export class BlockWithIndex {
     preHmacCursor.writeUint32OrThrow(this.block.data.get().length, true)
     preHmacCursor.writeOrThrow(this.block.data.get())
 
-    const result = await crypto.subtle.verify("HMAC", hmacKeyCrypto, this.block.hmac.get(), preHmacBytes)
+    const result = await key.verifyOrThrow(preHmacBytes, this.block.hmac.get())
 
     if (result !== true)
       throw new Error()

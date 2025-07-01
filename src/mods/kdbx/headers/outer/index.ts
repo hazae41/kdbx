@@ -3,11 +3,12 @@ export * from "./compression/index.js"
 
 import { Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
+import { Copiable, Uncopied } from "@hazae41/uncopy"
 import { Bytes, Uint8Array } from "libs/bytes/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
+import { HmacKey } from "mods/kdbx/hmac/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -25,15 +26,12 @@ export class HeadersWithHashAndHmac {
     if (!Bytes.equals(hash, this.hash.get()))
       throw new Error()
 
-    const preHmacKeyBytes = new Uint8Array(8 + masterHmacKeyBytes.length)
-    const preHmacKeyCursor = new Cursor(preHmacKeyBytes)
-    preHmacKeyCursor.writeUint64OrThrow(0xFFFFFFFFFFFFFFFFn, true)
-    preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
+    const index = 0xFFFFFFFFFFFFFFFFn
+    const bytes = new Uncopied(masterHmacKeyBytes as Uint8Array<32>)
 
-    const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
-    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["verify"])
+    const key = await HmacKey.importOrThrow(index, bytes)
 
-    const result = await crypto.subtle.verify("HMAC", hmacKeyCrypto, this.hmac.get(), this.data.bytes.get())
+    const result = await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
 
     if (result !== true)
       throw new Error()
