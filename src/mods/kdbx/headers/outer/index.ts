@@ -31,13 +31,11 @@ export class HeadersWithHashAndHmac {
     preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
 
     const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
-    const hmacKey = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"])
+    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"])
 
-    const hmacSigBytes = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, this.data.bytes.get()))
+    const hmacBytes = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKeyCrypto, this.data.bytes.get()))
 
-    console.log(hmacSigBytes, this.hmac.get())
-
-    if (!Bytes.equals(hmacSigBytes, this.hmac.get()))
+    if (!Bytes.equals(hmacBytes, this.hmac.get()))
       throw new Error()
 
     return true
