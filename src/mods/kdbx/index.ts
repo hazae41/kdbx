@@ -142,30 +142,6 @@ export namespace Database {
 
 }
 
-export class AesCbcCryptor {
-
-  constructor(
-    readonly alg: AesCbcParams,
-    readonly key: CryptoKey
-  ) { }
-
-  async decryptOrThrow(cipherbytes: Uint8Array) {
-    return await crypto.subtle.decrypt(this.alg, this.key, cipherbytes)
-  }
-
-}
-
-export namespace AesCbcCryptor {
-
-  export async function importOrThrow(database: Database.Encrypted, master: Uint8Array) {
-    const alg = { name: "AES-CBC", iv: database.head.data.value.headers.iv.get() }
-    const key = await crypto.subtle.importKey("raw", master, { name: "AES-CBC" }, false, ["decrypt"])
-
-    return new AesCbcCryptor(alg, key)
-  }
-
-}
-
 export class BlockWithIndexPreHmacData {
 
   constructor(
