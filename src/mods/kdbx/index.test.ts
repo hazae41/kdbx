@@ -3,7 +3,7 @@ import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { Uint8Array } from "libs/bytes/index.js"
 import { readFileSync } from "node:fs"
-import { Database } from "./index.js"
+import { CompositeKey, Database, PasswordKey } from "./index.js"
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -57,12 +57,10 @@ function rename(node: Node, oldName: string, newName: string) {
 
 await Argon2.initBundled()
 
+const password = await PasswordKey.digestOrThrow(new TextEncoder().encode("test"))
+
 const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
-
-const passwordString = "test"
-const passwordBytes = new TextEncoder().encode(passwordString)
-
-const decrypted = await encrypted.decryptOrThrow(passwordBytes)
+const decrypted = await encrypted.decryptOrThrow(await CompositeKey.digestOrThrow(password))
 
 const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
 const xml = new DOMParser().parseFromString(raw, "text/xml")

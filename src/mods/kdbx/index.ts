@@ -4,12 +4,42 @@ export * from "./headers/index.js"
 import { Argon2 } from "@hazae41/argon2.wasm"
 import { Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
+import { Copiable, Copied } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
 import { Cipher, KdfParameters, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { HmacKey } from "./hmac/index.js"
+
+export class PasswordKey {
+
+  constructor(
+    readonly bytes: Copiable<32>
+  ) { }
+
+  static async digestOrThrow(password: Uint8Array) {
+    const buffer = await crypto.subtle.digest("SHA-256", password)
+    const bytes = new Uint8Array(buffer) as Uint8Array<32>
+
+    return new PasswordKey(new Copied(bytes))
+  }
+
+}
+
+export class CompositeKey {
+
+  constructor(
+    readonly bytes: Copiable<32>,
+  ) { }
+
+  static async digestOrThrow(password: PasswordKey) {
+    const buffer = await crypto.subtle.digest("SHA-256", password.bytes.get())
+    const bytes = new Uint8Array(buffer) as Uint8Array<32>
+
+    return new CompositeKey(new Copied(bytes))
+  }
+
+}
 
 export namespace Database {
 
@@ -29,19 +59,14 @@ export namespace Database {
       readonly body: BlockWithIndex[]
     ) { }
 
-    async decryptOrThrow(password: Uint8Array) {
-      const passwordHashBuffer = await crypto.subtle.digest("SHA-256", password)
-
-      const compositeKeyBuffer = await crypto.subtle.digest("SHA-256", passwordHashBuffer)
-      const compositeKeyBytes = new Uint8Array(compositeKeyBuffer)
-
+    async decryptOrThrow(key: CompositeKey) {
       if (this.head.data.value.headers.kdf instanceof KdfParameters.Argon2d) {
         const { version, iterations, parallelism, memory, salt } = this.head.data.value.headers.kdf
 
         const masterSeedCopiable = this.head.data.value.headers.seed
 
         const deriverPointer = new Argon2.Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-        const derivedMemoryPointer = deriverPointer.derive(new Argon2.Memory(compositeKeyBytes), new Argon2.Memory(salt.get()))
+        const derivedMemoryPointer = deriverPointer.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
 
         const preMasterKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length)
         const preMasterKeyCursor = new Cursor(preMasterKeyBytes)
