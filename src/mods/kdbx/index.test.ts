@@ -84,7 +84,7 @@ preMasterHmacKeyCursor.writeUint8OrThrow(1)
 const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKey)
 const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer)
 
-await database.head.headers.verifyOrThrow(masterHmacKeyBytes)
+await database.verifyOrThrow(masterHmacKeyBytes)
 
 const cryptor = await AesCbcCryptor.importOrThrow(database, masterKeyBytes)
 

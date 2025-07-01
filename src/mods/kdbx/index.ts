@@ -9,19 +9,33 @@ export class Database {
 
   constructor(
     readonly head: Head,
-    readonly body: Block[]
+    readonly body: BlockWithIndex[]
   ) { }
 
-  async verifyOrThrow() {
-    return await this.head.verifyOrThrow()
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array) {
+    const result = await this.head.verifyOrThrow(masterHmacKeyBytes)
+
+    if (result !== true)
+      throw new Error()
+
+    for (const block of this.body) {
+      const result = await block.verifyOrThrow(masterHmacKeyBytes)
+
+      if (result !== true)
+        throw new Error()
+
+      continue
+    }
+
+    return true
   }
 
   async decryptOrThrow(cryptor: AesCbcCryptor) {
-    const length = this.body.reduce((a, b) => a + b.data.get().length, 0)
+    const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
     const cursor = new Cursor(new Uint8Array(length))
 
     for (const block of this.body) {
-      const decrypted = await cryptor.decryptOrThrow(block.data.get())
+      const decrypted = await cryptor.decryptOrThrow(block.block.data.get())
 
       cursor.writeOrThrow(new Uint8Array(decrypted))
 
@@ -40,8 +54,8 @@ export class Head {
     readonly headers: HeadersWithHashAndHmac,
   ) { }
 
-  async verifyOrThrow() {
-    // return await this.headers.verifyOrThrow()
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array) {
+    return await this.headers.verifyOrThrow(masterHmacKeyBytes)
   }
 
 }
@@ -75,6 +89,38 @@ export namespace AesCbcCryptor {
     const key = await crypto.subtle.importKey("raw", master, { name: "AES-CBC" }, false, ["decrypt"])
 
     return new AesCbcCryptor(alg, key)
+  }
+
+}
+
+export class BlockWithIndex {
+
+  constructor(
+    readonly index: bigint,
+    readonly block: Block
+  ) { }
+
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array) {
+    const preHmacKeyBytes = new Uint8Array(8 + masterHmacKeyBytes.length)
+    const preHmacKeyCursor = new Cursor(preHmacKeyBytes)
+    preHmacKeyCursor.writeUint64OrThrow(this.index, true)
+    preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
+
+    const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
+    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["verify"])
+
+    const preHmacBytes = new Uint8Array(8 + 4 + this.block.data.get().length)
+    const preHmacCursor = new Cursor(preHmacBytes)
+    preHmacCursor.writeUint64OrThrow(this.index, true)
+    preHmacCursor.writeUint32OrThrow(this.block.data.get().length, true)
+    preHmacCursor.writeOrThrow(this.block.data.get())
+
+    const result = await crypto.subtle.verify("HMAC", hmacKeyCrypto, this.block.hmac.get(), preHmacBytes)
+
+    if (result !== true)
+      throw new Error()
+
+    return true
   }
 
 }
@@ -132,15 +178,15 @@ export namespace Database {
 
     const headers = new HeadersWithHashAndHmac(data, hash, hmac)
 
-    const body = new Array<Block>()
+    const body = new Array<BlockWithIndex>()
 
-    while (true) {
+    for (let index = 0n; true; index++) {
       const block = Block.readOrThrow(cursor)
 
       if (block.data.get().length === 0)
         break
 
-      body.push(block)
+      body.push(new BlockWithIndex(index, block))
 
       continue
     }
