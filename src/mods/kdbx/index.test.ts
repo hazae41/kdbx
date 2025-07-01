@@ -57,10 +57,10 @@ function rename(node: Node, oldName: string, newName: string) {
 
 await Argon2.initBundled()
 
-const password = await PasswordKey.digestOrThrow(new TextEncoder().encode("test"))
+const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
-const decrypted = await encrypted.decryptOrThrow(await CompositeKey.digestOrThrow(password))
+const decrypted = await encrypted.decryptOrThrow(encrypted.head.data.value.headers.kdf.deriveOrThrow(composite))
 
 const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
 const xml = new DOMParser().parseFromString(raw, "text/xml")

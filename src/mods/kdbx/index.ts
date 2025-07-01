@@ -1,17 +1,17 @@
 export * from "./dictionary/index.js"
 export * from "./headers/index.js"
 
-import { Argon2 } from "@hazae41/argon2.wasm"
 import { Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Copiable, Copied } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
-import { Cipher, KdfParameters, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { Cipher, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { HmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
+  readonly #class = PasswordKey
 
   constructor(
     readonly bytes: Copiable<32>
@@ -27,6 +27,7 @@ export class PasswordKey {
 }
 
 export class CompositeKey {
+  readonly #class = CompositeKey
 
   constructor(
     readonly bytes: Copiable<32>,
@@ -38,6 +39,25 @@ export class CompositeKey {
 
     return new CompositeKey(new Copied(bytes))
   }
+
+}
+
+export class DerivedKey {
+  readonly #class = DerivedKey
+
+  constructor(
+    readonly bytes: Copiable<32>
+  ) { }
+
+}
+
+export class MasterKeys {
+
+  constructor(
+    readonly encryption: Copiable,
+    readonly authentication: Copiable<64>
+  ) { }
+
 
 }
 
@@ -59,57 +79,48 @@ export namespace Database {
       readonly body: BlockWithIndex[]
     ) { }
 
-    async decryptOrThrow(key: CompositeKey) {
-      if (this.head.data.value.headers.kdf instanceof KdfParameters.Argon2d) {
-        const { version, iterations, parallelism, memory, salt } = this.head.data.value.headers.kdf
+    async decryptOrThrow(derived: DerivedKey) {
+      const masterSeedCopiable = this.head.data.value.headers.seed
 
-        const masterSeedCopiable = this.head.data.value.headers.seed
+      const preMasterKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derived.bytes.get().length)
+      const preMasterKeyCursor = new Cursor(preMasterKeyBytes)
+      preMasterKeyCursor.writeOrThrow(masterSeedCopiable.get())
+      preMasterKeyCursor.writeOrThrow(derived.bytes.get())
 
-        const deriverPointer = new Argon2.Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-        const derivedMemoryPointer = deriverPointer.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
+      const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKeyBytes)
+      const masterKeyBytes = new Uint8Array(masterKeyBuffer) as Uint8Array<32>
 
-        const preMasterKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length)
-        const preMasterKeyCursor = new Cursor(preMasterKeyBytes)
-        preMasterKeyCursor.writeOrThrow(masterSeedCopiable.get())
-        preMasterKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
+      const preMasterHmacKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derived.bytes.get().length + 1)
+      const preMasterHmacKeyCursor = new Cursor(preMasterHmacKeyBytes)
+      preMasterHmacKeyCursor.writeOrThrow(masterSeedCopiable.get())
+      preMasterHmacKeyCursor.writeOrThrow(derived.bytes.get())
+      preMasterHmacKeyCursor.writeUint8OrThrow(1)
 
-        const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKeyBytes)
-        const masterKeyBytes = new Uint8Array(masterKeyBuffer) as Uint8Array<32>
+      const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKeyBytes)
+      const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<64>
 
-        const preMasterHmacKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length + 1)
-        const preMasterHmacKeyCursor = new Cursor(preMasterHmacKeyBytes)
-        preMasterHmacKeyCursor.writeOrThrow(masterSeedCopiable.get())
-        preMasterHmacKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
-        preMasterHmacKeyCursor.writeUint8OrThrow(1)
+      await this.head.verifyOrThrow(masterHmacKeyBytes)
 
-        const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKeyBytes)
-        const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<64>
+      if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
+        const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
+        const cursor = new Cursor(new Uint8Array(length))
 
-        await this.head.verifyOrThrow(masterHmacKeyBytes)
+        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.get() }
+        const key = await crypto.subtle.importKey("raw", masterKeyBytes, { name: "AES-CBC" }, false, ["decrypt"])
 
-        if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
-          const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
-          const cursor = new Cursor(new Uint8Array(length))
+        for (const block of this.body) {
+          await block.verifyOrThrow(masterHmacKeyBytes)
 
-          const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.get() }
-          const key = await crypto.subtle.importKey("raw", masterKeyBytes, { name: "AES-CBC" }, false, ["decrypt"])
+          const encrypted = block.block.data.get()
+          const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
 
-          for (const block of this.body) {
-            await block.verifyOrThrow(masterHmacKeyBytes)
-
-            const encrypted = block.block.data.get()
-            const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
-
-            cursor.writeOrThrow(new Uint8Array(decrypted))
-            continue
-          }
-
-          const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, gunzipSync(cursor.bytes))
-
-          return new Decrypted(this.head, body)
+          cursor.writeOrThrow(new Uint8Array(decrypted))
+          continue
         }
 
-        throw new Error()
+        const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, gunzipSync(cursor.bytes))
+
+        return new Decrypted(this.head, body)
       }
 
       throw new Error()

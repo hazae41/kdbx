@@ -1,14 +1,16 @@
 export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
+import { Argon2 } from "@hazae41/argon2.wasm"
 import { Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable, Uncopied } from "@hazae41/uncopy"
+import { Copiable, Copied, Uncopied } from "@hazae41/uncopy"
 import { Bytes, Uint8Array } from "libs/bytes/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
 import { HmacKey } from "mods/kdbx/hmac/index.js"
+import { CompositeKey, DerivedKey } from "mods/kdbx/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -299,6 +301,10 @@ export namespace KdfParameters {
       readonly seed: Copiable<32>,
     ) { }
 
+    deriveOrThrow(key: CompositeKey): never {
+      throw new Error()
+    }
+
   }
 
   export namespace AesKdf {
@@ -327,6 +333,15 @@ export namespace KdfParameters {
       readonly version: Argon2.Version,
     ) { }
 
+    deriveOrThrow(key: CompositeKey) {
+      const { version, iterations, parallelism, memory, salt } = this
+
+      const deriver = new Argon2.Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
+      const derived = deriver.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
+
+      return new DerivedKey(new Copied(new Uint8Array(derived.bytes) as Uint8Array<32>))
+    }
+
   }
 
   export namespace Argon2d {
@@ -344,6 +359,15 @@ export namespace KdfParameters {
       readonly iterations: bigint,
       readonly version: Argon2.Version,
     ) { }
+
+    deriveOrThrow(key: CompositeKey) {
+      const { version, iterations, parallelism, memory, salt } = this
+
+      const deriver = new Argon2.Argon2Deriver("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
+      const derived = deriver.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
+
+      return new DerivedKey(new Copied(new Uint8Array(derived.bytes) as Uint8Array<32>))
+    }
 
   }
 
