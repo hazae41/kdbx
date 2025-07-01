@@ -9,8 +9,8 @@ import { Bytes, Uint8Array } from "libs/bytes/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
-import { HmacKey } from "mods/kdbx/hmac/index.js"
-import { CompositeKey, DerivedKey } from "mods/kdbx/index.js"
+import { PreHmacKey } from "mods/kdbx/hmac/index.js"
+import { CompositeKey, DerivedKey, HmacMasterKey } from "mods/kdbx/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -32,16 +32,16 @@ export class VersionAndHeadersWithHashAndHmac {
     readonly hmac: Copiable<32>
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<64>) {
+  async verifyOrThrow(master: HmacMasterKey) {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
 
     if (!Bytes.equals(hash, this.hash.get()))
       throw new Error()
 
     const index = 0xFFFFFFFFFFFFFFFFn
-    const major = masterHmacKeyBytes
+    const major = master.bytes
 
-    const key = await HmacKey.digestOrThrow(index, major)
+    const key = await new PreHmacKey(index, major).digestOrThrow()
 
     await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
   }
@@ -124,7 +124,7 @@ export class Headers {
   constructor(
     readonly cipher: Cipher,
     readonly compression: Compression,
-    readonly seed: Copiable,
+    readonly seed: Copiable<32>,
     readonly iv: Copiable,
     readonly kdf: KdfParameters,
     readonly custom?: Dictionary
@@ -138,7 +138,7 @@ export namespace Headers {
     const fields: {
       cipher?: Cipher,
       compression?: Compression
-      seed?: Copiable
+      seed?: Copiable<32>
       iv?: Copiable
       kdf?: KdfParameters
       custom?: Dictionary
@@ -161,7 +161,7 @@ export namespace Headers {
       }
 
       if (tlv.type === 4) {
-        fields.seed = tlv.bytes
+        fields.seed = tlv.bytes as Copiable<32>
         continue
       }
 

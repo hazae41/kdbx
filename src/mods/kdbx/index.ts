@@ -8,7 +8,7 @@ import { Uint8Array } from "libs/bytes/index.js"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
 import { Cipher, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
-import { HmacKey } from "./hmac/index.js"
+import { PreHmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
   readonly #class = PasswordKey
@@ -51,13 +51,78 @@ export class DerivedKey {
 
 }
 
-export class MasterKeys {
+export class PreMasterKey {
+  readonly #class = PreMasterKey
 
   constructor(
-    readonly encryption: Copiable,
-    readonly authentication: Copiable<64>
+    readonly seed: Copiable<32>,
+    readonly hash: DerivedKey
   ) { }
 
+  sizeOrThrow() {
+    return 32 + 32
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.seed.get())
+    cursor.writeOrThrow(this.hash.bytes.get())
+  }
+
+  async digestOrThrow() {
+    const input = Writable.writeToBytesOrThrow(this)
+
+    const digest = await crypto.subtle.digest("SHA-256", input)
+    const output = new Uint8Array(digest) as Uint8Array<32>
+
+    return new MasterKey(new Copied(output))
+  }
+
+}
+
+export class MasterKey {
+  readonly #class = MasterKey
+
+  constructor(
+    readonly bytes: Copiable<32>,
+  ) { }
+
+}
+
+export class PreHmacMasterKey {
+  readonly #class = PreHmacMasterKey
+
+  constructor(
+    readonly seed: Copiable<32>,
+    readonly hash: DerivedKey
+  ) { }
+
+  sizeOrThrow() {
+    return 32 + 32 + 1
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.seed.get())
+    cursor.writeOrThrow(this.hash.bytes.get())
+    cursor.writeUint8OrThrow(1)
+  }
+
+  async digestOrThrow() {
+    const input = Writable.writeToBytesOrThrow(this)
+
+    const digest = await crypto.subtle.digest("SHA-512", input)
+    const output = new Uint8Array(digest) as Uint8Array<64>
+
+    return new HmacMasterKey(new Copied(output))
+  }
+
+}
+
+export class HmacMasterKey {
+  readonly #class = HmacMasterKey
+
+  constructor(
+    readonly bytes: Copiable<64>,
+  ) { }
 
 }
 
@@ -84,36 +149,22 @@ export namespace Database {
     }
 
     async decryptOrThrow(derived: DerivedKey) {
-      const masterSeedCopiable = this.head.data.value.headers.seed
+      const seed = this.head.data.value.headers.seed
 
-      const preMasterKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derived.bytes.get().length)
-      const preMasterKeyCursor = new Cursor(preMasterKeyBytes)
-      preMasterKeyCursor.writeOrThrow(masterSeedCopiable.get())
-      preMasterKeyCursor.writeOrThrow(derived.bytes.get())
+      const encrypter = await new PreMasterKey(seed, derived).digestOrThrow()
+      const authifier = await new PreHmacMasterKey(seed, derived).digestOrThrow()
 
-      const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKeyBytes)
-      const masterKeyBytes = new Uint8Array(masterKeyBuffer) as Uint8Array<32>
-
-      const preMasterHmacKeyBytes = new Uint8Array(masterSeedCopiable.get().length + derived.bytes.get().length + 1)
-      const preMasterHmacKeyCursor = new Cursor(preMasterHmacKeyBytes)
-      preMasterHmacKeyCursor.writeOrThrow(masterSeedCopiable.get())
-      preMasterHmacKeyCursor.writeOrThrow(derived.bytes.get())
-      preMasterHmacKeyCursor.writeUint8OrThrow(1)
-
-      const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKeyBytes)
-      const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<64>
-
-      await this.head.verifyOrThrow(masterHmacKeyBytes)
+      await this.head.verifyOrThrow(authifier)
 
       if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
         const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
         const cursor = new Cursor(new Uint8Array(length))
 
         const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.get() }
-        const key = await crypto.subtle.importKey("raw", masterKeyBytes, { name: "AES-CBC" }, false, ["decrypt"])
+        const key = await crypto.subtle.importKey("raw", encrypter.bytes.get(), { name: "AES-CBC" }, false, ["decrypt"])
 
         for (const block of this.body) {
-          await block.verifyOrThrow(masterHmacKeyBytes)
+          await block.verifyOrThrow(authifier)
 
           const encrypted = block.block.data.get()
           const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
@@ -182,11 +233,11 @@ export class BlockWithIndex {
     readonly block: Block
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<64>) {
+  async verifyOrThrow(master: HmacMasterKey) {
     const index = this.index
-    const major = masterHmacKeyBytes
+    const major = master.bytes
 
-    const key = await HmacKey.digestOrThrow(index, major)
+    const key = await new PreHmacKey(index, major).digestOrThrow()
 
     const data = Writable.writeToBytesOrThrow(new BlockWithIndexPreHmacData(this))
 

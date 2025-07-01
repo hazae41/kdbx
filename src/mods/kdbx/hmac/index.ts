@@ -1,6 +1,6 @@
 import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable, Uncopied } from "@hazae41/uncopy"
+import { Copiable } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
 
 export class PreHmacKey {
@@ -20,12 +20,13 @@ export class PreHmacKey {
   }
 
   async digestOrThrow() {
-    const preHmacKeyBytes = Writable.writeToBytesOrThrow(this)
+    const bytes = Writable.writeToBytesOrThrow(this)
 
-    const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
-    const hmacKeyCrypto = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, true, ["sign", "verify"])
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-512", bytes))
 
-    return new HmacKey(hmacKeyCrypto)
+    const key = await crypto.subtle.importKey("raw", digest, { name: "HMAC", hash: "SHA-256" }, true, ["sign", "verify"])
+
+    return new HmacKey(key)
   }
 
 }
@@ -35,13 +36,6 @@ export class HmacKey {
   constructor(
     readonly key: CryptoKey
   ) { }
-
-  static async digestOrThrow(index: bigint, major: Uint8Array<64>) {
-    const struct = new PreHmacKey(index, new Uncopied(major))
-    const digest = await struct.digestOrThrow()
-
-    return digest
-  }
 
   async signOrThrow(data: Uint8Array) {
     return await crypto.subtle.sign("HMAC", this.key, data)
