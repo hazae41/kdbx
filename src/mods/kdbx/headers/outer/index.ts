@@ -41,6 +41,9 @@ export class HeadersWithHashAndHmac {
 
     const hmacSigBytes = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, preHmacSigBytes))
 
+
+    console.log(hmacSigBytes, this.hmac.get())
+
     if (!Bytes.equals(hmacSigBytes, this.hmac.get()))
       throw new Error()
 
