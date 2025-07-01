@@ -30,7 +30,7 @@ export class VersionAndHeadersWithHashAndHmac {
     readonly hmac: Copiable<32>
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<64>): Promise<true> {
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<64>) {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
 
     if (!Bytes.equals(hash, this.hash.get()))
@@ -41,12 +41,7 @@ export class VersionAndHeadersWithHashAndHmac {
 
     const key = await HmacKey.digestOrThrow(index, major)
 
-    const result = await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
-
-    if (result !== true)
-      throw new Error()
-
-    return true
+    await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
   }
 
 }

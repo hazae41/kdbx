@@ -53,7 +53,7 @@ export class HmacKey {
     if (result !== true)
       throw new Error()
 
-    return true
+    return
   }
 
 }

@@ -199,12 +199,7 @@ export class BlockWithIndex {
 
     const data = Writable.writeToBytesOrThrow(new BlockWithIndexPreHmacData(this))
 
-    const result = await key.verifyOrThrow(data, this.block.hmac.get())
-
-    if (result !== true)
-      throw new Error()
-
-    return true
+    await key.verifyOrThrow(data, this.block.hmac.get())
   }
 
 }
