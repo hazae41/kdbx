@@ -12,6 +12,10 @@ export class Database {
     readonly body: Block[]
   ) { }
 
+  async verifyOrThrow() {
+    return await this.head.verifyOrThrow()
+  }
+
   async decryptOrThrow(cryptor: AesCbcCryptor) {
     const length = this.body.reduce((a, b) => a + b.data.get().length, 0)
     const cursor = new Cursor(new Uint8Array(length))
@@ -35,6 +39,10 @@ export class Head {
     readonly version: Version,
     readonly headers: HeadersWithHashAndHmac,
   ) { }
+
+  async verifyOrThrow() {
+    // return await this.headers.verifyOrThrow()
+  }
 
 }
 

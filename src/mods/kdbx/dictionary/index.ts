@@ -33,38 +33,38 @@ export namespace Dictionary {
       const vlength = cursor.readUint32OrThrow(true)
       const vbytes = cursor.readOrThrow(vlength)
 
-      if (type === UInt32.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(UInt32, vbytes.get())
+      if (type === Value.UInt32.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.UInt32, vbytes.get())
         continue
       }
 
-      if (type === UInt64.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(UInt64, vbytes.get())
+      if (type === Value.UInt64.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.UInt64, vbytes.get())
         continue
       }
 
-      if (type === Boolean.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Boolean, vbytes.get())
+      if (type === Value.Boolean.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Boolean, vbytes.get())
         continue
       }
 
-      if (type === Int32.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Int32, vbytes.get())
+      if (type === Value.Int32.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Int32, vbytes.get())
         continue
       }
 
-      if (type === Int64.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Int64, vbytes.get())
+      if (type === Value.Int64.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Int64, vbytes.get())
         continue
       }
 
-      if (type === String.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(String, vbytes.get())
+      if (type === Value.String.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.String, vbytes.get())
         continue
       }
 
-      if (type === Bytes.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Bytes, vbytes.get())
+      if (type === Value.Bytes.type) {
+        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Bytes, vbytes.get())
         continue
       }
 
@@ -77,149 +77,153 @@ export namespace Dictionary {
 }
 
 export type Value =
-  | UInt32
-  | UInt64
-  | Boolean
-  | Int32
-  | Int64
-  | String
-  | Bytes
+  | Value.UInt32
+  | Value.UInt64
+  | Value.Boolean
+  | Value.Int32
+  | Value.Int64
+  | Value.String
+  | Value.Bytes
 
-export class UInt32 {
+export namespace Value {
 
-  constructor(
-    readonly value: number
-  ) { }
+  export class UInt32 {
 
-}
+    constructor(
+      readonly value: number
+    ) { }
 
-export namespace UInt32 {
-
-  export const type = 0x04
-
-  export function readOrThrow(cursor: Cursor) {
-    return new UInt32(cursor.readUint32OrThrow(true))
   }
 
-}
+  export namespace UInt32 {
 
-export class UInt64 {
+    export const type = 0x04
 
-  constructor(
-    readonly value: bigint
-  ) { }
+    export function readOrThrow(cursor: Cursor) {
+      return new UInt32(cursor.readUint32OrThrow(true))
+    }
 
-}
-
-export namespace UInt64 {
-
-  export const type = 0x05
-
-  export function readOrThrow(cursor: Cursor) {
-    return new UInt64(cursor.readUint64OrThrow(true))
   }
 
-}
+  export class UInt64 {
 
-export class Boolean {
+    constructor(
+      readonly value: bigint
+    ) { }
 
-  constructor(
-    readonly value: boolean
-  ) { }
-
-}
-
-export namespace Boolean {
-
-  export const type = 0x08
-
-  export function readOrThrow(cursor: Cursor) {
-    const value = cursor.readUint8OrThrow()
-
-    if (value !== 0 && value !== 1)
-      throw new Error()
-
-    return new Boolean(value === 1)
   }
 
-}
+  export namespace UInt64 {
 
-export class Int32 {
+    export const type = 0x05
 
-  constructor(
-    readonly value: number
-  ) { }
+    export function readOrThrow(cursor: Cursor) {
+      return new UInt64(cursor.readUint64OrThrow(true))
+    }
 
-}
-
-export namespace Int32 {
-
-  export const type = 0x0C
-
-  export function readOrThrow(cursor: Cursor) {
-    const uint = cursor.readUint32OrThrow(true)
-
-    const int = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
-
-    return new Int32(int)
   }
 
-}
+  export class Boolean {
 
-export class Int64 {
+    constructor(
+      readonly value: boolean
+    ) { }
 
-  constructor(
-    readonly value: bigint
-  ) { }
-
-}
-
-export namespace Int64 {
-
-  export const type = 0x0D
-
-  export function readOrThrow(cursor: Cursor) {
-    const uint = cursor.readUint64OrThrow(true)
-
-    const int = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
-
-    return new Int64(int)
   }
 
-}
+  export namespace Boolean {
 
-export class String {
+    export const type = 0x08
 
-  constructor(
-    readonly value: string
-  ) { }
+    export function readOrThrow(cursor: Cursor) {
+      const value = cursor.readUint8OrThrow()
 
-}
+      if (value !== 0 && value !== 1)
+        throw new Error()
 
-export namespace String {
+      return new Boolean(value === 1)
+    }
 
-  export const type = 0x18
-
-  export function readOrThrow(cursor: Cursor) {
-    return new String(cursor.readUtf8OrThrow(cursor.remaining))
   }
 
-}
+  export class Int32 {
 
-export class Bytes {
+    constructor(
+      readonly value: number
+    ) { }
 
-  constructor(
-    readonly value: Copiable
-  ) { }
+  }
 
-}
+  export namespace Int32 {
 
-export namespace Bytes {
+    export const type = 0x0C
 
-  export const type = 0x42
+    export function readOrThrow(cursor: Cursor) {
+      const uint = cursor.readUint32OrThrow(true)
 
-  export function readOrThrow(cursor: Cursor) {
-    return new Bytes(cursor.readOrThrow(cursor.remaining))
+      const int = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
+
+      return new Int32(int)
+    }
+
+  }
+
+  export class Int64 {
+
+    constructor(
+      readonly value: bigint
+    ) { }
+
+  }
+
+  export namespace Int64 {
+
+    export const type = 0x0D
+
+    export function readOrThrow(cursor: Cursor) {
+      const uint = cursor.readUint64OrThrow(true)
+
+      const int = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
+
+      return new Int64(int)
+    }
+
+  }
+
+  export class String {
+
+    constructor(
+      readonly value: string
+    ) { }
+
+  }
+
+  export namespace String {
+
+    export const type = 0x18
+
+    export function readOrThrow(cursor: Cursor) {
+      return new String(cursor.readUtf8OrThrow(cursor.remaining))
+    }
+
+  }
+
+  export class Bytes {
+
+    constructor(
+      readonly value: Copiable
+    ) { }
+
+  }
+
+  export namespace Bytes {
+
+    export const type = 0x42
+
+    export function readOrThrow(cursor: Cursor) {
+      return new Bytes(cursor.readOrThrow(cursor.remaining))
+    }
+
   }
 
 }

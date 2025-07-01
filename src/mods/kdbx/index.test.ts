@@ -5,10 +5,6 @@ import { readFileSync } from "node:fs"
 import { KdfParameters } from "./headers/outer/index.js"
 import { AesCbcCryptor, Database, Inner } from "./index.js"
 
-function equals(a: Uint8Array, b: Uint8Array): boolean {
-  return Buffer.compare(a, b) === 0
-}
-
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
 
@@ -52,12 +48,6 @@ const bytes = readFileSync("./local/test.kdbx")
 
 const database = Database.readOrThrow(new Cursor(bytes))
 
-const headersHashBuffer = await crypto.subtle.digest("SHA-256", database.head.headers.data.bytes.get())
-const headersHashBytes = new Uint8Array(headersHashBuffer)
-
-if (!equals(headersHashBytes, database.head.headers.hash.get()))
-  throw new Error()
-
 if (database.head.headers.data.value.kdf instanceof KdfParameters.Argon2d === false)
   throw new Error()
 
@@ -76,11 +66,25 @@ const derivedMemoryPointer = deriverPointer.derive(new Memory(compositeKeyBytes)
 const masterSeedCopiable = database.head.headers.data.value.seed
 
 const preMasterKey = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length)
-preMasterKey.set(masterSeedCopiable.get())
-preMasterKey.set(derivedMemoryPointer.bytes, masterSeedCopiable.get().length)
+
+const preMasterKeyCursor = new Cursor(preMasterKey)
+preMasterKeyCursor.writeOrThrow(masterSeedCopiable.get())
+preMasterKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
 
 const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKey)
 const masterKeyBytes = new Uint8Array(masterKeyBuffer)
+
+const preMasterHmacKey = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length + 1)
+
+const preMasterHmacKeyCursor = new Cursor(preMasterHmacKey)
+preMasterHmacKeyCursor.writeOrThrow(masterSeedCopiable.get())
+preMasterHmacKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
+preMasterHmacKeyCursor.writeUint8OrThrow(1)
+
+const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKey)
+const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer)
+
+await database.head.headers.verifyOrThrow(masterHmacKeyBytes)
 
 const cryptor = await AesCbcCryptor.importOrThrow(database, masterKeyBytes)
 

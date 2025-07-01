@@ -4,9 +4,10 @@ export * from "./compression/index.js"
 import { Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Copiable } from "@hazae41/uncopy"
+import { Bytes, Uint8Array } from "libs/bytes/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
-import { Bytes, Dictionary, UInt32, UInt64 } from "mods/kdbx/dictionary/index.js"
+import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -17,6 +18,34 @@ export class HeadersWithHashAndHmac {
     readonly hash: Copiable<32>,
     readonly hmac: Copiable<32>
   ) { }
+
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array): Promise<true> {
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
+
+    if (!Bytes.equals(hash, this.hash.get()))
+      throw new Error()
+
+    const preHmacKeyBytes = new Uint8Array(8 + masterHmacKeyBytes.length)
+    const preHmacKeyCursor = new Cursor(preHmacKeyBytes)
+    preHmacKeyCursor.writeUint64OrThrow(0xFFFFFFFFFFFFFFFFn, true)
+    preHmacKeyCursor.writeOrThrow(masterHmacKeyBytes)
+
+    const hmacKeyBytes = new Uint8Array(await crypto.subtle.digest("SHA-512", preHmacKeyBytes))
+    const hmacKey = await crypto.subtle.importKey("raw", hmacKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"])
+
+    const preHmacSigBytes = new Uint8Array(8 + 4 + this.data.bytes.get().length)
+    const preHmacSigCursor = new Cursor(preHmacSigBytes)
+    preHmacSigCursor.writeUint64OrThrow(0xFFFFFFFFFFFFFFFFn, true)
+    preHmacSigCursor.writeUint32OrThrow(this.data.bytes.get().length, true)
+    preHmacSigCursor.writeOrThrow(this.data.bytes.get())
+
+    const hmacSigBytes = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, preHmacSigBytes))
+
+    if (!Bytes.equals(hmacSigBytes, this.hmac.get()))
+      throw new Error()
+
+    return true
+  }
 
 }
 
@@ -83,7 +112,7 @@ export namespace Headers {
       if (tlv.type === 11) {
         const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
 
-        if (dictionary.value["$UUID"] instanceof Bytes === false)
+        if (dictionary.value["$UUID"] instanceof Value.Bytes === false)
           throw new Error()
 
         const $UUID = StringAsUuid.from(dictionary.value["$UUID"].value.get())
@@ -92,11 +121,11 @@ export namespace Headers {
           throw new Error()
 
         if ($UUID === KdfParameters.AesKdf.$UUID) {
-          if (dictionary.value["R"] instanceof UInt32 === false)
+          if (dictionary.value["R"] instanceof Value.UInt32 === false)
             throw new Error()
           const rounds = dictionary.value["R"].value
 
-          if (dictionary.value["S"] instanceof Bytes === false)
+          if (dictionary.value["S"] instanceof Value.Bytes === false)
             throw new Error()
           const seed = dictionary.value["S"].value as Copiable<32>
 
@@ -106,24 +135,24 @@ export namespace Headers {
         }
 
         if ($UUID === KdfParameters.Argon2d.$UUID) {
-          if (dictionary.value["S"] instanceof Bytes === false)
+          if (dictionary.value["S"] instanceof Value.Bytes === false)
             throw new Error()
           const salt = dictionary.value["S"].value as Copiable<32>
 
-          if (dictionary.value["P"] instanceof UInt32 === false)
+          if (dictionary.value["P"] instanceof Value.UInt32 === false)
             throw new Error()
           const parallelism = dictionary.value["P"].value
 
 
-          if (dictionary.value["M"] instanceof UInt64 === false)
+          if (dictionary.value["M"] instanceof Value.UInt64 === false)
             throw new Error()
           const memory = dictionary.value["M"].value
 
-          if (dictionary.value["I"] instanceof UInt64 === false)
+          if (dictionary.value["I"] instanceof Value.UInt64 === false)
             throw new Error()
           const iterations = dictionary.value["I"].value
 
-          if (dictionary.value["V"] instanceof UInt32 === false)
+          if (dictionary.value["V"] instanceof Value.UInt32 === false)
             throw new Error()
           const version = dictionary.value["V"].value as KdfParameters.Argon2.Version
 
@@ -133,23 +162,23 @@ export namespace Headers {
         }
 
         if ($UUID === KdfParameters.Argon2id.$UUID) {
-          if (dictionary.value["S"] instanceof Bytes === false)
+          if (dictionary.value["S"] instanceof Value.Bytes === false)
             throw new Error()
           const salt = dictionary.value["S"].value as Copiable<32>
 
-          if (dictionary.value["P"] instanceof UInt32 === false)
+          if (dictionary.value["P"] instanceof Value.UInt32 === false)
             throw new Error()
           const parallelism = dictionary.value["P"].value
 
-          if (dictionary.value["M"] instanceof UInt64 === false)
+          if (dictionary.value["M"] instanceof Value.UInt64 === false)
             throw new Error()
           const memory = dictionary.value["M"].value
 
-          if (dictionary.value["I"] instanceof UInt64 === false)
+          if (dictionary.value["I"] instanceof Value.UInt64 === false)
             throw new Error()
           const iterations = dictionary.value["I"].value
 
-          if (dictionary.value["V"] instanceof UInt32 === false)
+          if (dictionary.value["V"] instanceof Value.UInt32 === false)
             throw new Error()
           const version = dictionary.value["V"].value as KdfParameters.Argon2.Version
 
