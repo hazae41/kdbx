@@ -10,7 +10,7 @@ import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
 import { PreHmacKey } from "mods/kdbx/hmac/index.js"
-import { CompositeKey, DerivedKey, HmacMasterKey } from "mods/kdbx/index.js"
+import { CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "mods/kdbx/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -41,11 +41,9 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     readonly hmac: Copiable<32>
   ) { }
 
-  static async computeOrThrow(value: MagicAndVersionAndHeaders, master: HmacMasterKey) {
-    const data = MagicAndVersionAndHeadersWithBytes.computeOrThrow(value)
-
+  static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys) {
     const index = 0xFFFFFFFFFFFFFFFFn
-    const major = master.bytes
+    const major = keys.authifier.bytes
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
@@ -55,14 +53,14 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     return new MagicAndVersionAndHeadersWithHashAndHmac(data, new Copied(hash), new Copied(hmac))
   }
 
-  async verifyOrThrow(master: HmacMasterKey) {
+  async verifyOrThrow(keys: MasterKeys) {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
 
     if (!Bytes.equals(hash, this.hash.get()))
       throw new Error()
 
     const index = 0xFFFFFFFFFFFFFFFFn
-    const major = master.bytes
+    const major = keys.authifier.bytes
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
@@ -78,6 +76,14 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
 
     cursor.writeOrThrow(this.hash.get())
     cursor.writeOrThrow(this.hmac.get())
+  }
+
+  deriveOrThrow(composite: CompositeKey) {
+    return this.data.deriveOrThrow(composite)
+  }
+
+  async digestOrThrow(derived: DerivedKey) {
+    return await this.data.digestOrThrow(derived)
   }
 
 }
@@ -106,12 +112,27 @@ export class MagicAndVersionAndHeadersWithBytes {
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
+  rotateOrThrow() {
+    const value = this.value.rotateOrThrow()
+    const bytes = new Copied(Writable.writeToBytesOrThrow(value))
+
+    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
+  }
+
   sizeOrThrow() {
     return this.bytes.get().length
   }
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeOrThrow(this.bytes.get())
+  }
+
+  deriveOrThrow(composite: CompositeKey) {
+    return this.value.deriveOrThrow(composite)
+  }
+
+  async digestOrThrow(derived: DerivedKey) {
+    return await this.value.digestOrThrow(derived)
   }
 
 }
@@ -136,6 +157,14 @@ export class MagicAndVersionAndHeaders {
     readonly headers: Headers
   ) { }
 
+  rotateOrThrow() {
+    const { version } = this
+
+    const headers = this.headers.rotateOrThrow()
+
+    return new MagicAndVersionAndHeaders(version, headers)
+  }
+
   sizeOrThrow() {
     return 4 + 4 + this.version.sizeOrThrow() + this.headers.sizeOrThrow()
   }
@@ -146,6 +175,14 @@ export class MagicAndVersionAndHeaders {
 
     this.version.writeOrThrow(cursor)
     this.headers.writeOrThrow(cursor)
+  }
+
+  deriveOrThrow(composite: CompositeKey) {
+    return this.headers.deriveOrThrow(composite)
+  }
+
+  async digestOrThrow(derived: DerivedKey) {
+    return await this.headers.digestOrThrow(derived)
   }
 
 }
@@ -189,12 +226,33 @@ export class Headers {
     readonly custom?: Dictionary
   ) { }
 
+  rotateOrThrow() {
+    const { cipher, compression, iv, kdf } = this
+
+    const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<32>
+
+    return new Headers(cipher, compression, new Copied(seed), iv, kdf, this.custom)
+  }
+
   sizeOrThrow(): number {
     throw new Error("Not implemented")
   }
 
   writeOrThrow(cursor: Cursor): void {
     throw new Error("Not implemented")
+  }
+
+  deriveOrThrow(composite: CompositeKey) {
+    return this.kdf.deriveOrThrow(composite)
+  }
+
+  async digestOrThrow(derived: DerivedKey) {
+    const { seed } = this
+
+    const encrypter = await new PreMasterKey(seed, derived).digestOrThrow()
+    const authifier = await new PreHmacMasterKey(seed, derived).digestOrThrow()
+
+    return new MasterKeys(encrypter, authifier)
   }
 
 }

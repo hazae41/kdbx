@@ -126,6 +126,16 @@ export class HmacMasterKey {
 
 }
 
+export class MasterKeys {
+  readonly #class = MasterKeys
+
+  constructor(
+    readonly encrypter: MasterKey,
+    readonly authifier: HmacMasterKey
+  ) { }
+
+}
+
 export namespace Database {
 
   export class Decrypted {
@@ -145,26 +155,25 @@ export namespace Database {
     ) { }
 
     deriveOrThrow(composite: CompositeKey) {
-      return this.head.data.value.headers.kdf.deriveOrThrow(composite)
+      return this.head.deriveOrThrow(composite)
     }
 
-    async decryptOrThrow(derived: DerivedKey) {
-      const seed = this.head.data.value.headers.seed
+    async digestOrThrow(derived: DerivedKey) {
+      return await this.head.digestOrThrow(derived)
+    }
 
-      const encrypter = await new PreMasterKey(seed, derived).digestOrThrow()
-      const authifier = await new PreHmacMasterKey(seed, derived).digestOrThrow()
-
-      await this.head.verifyOrThrow(authifier)
+    async decryptOrThrow(keys: MasterKeys) {
+      await this.head.verifyOrThrow(keys)
 
       if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
         const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
         const cursor = new Cursor(new Uint8Array(length))
 
         const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.get() }
-        const key = await crypto.subtle.importKey("raw", encrypter.bytes.get(), { name: "AES-CBC" }, false, ["decrypt"])
+        const key = await crypto.subtle.importKey("raw", keys.encrypter.bytes.get(), { name: "AES-CBC" }, false, ["decrypt"])
 
         for (const block of this.body) {
-          await block.verifyOrThrow(authifier)
+          await block.verifyOrThrow(keys)
 
           const encrypted = block.block.data.get()
           const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
@@ -233,9 +242,9 @@ export class BlockWithIndex {
     readonly block: Block
   ) { }
 
-  async verifyOrThrow(master: HmacMasterKey) {
+  async verifyOrThrow(keys: MasterKeys) {
     const index = this.index
-    const major = master.bytes
+    const major = keys.authifier.bytes
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
