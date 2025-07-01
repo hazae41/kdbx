@@ -3,6 +3,15 @@ import { Cursor } from "@hazae41/cursor"
 import { Copiable } from "@hazae41/uncopy"
 import { TLV } from "libs/tlv/index.js"
 
+export class HeadersAndContent {
+
+  constructor(
+    readonly headers: Headers,
+    readonly content: Uint8Array
+  ) { }
+
+}
+
 export class Headers {
 
   constructor(

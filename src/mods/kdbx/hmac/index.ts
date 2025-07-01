@@ -7,7 +7,7 @@ export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly major: Copiable<32>,
+    readonly major: Copiable<64>,
   ) { }
 
   sizeOrThrow() {
@@ -36,7 +36,7 @@ export class HmacKey {
     readonly key: CryptoKey
   ) { }
 
-  static async digestOrThrow(index: bigint, major: Uint8Array<32>) {
+  static async digestOrThrow(index: bigint, major: Uint8Array<64>) {
     const struct = new PreHmacKey(index, new Uncopied(major))
     const digest = await struct.digestOrThrow()
 

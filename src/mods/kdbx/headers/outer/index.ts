@@ -30,7 +30,7 @@ export class VersionAndHeadersWithHashAndHmac {
     readonly hmac: Copiable<32>
   ) { }
 
-  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<32>): Promise<true> {
+  async verifyOrThrow(masterHmacKeyBytes: Uint8Array<64>): Promise<true> {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
 
     if (!Bytes.equals(hash, this.hash.get()))

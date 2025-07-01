@@ -4,7 +4,7 @@ import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { Uint8Array } from "libs/bytes/index.js"
 import { readFileSync } from "node:fs"
 import { KdfParameters } from "./headers/outer/index.js"
-import { AesCbcCryptor, Database, Inner } from "./index.js"
+import { Database, Inner } from "./index.js"
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -85,14 +85,10 @@ preMasterHmacKeyCursor.writeUint8OrThrow(1)
 const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKey)
 const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<32>
 
-await database.verifyOrThrow(masterHmacKeyBytes)
+const decrypted = await database.decryptOrThrow(masterHmacKeyBytes)
+const dezipped = await unzip(decrypted.body.get())
 
-const cryptor = await AesCbcCryptor.importOrThrow(database, masterKeyBytes)
-
-const decryptedBytes = await database.decryptOrThrow(cryptor)
-const dezippedBytes = await unzip(decryptedBytes)
-
-const cursor = new Cursor(dezippedBytes)
+const cursor = new Cursor(dezipped)
 
 const head = Inner.Headers.readOrThrow(cursor)
 console.log(head)
