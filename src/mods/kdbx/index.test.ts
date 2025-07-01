@@ -1,10 +1,9 @@
-import { Argon2, Argon2Deriver, Memory } from "@hazae41/argon2.wasm"
+import { Argon2 } from "@hazae41/argon2.wasm"
 import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { Uint8Array } from "libs/bytes/index.js"
 import { readFileSync } from "node:fs"
-import { KdfParameters } from "./headers/outer/index.js"
-import { Database, Inner } from "./index.js"
+import { Database } from "./index.js"
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -45,59 +44,17 @@ function format(text: string, tab: string = "  ") {
 
 await Argon2.initBundled()
 
-const bytes = readFileSync("./local/test.kdbx")
-
-const database = Database.Encrypted.readOrThrow(new Cursor(bytes))
-
-if (database.head.data.value.headers.kdf instanceof KdfParameters.Argon2d === false)
-  throw new Error()
+const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
 
 const passwordString = "test"
 const passwordBytes = new TextEncoder().encode(passwordString)
-const passwordHashBuffer = await crypto.subtle.digest("SHA-256", passwordBytes)
 
-const compositeKeyBuffer = await crypto.subtle.digest("SHA-256", passwordHashBuffer)
-const compositeKeyBytes = new Uint8Array(compositeKeyBuffer)
+const decrypted = await encrypted.decryptOrThrow(passwordBytes)
 
-const { version, iterations, parallelism, memory, salt } = database.head.data.value.headers.kdf
+const raw = new TextDecoder("utf-8").decode(decrypted.body.content.get())
+console.log(format(raw))
 
-const deriverPointer = new Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-const derivedMemoryPointer = deriverPointer.derive(new Memory(compositeKeyBytes), new Memory(salt.get()))
-
-const masterSeedCopiable = database.head.data.value.headers.seed
-
-const preMasterKey = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length)
-
-const preMasterKeyCursor = new Cursor(preMasterKey)
-preMasterKeyCursor.writeOrThrow(masterSeedCopiable.get())
-preMasterKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
-
-const masterKeyBuffer = await crypto.subtle.digest("SHA-256", preMasterKey)
-const masterKeyBytes = new Uint8Array(masterKeyBuffer)
-
-const preMasterHmacKey = new Uint8Array(masterSeedCopiable.get().length + derivedMemoryPointer.bytes.length + 1)
-
-const preMasterHmacKeyCursor = new Cursor(preMasterHmacKey)
-preMasterHmacKeyCursor.writeOrThrow(masterSeedCopiable.get())
-preMasterHmacKeyCursor.writeOrThrow(derivedMemoryPointer.bytes)
-preMasterHmacKeyCursor.writeUint8OrThrow(1)
-
-const masterHmacKeyBuffer = await crypto.subtle.digest("SHA-512", preMasterHmacKey)
-const masterHmacKeyBytes = new Uint8Array(masterHmacKeyBuffer) as Uint8Array<32>
-
-const decrypted = await database.decryptOrThrow(masterHmacKeyBytes)
-const dezipped = await unzip(decrypted.body.get())
-
-const cursor = new Cursor(dezipped)
-
-const head = Inner.Headers.readOrThrow(cursor)
-console.log(head)
-
-const body = cursor.after
-const text = new TextDecoder("utf-8").decode(body)
-console.log(format(text))
-
-const xml = new DOMParser().parseFromString(text, "text/xml")
+const xml = new DOMParser().parseFromString(raw, "text/xml")
 
 function rename(node: Node, oldName: string, newName: string) {
   if (node.nodeName === "Value") {

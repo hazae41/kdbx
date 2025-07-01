@@ -7,8 +7,19 @@ export class HeadersAndContent {
 
   constructor(
     readonly headers: Headers,
-    readonly content: Uint8Array
+    readonly content: Copiable
   ) { }
+
+}
+
+export namespace HeadersAndContent {
+
+  export function readOrThrow(cursor: Cursor) {
+    const headers = Headers.readOrThrow(cursor)
+    const content = cursor.readOrThrow(cursor.remaining)
+
+    return new HeadersAndContent(headers, content)
+  }
 
 }
 

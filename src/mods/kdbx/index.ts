@@ -2,10 +2,11 @@ export * from "./dictionary/index.js"
 export * from "./headers/index.js"
 
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Writable } from "@hazae41/binary"
+import { Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable, Copied } from "@hazae41/uncopy"
+import { Copiable } from "@hazae41/uncopy"
 import { Uint8Array } from "libs/bytes/index.js"
+import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
 import { Cipher, KdfParameters, VersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { HmacKey } from "./hmac/index.js"
@@ -78,7 +79,9 @@ export namespace Database {
             continue
           }
 
-          return new Decrypted(this.head, new Copied(cursor.bytes))
+          const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, gunzipSync(cursor.bytes))
+
+          return new Decrypted(this.head, body)
         }
 
         throw new Error()
