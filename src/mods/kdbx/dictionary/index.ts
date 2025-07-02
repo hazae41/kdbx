@@ -73,7 +73,7 @@ export namespace Dictionary {
 
       array.push(record)
 
-      value[record.key.value] = record.value
+      value[record.key.value] = record.val
 
       continue
     }
@@ -87,23 +87,23 @@ export class Record<T extends Value> {
 
   constructor(
     readonly key: Key,
-    readonly value: T
+    readonly val: T
   ) { }
 
   sizeOrThrow() {
-    return 1 + 4 + this.key.sizeOrThrow() + 4 + this.value.sizeOrThrow()
+    return 1 + 4 + this.key.sizeOrThrow() + 4 + this.val.sizeOrThrow()
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeUint8OrThrow(this.value.type)
+    cursor.writeUint8OrThrow(this.val.type)
 
     const klength = this.key.sizeOrThrow()
     cursor.writeUint32OrThrow(klength, true)
     this.key.writeOrThrow(cursor)
 
-    const vlength = this.value.sizeOrThrow()
+    const vlength = this.val.sizeOrThrow()
     cursor.writeUint32OrThrow(vlength, true)
-    this.value.writeOrThrow(cursor)
+    this.val.writeOrThrow(cursor)
   }
 
 }
