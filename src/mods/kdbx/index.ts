@@ -150,7 +150,7 @@ export namespace Database {
 
     constructor(
       readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
-      readonly body: BlockWithIndex[]
+      readonly body: Blocks
     ) { }
 
     deriveOrThrow(composite: CompositeKey) {
@@ -165,13 +165,13 @@ export namespace Database {
       await this.head.verifyOrThrow(keys)
 
       if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
-        const length = this.body.reduce((a, b) => a + b.block.data.bytes.length, 0)
+        const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
         const cursor = new Cursor(new Uint8Array(length))
 
         const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.bytes }
         const key = await crypto.subtle.importKey("raw", keys.encrypter.value.bytes, { name: "AES-CBC" }, false, ["decrypt"])
 
-        for (const block of this.body) {
+        for (const block of this.body.blocks) {
           await block.verifyOrThrow(keys)
 
           const encrypted = block.block.data.bytes
@@ -195,23 +195,50 @@ export namespace Database {
 
     export function readOrThrow(cursor: Cursor) {
       const head = MagicAndVersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
-
-      const body = new Array<BlockWithIndex>()
-
-      for (let index = 0n; true; index++) {
-        const block = Block.readOrThrow(cursor)
-
-        if (block.data.bytes.length === 0)
-          break
-
-        body.push(new BlockWithIndex(index, block))
-
-        continue
-      }
+      const body = Blocks.readOrThrow(cursor)
 
       return new Encrypted(head, body)
     }
 
+  }
+
+}
+
+export class Blocks {
+
+  constructor(
+    readonly blocks: BlockWithIndex[]
+  ) { }
+
+  sizeOrThrow() {
+    return this.blocks.reduce((a, b) => a + b.sizeOrThrow(), 0) + Block.Empty.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    for (const block of this.blocks)
+      block.writeOrThrow(cursor)
+    Block.Empty.writeOrThrow(cursor)
+  }
+
+}
+
+export namespace Blocks {
+
+  export function readOrThrow(cursor: Cursor) {
+    const blocks = new Array<BlockWithIndex>()
+
+    for (let index = 0n; true; index++) {
+      const block = Block.readOrThrow(cursor)
+
+      if (block.data.bytes.length === 0)
+        break
+
+      blocks.push(new BlockWithIndex(index, block))
+
+      continue
+    }
+
+    return new Blocks(blocks)
   }
 
 }
@@ -241,6 +268,14 @@ export class BlockWithIndex {
     readonly block: Block
   ) { }
 
+  sizeOrThrow() {
+    return this.block.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.block.writeOrThrow(cursor)
+  }
+
   async verifyOrThrow(keys: MasterKeys) {
     const index = this.index
     const major = keys.authifier.bytes
@@ -261,9 +296,32 @@ export class Block {
     readonly data: Opaque
   ) { }
 
+  sizeOrThrow() {
+    return 32 + 4 + this.data.bytes.length
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.hmac.bytes)
+    cursor.writeUint32OrThrow(this.data.bytes.length, true)
+    cursor.writeOrThrow(this.data.bytes)
+  }
+
 }
 
 export namespace Block {
+
+  export namespace Empty {
+
+    export function sizeOrThrow() {
+      return 32 + 4 + 0
+    }
+
+    export function writeOrThrow(cursor: Cursor) {
+      cursor.writeOrThrow(new Uint8Array(32))
+      cursor.writeUint32OrThrow(0, true)
+    }
+
+  }
 
   export function readOrThrow(cursor: Cursor) {
     const hmac = new Opaque(cursor.readOrThrow(32))
