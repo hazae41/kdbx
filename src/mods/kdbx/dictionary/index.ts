@@ -5,21 +5,65 @@ import { Copiable } from "@hazae41/uncopy"
 export class Dictionary {
 
   constructor(
+    readonly versi: Dictionary.Version,
+    readonly array: Record<Value>[],
     readonly value: { [key: string]: Value }
   ) { }
+
+  sizeOrThrow() {
+    return this.versi.sizeOrThrow() + this.array.reduce((x, r) => x + r.sizeOrThrow(), 0)
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.versi.writeOrThrow(cursor)
+
+    for (const record of this.array)
+      record.writeOrThrow(cursor)
+
+    cursor.writeUint8OrThrow(0x00)
+  }
 
 }
 
 export namespace Dictionary {
 
-  export function readOrThrow(cursor: Cursor) {
-    const minor = cursor.readUint8OrThrow()
-    const major = cursor.readUint8OrThrow()
+  export class Version {
 
-    if (major !== 1)
+    constructor(
+      readonly minor: number,
+      readonly major: number
+    ) { }
+
+    sizeOrThrow() {
+      return 1 + 1
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint8OrThrow(this.minor)
+      cursor.writeUint8OrThrow(this.major)
+    }
+
+  }
+
+  export namespace Version {
+
+    export function readOrThrow(cursor: Cursor) {
+      const minor = cursor.readUint8OrThrow()
+      const major = cursor.readUint8OrThrow()
+
+      return new Version(minor, major)
+    }
+
+  }
+
+  export function readOrThrow(cursor: Cursor) {
+    const version = Version.readOrThrow(cursor)
+
+    if (version.major !== 1)
       throw new Error()
 
-    const dictionary: { [key: string]: Value } = {}
+    const array = new Array<Record<Value>>()
+    const value: { [key: string]: Value } = {}
 
     while (true) {
       const record = Record.readOrThrow(cursor)
@@ -27,12 +71,14 @@ export namespace Dictionary {
       if (record == null)
         break
 
-      dictionary[record.key] = record.value
+      array.push(record)
+
+      value[record.key.value] = record.value
 
       continue
     }
 
-    return new Dictionary(dictionary)
+    return new Dictionary(version, array, value)
   }
 
 }
@@ -40,9 +86,25 @@ export namespace Dictionary {
 export class Record<T extends Value> {
 
   constructor(
-    readonly key: string,
+    readonly key: Key,
     readonly value: T
   ) { }
+
+  sizeOrThrow() {
+    return 1 + 4 + this.key.sizeOrThrow() + 4 + this.value.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeUint8OrThrow(this.value.type)
+
+    const klength = this.key.sizeOrThrow()
+    cursor.writeUint32OrThrow(klength, true)
+    this.key.writeOrThrow(cursor)
+
+    const vlength = this.value.sizeOrThrow()
+    cursor.writeUint32OrThrow(vlength, true)
+    this.value.writeOrThrow(cursor)
+  }
 
 }
 
@@ -55,20 +117,38 @@ export namespace Record {
       return
 
     const klength = cursor.readUint32OrThrow(true)
-    const kstring = cursor.readUtf8OrThrow(klength)
+    const kbytes = cursor.readOrThrow(klength)
+    const kstring = new TextDecoder().decode(kbytes.get())
 
     const vlength = cursor.readUint32OrThrow(true)
     const vbytes = cursor.readOrThrow(vlength)
 
-    const value = new Value.Unknown(type, vbytes)
+    const key = new Key(kbytes, kstring)
+    const value = Value.parseOrThrow(type, vbytes)
 
-    return new Record(kstring, value.parseOrThrow())
+    return new Record(key, value)
+  }
+
+}
+
+export class Key {
+
+  constructor(
+    readonly bytes: Copiable,
+    readonly value: string
+  ) { }
+
+  sizeOrThrow() {
+    return this.bytes.get().length
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.bytes.get())
   }
 
 }
 
 export type Value =
-  | Value.Unknown
   | Value.UInt32
   | Value.UInt64
   | Value.Boolean
@@ -79,38 +159,29 @@ export type Value =
 
 export namespace Value {
 
-  export class Unknown {
+  export function parseOrThrow(type: number, value: Copiable) {
+    if (type === UInt32.type)
+      return Readable.readFromBytesOrThrow(UInt32, value.get())
 
-    constructor(
-      readonly type: number,
-      readonly value: Copiable
-    ) { }
+    if (type === UInt64.type)
+      return Readable.readFromBytesOrThrow(UInt64, value.get())
 
-    parseOrThrow() {
-      if (this.type === UInt32.type)
-        return Readable.readFromBytesOrThrow(UInt32, this.value.get())
+    if (type === Boolean.type)
+      return Readable.readFromBytesOrThrow(Boolean, value.get())
 
-      if (this.type === UInt64.type)
-        return Readable.readFromBytesOrThrow(UInt64, this.value.get())
+    if (type === Int32.type)
+      return Readable.readFromBytesOrThrow(Int32, value.get())
 
-      if (this.type === Boolean.type)
-        return Readable.readFromBytesOrThrow(Boolean, this.value.get())
+    if (type === Int64.type)
+      return Readable.readFromBytesOrThrow(Int64, value.get())
 
-      if (this.type === Int32.type)
-        return Readable.readFromBytesOrThrow(Int32, this.value.get())
+    if (type === String.type)
+      return Readable.readFromBytesOrThrow(String, value.get())
 
-      if (this.type === Int64.type)
-        return Readable.readFromBytesOrThrow(Int64, this.value.get())
+    if (type === Bytes.type)
+      return Readable.readFromBytesOrThrow(Bytes, value.get())
 
-      if (this.type === String.type)
-        return Readable.readFromBytesOrThrow(String, this.value.get())
-
-      if (this.type === Bytes.type)
-        return Readable.readFromBytesOrThrow(Bytes, this.value.get())
-
-      throw new Error()
-    }
-
+    throw new Error()
   }
 
   export class UInt32 {
@@ -122,6 +193,14 @@ export namespace Value {
 
     get type() {
       return this.#class.type
+    }
+
+    sizeOrThrow() {
+      return 4
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint32OrThrow(this.value, true)
     }
 
   }
@@ -147,6 +226,14 @@ export namespace Value {
       return this.#class.type
     }
 
+    sizeOrThrow() {
+      return 8
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint64OrThrow(this.value, true)
+    }
+
   }
 
   export namespace UInt64 {
@@ -168,6 +255,14 @@ export namespace Value {
 
     get type() {
       return this.#class.type
+    }
+
+    sizeOrThrow() {
+      return 1
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint8OrThrow(this.value ? 1 : 0)
     }
 
   }
@@ -198,6 +293,14 @@ export namespace Value {
       return this.#class.type
     }
 
+    sizeOrThrow() {
+      return 4
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint32OrThrow(this.value < 0 ? this.value + (2 ** 32) : this.value, true)
+    }
+
   }
 
   export namespace Int32 {
@@ -206,10 +309,9 @@ export namespace Value {
 
     export function readOrThrow(cursor: Cursor) {
       const uint = cursor.readUint32OrThrow(true)
+      const sint = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
 
-      const int = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
-
-      return new Int32(int)
+      return new Int32(sint)
     }
 
   }
@@ -225,6 +327,14 @@ export namespace Value {
       return this.#class.type
     }
 
+    sizeOrThrow() {
+      return 8
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeUint64OrThrow(this.value < 0n ? this.value + (2n ** 64n) : this.value, true)
+    }
+
   }
 
   export namespace Int64 {
@@ -233,10 +343,9 @@ export namespace Value {
 
     export function readOrThrow(cursor: Cursor) {
       const uint = cursor.readUint64OrThrow(true)
+      const sint = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
 
-      const int = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
-
-      return new Int64(int)
+      return new Int64(sint)
     }
 
   }
@@ -245,11 +354,20 @@ export namespace Value {
     readonly #class = String
 
     constructor(
+      readonly bytes: Copiable,
       readonly value: string
     ) { }
 
     get type() {
       return this.#class.type
+    }
+
+    sizeOrThrow() {
+      return this.bytes.get().length
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeOrThrow(this.bytes.get())
     }
 
   }
@@ -259,7 +377,10 @@ export namespace Value {
     export const type = 0x18
 
     export function readOrThrow(cursor: Cursor) {
-      return new String(cursor.readUtf8OrThrow(cursor.remaining))
+      const bytes = cursor.readOrThrow(cursor.remaining)
+      const value = new TextDecoder().decode(bytes.get())
+
+      return new String(bytes, value)
     }
 
   }
@@ -273,6 +394,14 @@ export namespace Value {
 
     get type() {
       return this.#class.type
+    }
+
+    sizeOrThrow() {
+      return this.value.get().length
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      cursor.writeOrThrow(this.value.get())
     }
 
   }
