@@ -244,6 +244,7 @@ export namespace Blocks {
 
       if (block.data.bytes.length === 0)
         break
+
       continue
     }
 
