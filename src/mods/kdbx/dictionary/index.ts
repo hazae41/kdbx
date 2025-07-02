@@ -5,19 +5,19 @@ import { Copiable } from "@hazae41/uncopy"
 export class Dictionary {
 
   constructor(
-    readonly versi: Dictionary.Version,
-    readonly array: Record<Value>[],
-    readonly value: { [key: string]: Value }
+    readonly version: Dictionary.Version,
+    readonly records: Record<Value>[],
+    readonly kvvalue: { [key: string]: Value }
   ) { }
 
   sizeOrThrow() {
-    return this.versi.sizeOrThrow() + this.array.reduce((x, r) => x + r.sizeOrThrow(), 0)
+    return this.version.sizeOrThrow() + this.records.reduce((x, r) => x + r.sizeOrThrow(), 0)
   }
 
   writeOrThrow(cursor: Cursor) {
-    this.versi.writeOrThrow(cursor)
+    this.version.writeOrThrow(cursor)
 
-    for (const record of this.array)
+    for (const record of this.records)
       record.writeOrThrow(cursor)
 
     cursor.writeUint8OrThrow(0x00)

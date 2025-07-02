@@ -298,22 +298,22 @@ export namespace Headers {
       if (tlv.type === 11) {
         const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
 
-        if (dictionary.value["$UUID"] instanceof Value.Bytes === false)
+        if (dictionary.kvvalue["$UUID"] instanceof Value.Bytes === false)
           throw new Error()
 
-        const $UUID = StringAsUuid.from(dictionary.value["$UUID"].value.get())
+        const $UUID = StringAsUuid.from(dictionary.kvvalue["$UUID"].value.get())
 
         if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
           throw new Error()
 
         if ($UUID === KdfParameters.AesKdf.$UUID) {
-          if (dictionary.value["R"] instanceof Value.UInt32 === false)
+          if (dictionary.kvvalue["R"] instanceof Value.UInt32 === false)
             throw new Error()
-          const rounds = dictionary.value["R"].value
+          const rounds = dictionary.kvvalue["R"].value
 
-          if (dictionary.value["S"] instanceof Value.Bytes === false)
+          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const seed = dictionary.value["S"].value as Copiable<32>
+          const seed = dictionary.kvvalue["S"].value as Copiable<32>
 
           fields.kdf = new KdfParameters.AesKdf(rounds, seed)
 
@@ -321,26 +321,26 @@ export namespace Headers {
         }
 
         if ($UUID === KdfParameters.Argon2d.$UUID) {
-          if (dictionary.value["S"] instanceof Value.Bytes === false)
+          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.value["S"].value as Copiable<32>
+          const salt = dictionary.kvvalue["S"].value as Copiable<32>
 
-          if (dictionary.value["P"] instanceof Value.UInt32 === false)
+          if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
             throw new Error()
-          const parallelism = dictionary.value["P"].value
+          const parallelism = dictionary.kvvalue["P"].value
 
 
-          if (dictionary.value["M"] instanceof Value.UInt64 === false)
+          if (dictionary.kvvalue["M"] instanceof Value.UInt64 === false)
             throw new Error()
-          const memory = dictionary.value["M"].value
+          const memory = dictionary.kvvalue["M"].value
 
-          if (dictionary.value["I"] instanceof Value.UInt64 === false)
+          if (dictionary.kvvalue["I"] instanceof Value.UInt64 === false)
             throw new Error()
-          const iterations = dictionary.value["I"].value
+          const iterations = dictionary.kvvalue["I"].value
 
-          if (dictionary.value["V"] instanceof Value.UInt32 === false)
+          if (dictionary.kvvalue["V"] instanceof Value.UInt32 === false)
             throw new Error()
-          const version = dictionary.value["V"].value as KdfParameters.Argon2.Version
+          const version = dictionary.kvvalue["V"].value as KdfParameters.Argon2.Version
 
           fields.kdf = new KdfParameters.Argon2d(salt, parallelism, memory, iterations, version)
 
@@ -348,25 +348,25 @@ export namespace Headers {
         }
 
         if ($UUID === KdfParameters.Argon2id.$UUID) {
-          if (dictionary.value["S"] instanceof Value.Bytes === false)
+          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.value["S"].value as Copiable<32>
+          const salt = dictionary.kvvalue["S"].value as Copiable<32>
 
-          if (dictionary.value["P"] instanceof Value.UInt32 === false)
+          if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
             throw new Error()
-          const parallelism = dictionary.value["P"].value
+          const parallelism = dictionary.kvvalue["P"].value
 
-          if (dictionary.value["M"] instanceof Value.UInt64 === false)
+          if (dictionary.kvvalue["M"] instanceof Value.UInt64 === false)
             throw new Error()
-          const memory = dictionary.value["M"].value
+          const memory = dictionary.kvvalue["M"].value
 
-          if (dictionary.value["I"] instanceof Value.UInt64 === false)
+          if (dictionary.kvvalue["I"] instanceof Value.UInt64 === false)
             throw new Error()
-          const iterations = dictionary.value["I"].value
+          const iterations = dictionary.kvvalue["I"].value
 
-          if (dictionary.value["V"] instanceof Value.UInt32 === false)
+          if (dictionary.kvvalue["V"] instanceof Value.UInt32 === false)
             throw new Error()
-          const version = dictionary.value["V"].value as KdfParameters.Argon2.Version
+          const version = dictionary.kvvalue["V"].value as KdfParameters.Argon2.Version
 
           fields.kdf = new KdfParameters.Argon2id(salt, parallelism, memory, iterations, version)
 
