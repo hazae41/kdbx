@@ -22,53 +22,14 @@ export namespace Dictionary {
     const dictionary: { [key: string]: Value } = {}
 
     while (true) {
-      const type = cursor.readUint8OrThrow()
+      const record = Record.readOrThrow(cursor)
 
-      if (type === 0)
+      if (record == null)
         break
 
-      const klength = cursor.readUint32OrThrow(true)
-      const kstring = cursor.readUtf8OrThrow(klength)
+      dictionary[record.key] = record.value
 
-      const vlength = cursor.readUint32OrThrow(true)
-      const vbytes = cursor.readOrThrow(vlength)
-
-      if (type === Value.UInt32.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.UInt32, vbytes.get())
-        continue
-      }
-
-      if (type === Value.UInt64.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.UInt64, vbytes.get())
-        continue
-      }
-
-      if (type === Value.Boolean.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Boolean, vbytes.get())
-        continue
-      }
-
-      if (type === Value.Int32.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Int32, vbytes.get())
-        continue
-      }
-
-      if (type === Value.Int64.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Int64, vbytes.get())
-        continue
-      }
-
-      if (type === Value.String.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.String, vbytes.get())
-        continue
-      }
-
-      if (type === Value.Bytes.type) {
-        dictionary[kstring] = Readable.readFromBytesOrThrow(Value.Bytes, vbytes.get())
-        continue
-      }
-
-      throw new Error()
+      continue
     }
 
     return new Dictionary(dictionary)
@@ -76,7 +37,38 @@ export namespace Dictionary {
 
 }
 
+export class Record<T extends Value> {
+
+  constructor(
+    readonly key: string,
+    readonly value: T
+  ) { }
+
+}
+
+export namespace Record {
+
+  export function readOrThrow(cursor: Cursor) {
+    const type = cursor.readUint8OrThrow()
+
+    if (type === 0)
+      return
+
+    const klength = cursor.readUint32OrThrow(true)
+    const kstring = cursor.readUtf8OrThrow(klength)
+
+    const vlength = cursor.readUint32OrThrow(true)
+    const vbytes = cursor.readOrThrow(vlength)
+
+    const value = new Value.Unknown(type, vbytes)
+
+    return new Record(kstring, value.parseOrThrow())
+  }
+
+}
+
 export type Value =
+  | Value.Unknown
   | Value.UInt32
   | Value.UInt64
   | Value.Boolean
@@ -87,11 +79,50 @@ export type Value =
 
 export namespace Value {
 
+  export class Unknown {
+
+    constructor(
+      readonly type: number,
+      readonly value: Copiable
+    ) { }
+
+    parseOrThrow() {
+      if (this.type === UInt32.type)
+        return Readable.readFromBytesOrThrow(UInt32, this.value.get())
+
+      if (this.type === UInt64.type)
+        return Readable.readFromBytesOrThrow(UInt64, this.value.get())
+
+      if (this.type === Boolean.type)
+        return Readable.readFromBytesOrThrow(Boolean, this.value.get())
+
+      if (this.type === Int32.type)
+        return Readable.readFromBytesOrThrow(Int32, this.value.get())
+
+      if (this.type === Int64.type)
+        return Readable.readFromBytesOrThrow(Int64, this.value.get())
+
+      if (this.type === String.type)
+        return Readable.readFromBytesOrThrow(String, this.value.get())
+
+      if (this.type === Bytes.type)
+        return Readable.readFromBytesOrThrow(Bytes, this.value.get())
+
+      throw new Error()
+    }
+
+  }
+
   export class UInt32 {
+    readonly #class = UInt32
 
     constructor(
       readonly value: number
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -106,10 +137,15 @@ export namespace Value {
   }
 
   export class UInt64 {
+    readonly #class = UInt64
 
     constructor(
       readonly value: bigint
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -124,10 +160,15 @@ export namespace Value {
   }
 
   export class Boolean {
+    readonly #class = Boolean
 
     constructor(
       readonly value: boolean
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -147,10 +188,15 @@ export namespace Value {
   }
 
   export class Int32 {
+    readonly #class = Int32
 
     constructor(
       readonly value: number
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -169,10 +215,15 @@ export namespace Value {
   }
 
   export class Int64 {
+    readonly #class = Int64
 
     constructor(
       readonly value: bigint
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -191,10 +242,15 @@ export namespace Value {
   }
 
   export class String {
+    readonly #class = String
 
     constructor(
       readonly value: string
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
@@ -209,10 +265,15 @@ export namespace Value {
   }
 
   export class Bytes {
+    readonly #class = Bytes
 
     constructor(
       readonly value: Copiable
     ) { }
+
+    get type() {
+      return this.#class.type
+    }
 
   }
 
