@@ -1,8 +1,8 @@
 import { Buffers } from "libs/buffers/index.js"
 
-export type Uint8Array<N extends number = number> = number extends N
-  ? globalThis.Uint8Array
-  : globalThis.Uint8Array & { readonly length: N }
+export interface Uint8Array<N extends number = number> extends globalThis.Uint8Array {
+  slice(): Uint8Array<N> & globalThis.Uint8Array<ArrayBuffer>
+}
 
 export namespace Bytes {
 
