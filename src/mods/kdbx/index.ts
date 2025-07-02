@@ -153,6 +153,15 @@ export namespace Database {
       readonly body: Blocks
     ) { }
 
+    sizeOrThrow() {
+      return this.head.sizeOrThrow() + this.body.sizeOrThrow()
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      this.head.writeOrThrow(cursor)
+      this.body.writeOrThrow(cursor)
+    }
+
     deriveOrThrow(composite: CompositeKey) {
       return this.head.deriveOrThrow(composite)
     }
@@ -168,20 +177,21 @@ export namespace Database {
         const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
         const cursor = new Cursor(new Uint8Array(length))
 
-        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.bytes }
-        const key = await crypto.subtle.importKey("raw", keys.encrypter.value.bytes, { name: "AES-CBC" }, false, ["decrypt"])
-
         for (const block of this.body.blocks) {
           await block.verifyOrThrow(keys)
 
-          const encrypted = block.block.data.bytes
-          const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
+          cursor.writeOrThrow(block.block.data.bytes)
 
-          cursor.writeOrThrow(new Uint8Array(decrypted))
           continue
         }
 
-        const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, gunzipSync(cursor.bytes))
+        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.bytes }
+        const key = await crypto.subtle.importKey("raw", keys.encrypter.value.bytes, { name: "AES-CBC" }, false, ["decrypt"])
+
+        const decrypted = await crypto.subtle.decrypt(alg, key, cursor.bytes)
+        const degzipped = gunzipSync(decrypted)
+
+        const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
 
         return new Decrypted(this.head, body)
       }
@@ -211,13 +221,13 @@ export class Blocks {
   ) { }
 
   sizeOrThrow() {
-    return this.blocks.reduce((a, b) => a + b.sizeOrThrow(), 0) + Block.Empty.sizeOrThrow()
+    return this.blocks.reduce((a, b) => a + b.sizeOrThrow(), 0)
   }
 
   writeOrThrow(cursor: Cursor) {
     for (const block of this.blocks)
       block.writeOrThrow(cursor)
-    Block.Empty.writeOrThrow(cursor)
+    return
   }
 
 }
@@ -230,11 +240,10 @@ export namespace Blocks {
     for (let index = 0n; true; index++) {
       const block = Block.readOrThrow(cursor)
 
-      if (block.data.bytes.length === 0)
-        break
-
       blocks.push(new BlockWithIndex(index, block))
 
+      if (block.data.bytes.length === 0)
+        break
       continue
     }
 
@@ -309,19 +318,6 @@ export class Block {
 }
 
 export namespace Block {
-
-  export namespace Empty {
-
-    export function sizeOrThrow() {
-      return 32 + 4 + 0
-    }
-
-    export function writeOrThrow(cursor: Cursor) {
-      cursor.writeOrThrow(new Uint8Array(32))
-      cursor.writeUint32OrThrow(0, true)
-    }
-
-  }
 
   export function readOrThrow(cursor: Cursor) {
     const hmac = new Opaque(cursor.readOrThrow(32))

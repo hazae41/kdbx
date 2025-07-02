@@ -62,6 +62,9 @@ globalThis.XMLSerializer = XMLSerializer as any
 const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
+
+console.log(encrypted.body.blocks.map(b => b.block.data.bytes.length))
+
 const decrypted = await encrypted.decryptOrThrow(await encrypted.digestOrThrow(encrypted.deriveOrThrow(composite)))
 
 rename(decrypted.body.content as any, "nom d'utilisateur", "lol")
