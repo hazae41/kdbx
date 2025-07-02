@@ -1,6 +1,5 @@
-import { Readable } from "@hazae41/binary"
+import { Opaque, Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
 
 export class Dictionary {
 
@@ -118,13 +117,13 @@ export namespace Record {
 
     const klength = cursor.readUint32OrThrow(true)
     const kbytes = cursor.readOrThrow(klength)
-    const kstring = new TextDecoder().decode(kbytes.get())
+    const kstring = new TextDecoder().decode(kbytes)
 
     const vlength = cursor.readUint32OrThrow(true)
     const vbytes = cursor.readOrThrow(vlength)
 
-    const key = new Key(kbytes, kstring)
-    const value = Value.parseOrThrow(type, vbytes)
+    const key = new Key(new Opaque(kbytes), kstring)
+    const value = Value.parseOrThrow(type, new Opaque(vbytes))
 
     return new Record(key, value)
   }
@@ -134,16 +133,16 @@ export namespace Record {
 export class Key {
 
   constructor(
-    readonly bytes: Copiable,
+    readonly bytes: Opaque,
     readonly value: string
   ) { }
 
   sizeOrThrow() {
-    return this.bytes.get().length
+    return this.bytes.bytes.length
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeOrThrow(this.bytes.get())
+    cursor.writeOrThrow(this.bytes.bytes)
   }
 
 }
@@ -159,27 +158,27 @@ export type Value =
 
 export namespace Value {
 
-  export function parseOrThrow(type: number, value: Copiable) {
+  export function parseOrThrow(type: number, value: Opaque) {
     if (type === UInt32.type)
-      return Readable.readFromBytesOrThrow(UInt32, value.get())
+      return Readable.readFromBytesOrThrow(UInt32, value.bytes)
 
     if (type === UInt64.type)
-      return Readable.readFromBytesOrThrow(UInt64, value.get())
+      return Readable.readFromBytesOrThrow(UInt64, value.bytes)
 
     if (type === Boolean.type)
-      return Readable.readFromBytesOrThrow(Boolean, value.get())
+      return Readable.readFromBytesOrThrow(Boolean, value.bytes)
 
     if (type === Int32.type)
-      return Readable.readFromBytesOrThrow(Int32, value.get())
+      return Readable.readFromBytesOrThrow(Int32, value.bytes)
 
     if (type === Int64.type)
-      return Readable.readFromBytesOrThrow(Int64, value.get())
+      return Readable.readFromBytesOrThrow(Int64, value.bytes)
 
     if (type === String.type)
-      return Readable.readFromBytesOrThrow(String, value.get())
+      return Readable.readFromBytesOrThrow(String, value.bytes)
 
     if (type === Bytes.type)
-      return Readable.readFromBytesOrThrow(Bytes, value.get())
+      return Readable.readFromBytesOrThrow(Bytes, value.bytes)
 
     throw new Error()
   }
@@ -354,7 +353,7 @@ export namespace Value {
     readonly #class = String
 
     constructor(
-      readonly bytes: Copiable,
+      readonly bytes: Opaque,
       readonly value: string
     ) { }
 
@@ -363,11 +362,11 @@ export namespace Value {
     }
 
     sizeOrThrow() {
-      return this.bytes.get().length
+      return this.bytes.bytes.length
     }
 
     writeOrThrow(cursor: Cursor) {
-      cursor.writeOrThrow(this.bytes.get())
+      cursor.writeOrThrow(this.bytes.bytes)
     }
 
   }
@@ -378,9 +377,9 @@ export namespace Value {
 
     export function readOrThrow(cursor: Cursor) {
       const bytes = cursor.readOrThrow(cursor.remaining)
-      const value = new TextDecoder().decode(bytes.get())
+      const value = new TextDecoder().decode(bytes)
 
-      return new String(bytes, value)
+      return new String(new Opaque(bytes), value)
     }
 
   }
@@ -389,7 +388,7 @@ export namespace Value {
     readonly #class = Bytes
 
     constructor(
-      readonly value: Copiable
+      readonly value: Opaque
     ) { }
 
     get type() {
@@ -397,11 +396,11 @@ export namespace Value {
     }
 
     sizeOrThrow() {
-      return this.value.get().length
+      return this.value.bytes.length
     }
 
     writeOrThrow(cursor: Cursor) {
-      cursor.writeOrThrow(this.value.get())
+      cursor.writeOrThrow(this.value.bytes)
     }
 
   }
@@ -411,7 +410,7 @@ export namespace Value {
     export const type = 0x42
 
     export function readOrThrow(cursor: Cursor) {
-      return new Bytes(cursor.readOrThrow(cursor.remaining))
+      return new Bytes(new Opaque(cursor.readOrThrow(cursor.remaining)))
     }
 
   }

@@ -1,22 +1,20 @@
-import { Writable } from "@hazae41/binary"
+import { Opaque, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
-import { Uint8Array } from "libs/bytes/index.js"
 
 export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly major: Copiable<64>,
+    readonly major: Opaque<64>,
   ) { }
 
   sizeOrThrow() {
-    return 8 + this.major.get().length
+    return 8 + this.major.bytes.length
   }
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeUint64OrThrow(this.index, true)
-    cursor.writeOrThrow(this.major.get())
+    cursor.writeOrThrow(this.major.bytes)
   }
 
   async digestOrThrow() {

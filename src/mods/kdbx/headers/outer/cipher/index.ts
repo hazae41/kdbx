@@ -55,7 +55,7 @@ export namespace Cipher {
 
   export function readOrThrow(cursor: Cursor) {
     const bytes = cursor.readOrThrow(16)
-    const uuid = StringAsUuid.from(bytes.get())
+    const uuid = StringAsUuid.from(bytes)
 
     if (uuid === Aes256Cbc.uuid)
       return Aes256Cbc

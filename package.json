@@ -58,8 +58,9 @@
   "dependencies": {
     "@hazae41/argon2.wasm": "^1.0.3",
     "@hazae41/base16": "^1.1.1",
-    "@hazae41/binary": "^1.3.6",
-    "@hazae41/cursor": "^2.0.3",
-    "@hazae41/uncopy": "^1.0.4"
+    "@hazae41/binary": "^1.3.8",
+    "@hazae41/clonable": "^1.0.6",
+    "@hazae41/cursor": "^2.0.4",
+    "@hazae41/lengthed": "^1.0.1"
   }
 }

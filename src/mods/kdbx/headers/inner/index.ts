@@ -1,6 +1,5 @@
-import { Readable } from "@hazae41/binary"
+import { Opaque, Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable } from "@hazae41/uncopy"
 import { TLV } from "libs/tlv/index.js"
 
 export class HeadersAndContent {
@@ -18,7 +17,7 @@ export namespace HeadersAndContent {
     const headers = Headers.readOrThrow(cursor)
     const content = cursor.readOrThrow(cursor.remaining)
 
-    const raw = new TextDecoder().decode(content.get())
+    const raw = new TextDecoder().decode(content)
     const xml = new DOMParser().parseFromString(raw, "text/xml")
 
     return new HeadersAndContent(headers, xml)
@@ -30,8 +29,8 @@ export class Headers {
 
   constructor(
     readonly cipher: StreamCipher,
-    readonly key: Copiable,
-    readonly binary: Copiable[]
+    readonly key: Opaque,
+    readonly binary: Opaque[]
   ) { }
 
 }
@@ -41,8 +40,8 @@ export namespace Headers {
   export function readOrThrow(cursor: Cursor) {
     const fields: {
       cipher?: StreamCipher,
-      key?: Copiable,
-      binary: Copiable[]
+      key?: Opaque,
+      binary: Opaque[]
     } = {
       binary: []
     }
@@ -54,17 +53,17 @@ export namespace Headers {
         break
 
       if (tlv.type === 1) {
-        fields.cipher = Readable.readFromBytesOrThrow(StreamCipher, tlv.bytes.get())
+        fields.cipher = Readable.readFromBytesOrThrow(StreamCipher, tlv.value.bytes)
         continue
       }
 
       if (tlv.type === 2) {
-        fields.key = tlv.bytes
+        fields.key = tlv.value
         continue
       }
 
       if (tlv.type === 3) {
-        fields.binary.push(tlv.bytes)
+        fields.binary.push(tlv.value)
         continue
       }
 

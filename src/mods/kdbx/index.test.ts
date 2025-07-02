@@ -1,7 +1,6 @@
 import { Argon2 } from "@hazae41/argon2.wasm"
 import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
-import { Uint8Array } from "libs/bytes/index.js"
 import { readFileSync } from "node:fs"
 import { CompositeKey, Database, PasswordKey } from "./index.js"
 

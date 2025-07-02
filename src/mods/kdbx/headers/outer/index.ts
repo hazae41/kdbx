@@ -2,10 +2,10 @@ export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Readable, Writable } from "@hazae41/binary"
+import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable, Copied, Uncopied } from "@hazae41/uncopy"
-import { Bytes, Uint8Array } from "libs/bytes/index.js"
+import { Lengthed } from "@hazae41/lengthed"
+import { Bytes } from "libs/bytes/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
@@ -37,8 +37,8 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
 
   constructor(
     readonly data: MagicAndVersionAndHeadersWithBytes,
-    readonly hash: Copiable<32>,
-    readonly hmac: Copiable<32>
+    readonly hash: Opaque<32>,
+    readonly hmac: Opaque<32>
   ) { }
 
   static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys) {
@@ -47,16 +47,16 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.get())) as Uint8Array<32>
-    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.get())) as Uint8Array<32>
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array & Lengthed<32>
+    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array & Lengthed<32>
 
-    return new MagicAndVersionAndHeadersWithHashAndHmac(data, new Copied(hash), new Copied(hmac))
+    return new MagicAndVersionAndHeadersWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
   }
 
   async verifyOrThrow(keys: MasterKeys) {
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.get()))
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.bytes))
 
-    if (!Bytes.equals(hash, this.hash.get()))
+    if (!Bytes.equals(hash, this.hash.bytes))
       throw new Error()
 
     const index = 0xFFFFFFFFFFFFFFFFn
@@ -64,7 +64,7 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
-    await key.verifyOrThrow(this.data.bytes.get(), this.hmac.get())
+    await key.verifyOrThrow(this.data.bytes.bytes, this.hmac.bytes)
   }
 
   sizeOrThrow() {
@@ -74,8 +74,8 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
   writeOrThrow(cursor: Cursor) {
     this.data.writeOrThrow(cursor)
 
-    cursor.writeOrThrow(this.hash.get())
-    cursor.writeOrThrow(this.hmac.get())
+    cursor.writeOrThrow(this.hash.bytes)
+    cursor.writeOrThrow(this.hmac.bytes)
   }
 
   deriveOrThrow(composite: CompositeKey) {
@@ -92,8 +92,8 @@ export namespace MagicAndVersionAndHeadersWithHashAndHmac {
 
   export function readOrThrow(cursor: Cursor) {
     const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
-    const hash = cursor.readOrThrow(32)
-    const hmac = cursor.readOrThrow(32)
+    const hash = new Opaque(cursor.readOrThrow(32))
+    const hmac = new Opaque(cursor.readOrThrow(32))
 
     return new MagicAndVersionAndHeadersWithHashAndHmac(data, hash, hmac)
   }
@@ -104,27 +104,27 @@ export class MagicAndVersionAndHeadersWithBytes {
 
   constructor(
     readonly value: MagicAndVersionAndHeaders,
-    readonly bytes: Copiable,
+    readonly bytes: Opaque,
   ) { }
 
   static computeOrThrow(value: MagicAndVersionAndHeaders) {
-    const bytes = new Copied(Writable.writeToBytesOrThrow(value))
+    const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
   rotateOrThrow() {
     const value = this.value.rotateOrThrow()
-    const bytes = new Copied(Writable.writeToBytesOrThrow(value))
+    const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
 
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
   sizeOrThrow() {
-    return this.bytes.get().length
+    return this.bytes.bytes.length
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeOrThrow(this.bytes.get())
+    cursor.writeOrThrow(this.bytes.bytes)
   }
 
   deriveOrThrow(composite: CompositeKey) {
@@ -143,7 +143,7 @@ export namespace MagicAndVersionAndHeadersWithBytes {
     const start = cursor.offset
 
     const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
-    const bytes = new Uncopied(cursor.bytes.subarray(start, cursor.offset))
+    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
 
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
@@ -220,8 +220,8 @@ export class Headers {
   constructor(
     readonly cipher: Cipher,
     readonly compression: Compression,
-    readonly seed: Copiable<32>,
-    readonly iv: Copiable,
+    readonly seed: Opaque<32>,
+    readonly iv: Opaque,
     readonly kdf: KdfParameters,
     readonly custom?: Dictionary
   ) { }
@@ -229,9 +229,9 @@ export class Headers {
   rotateOrThrow() {
     const { cipher, compression, iv, kdf } = this
 
-    const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<32>
+    const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
 
-    return new Headers(cipher, compression, new Copied(seed), iv, kdf, this.custom)
+    return new Headers(cipher, compression, new Opaque(seed), iv, kdf, this.custom)
   }
 
   sizeOrThrow(): number {
@@ -263,8 +263,8 @@ export namespace Headers {
     const fields: {
       cipher?: Cipher,
       compression?: Compression
-      seed?: Copiable<32>
-      iv?: Copiable
+      seed?: Opaque<32>
+      iv?: Opaque
       kdf?: KdfParameters
       custom?: Dictionary
     } = {}
@@ -276,32 +276,32 @@ export namespace Headers {
         break
 
       if (tlv.type === 2) {
-        fields.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.bytes.get())
+        fields.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.value.bytes)
         continue
       }
 
       if (tlv.type === 3) {
-        fields.compression = Readable.readFromBytesOrThrow(Compression, tlv.bytes.get())
+        fields.compression = Readable.readFromBytesOrThrow(Compression, tlv.value.bytes)
         continue
       }
 
       if (tlv.type === 4) {
-        fields.seed = tlv.bytes as Copiable<32>
+        fields.seed = tlv.value as Opaque<32>
         continue
       }
 
       if (tlv.type === 7) {
-        fields.iv = tlv.bytes
+        fields.iv = tlv.value
         continue
       }
 
       if (tlv.type === 11) {
-        const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
 
         if (dictionary.kvvalue["$UUID"] instanceof Value.Bytes === false)
           throw new Error()
 
-        const $UUID = StringAsUuid.from(dictionary.kvvalue["$UUID"].value.get())
+        const $UUID = StringAsUuid.from(dictionary.kvvalue["$UUID"].value.bytes)
 
         if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
           throw new Error()
@@ -313,7 +313,7 @@ export namespace Headers {
 
           if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const seed = dictionary.kvvalue["S"].value as Copiable<32>
+          const seed = dictionary.kvvalue["S"].value as Opaque<32>
 
           fields.kdf = new KdfParameters.AesKdf(rounds, seed)
 
@@ -323,7 +323,7 @@ export namespace Headers {
         if ($UUID === KdfParameters.Argon2d.$UUID) {
           if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.kvvalue["S"].value as Copiable<32>
+          const salt = dictionary.kvvalue["S"].value as Opaque<32>
 
           if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
             throw new Error()
@@ -350,7 +350,7 @@ export namespace Headers {
         if ($UUID === KdfParameters.Argon2id.$UUID) {
           if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.kvvalue["S"].value as Copiable<32>
+          const salt = dictionary.kvvalue["S"].value as Opaque<32>
 
           if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
             throw new Error()
@@ -377,7 +377,7 @@ export namespace Headers {
       }
 
       if (tlv.type === 12) {
-        fields.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.bytes.get())
+        fields.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
         continue
       }
 
@@ -403,11 +403,11 @@ export namespace Headers {
 export class Seed {
 
   constructor(
-    readonly bytes: Copiable<32>
+    readonly bytes: Opaque<32>
   ) { }
 
   static readOrThrow(cursor: Cursor) {
-    return new Seed(cursor.readOrThrow(32))
+    return new Seed(new Opaque(cursor.readOrThrow(32)))
   }
 
 }
@@ -423,7 +423,7 @@ export namespace KdfParameters {
 
     constructor(
       readonly rounds: number,
-      readonly seed: Copiable<32>,
+      readonly seed: Opaque<32>,
     ) { }
 
     deriveOrThrow(key: CompositeKey): never {
@@ -451,7 +451,7 @@ export namespace KdfParameters {
   export class Argon2d {
 
     constructor(
-      readonly salt: Copiable<32>,
+      readonly salt: Opaque<32>,
       readonly parallelism: number,
       readonly memory: bigint,
       readonly iterations: bigint,
@@ -462,9 +462,9 @@ export namespace KdfParameters {
       const { version, iterations, parallelism, memory, salt } = this
 
       const deriver = new Argon2.Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-      const derived = deriver.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
+      const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
 
-      return new DerivedKey(new Copied(new Uint8Array(derived.bytes) as Uint8Array<32>))
+      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
     }
 
   }
@@ -478,7 +478,7 @@ export namespace KdfParameters {
   export class Argon2id {
 
     constructor(
-      readonly salt: Copiable<32>,
+      readonly salt: Opaque<32>,
       readonly parallelism: number,
       readonly memory: bigint,
       readonly iterations: bigint,
@@ -489,9 +489,9 @@ export namespace KdfParameters {
       const { version, iterations, parallelism, memory, salt } = this
 
       const deriver = new Argon2.Argon2Deriver("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
-      const derived = deriver.derive(new Argon2.Memory(key.bytes.get()), new Argon2.Memory(salt.get()))
+      const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
 
-      return new DerivedKey(new Copied(new Uint8Array(derived.bytes) as Uint8Array<32>))
+      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
     }
 
   }

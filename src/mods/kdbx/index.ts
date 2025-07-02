@@ -1,10 +1,9 @@
 export * from "./dictionary/index.js"
 export * from "./headers/index.js"
 
-import { Readable, Writable } from "@hazae41/binary"
+import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
-import { Copiable, Copied } from "@hazae41/uncopy"
-import { Uint8Array } from "libs/bytes/index.js"
+import { Lengthed } from "@hazae41/lengthed"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
 import { Cipher, MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
@@ -14,14 +13,14 @@ export class PasswordKey {
   readonly #class = PasswordKey
 
   constructor(
-    readonly bytes: Copiable<32>
+    readonly value: Opaque<32>
   ) { }
 
   static async digestOrThrow(password: Uint8Array) {
     const array = await crypto.subtle.digest("SHA-256", password)
-    const bytes = new Uint8Array(array) as Uint8Array<32>
+    const bytes = new Uint8Array(array) as Uint8Array & Lengthed<32>
 
-    return new PasswordKey(new Copied(bytes))
+    return new PasswordKey(new Opaque(bytes))
   }
 
 }
@@ -30,14 +29,14 @@ export class CompositeKey {
   readonly #class = CompositeKey
 
   constructor(
-    readonly bytes: Copiable<32>,
+    readonly value: Opaque<32>,
   ) { }
 
   static async digestOrThrow(password: PasswordKey) {
-    const array = await crypto.subtle.digest("SHA-256", password.bytes.get())
-    const bytes = new Uint8Array(array) as Uint8Array<32>
+    const array = await crypto.subtle.digest("SHA-256", password.value.bytes)
+    const bytes = new Uint8Array(array) as Uint8Array & Lengthed<32>
 
-    return new CompositeKey(new Copied(bytes))
+    return new CompositeKey(new Opaque(bytes))
   }
 
 }
@@ -46,7 +45,7 @@ export class DerivedKey {
   readonly #class = DerivedKey
 
   constructor(
-    readonly bytes: Copiable<32>
+    readonly value: Opaque<32>
   ) { }
 
 }
@@ -55,7 +54,7 @@ export class PreMasterKey {
   readonly #class = PreMasterKey
 
   constructor(
-    readonly seed: Copiable<32>,
+    readonly seed: Opaque<32>,
     readonly hash: DerivedKey
   ) { }
 
@@ -64,17 +63,17 @@ export class PreMasterKey {
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeOrThrow(this.seed.get())
-    cursor.writeOrThrow(this.hash.bytes.get())
+    cursor.writeOrThrow(this.seed.bytes)
+    cursor.writeOrThrow(this.hash.value.bytes)
   }
 
   async digestOrThrow() {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-256", input)
-    const output = new Uint8Array(digest) as Uint8Array<32>
+    const output = new Uint8Array(digest) as Uint8Array & Lengthed<32>
 
-    return new MasterKey(new Copied(output))
+    return new MasterKey(new Opaque(output))
   }
 
 }
@@ -83,7 +82,7 @@ export class MasterKey {
   readonly #class = MasterKey
 
   constructor(
-    readonly bytes: Copiable<32>,
+    readonly value: Opaque<32>,
   ) { }
 
 }
@@ -92,7 +91,7 @@ export class PreHmacMasterKey {
   readonly #class = PreHmacMasterKey
 
   constructor(
-    readonly seed: Copiable<32>,
+    readonly seed: Opaque<32>,
     readonly hash: DerivedKey
   ) { }
 
@@ -101,8 +100,8 @@ export class PreHmacMasterKey {
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeOrThrow(this.seed.get())
-    cursor.writeOrThrow(this.hash.bytes.get())
+    cursor.writeOrThrow(this.seed.bytes)
+    cursor.writeOrThrow(this.hash.value.bytes)
     cursor.writeUint8OrThrow(1)
   }
 
@@ -110,9 +109,9 @@ export class PreHmacMasterKey {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-512", input)
-    const output = new Uint8Array(digest) as Uint8Array<64>
+    const output = new Uint8Array(digest) as Uint8Array & Lengthed<64>
 
-    return new HmacMasterKey(new Copied(output))
+    return new HmacMasterKey(new Opaque(output))
   }
 
 }
@@ -121,7 +120,7 @@ export class HmacMasterKey {
   readonly #class = HmacMasterKey
 
   constructor(
-    readonly bytes: Copiable<64>,
+    readonly bytes: Opaque<64>,
   ) { }
 
 }
@@ -166,16 +165,16 @@ export namespace Database {
       await this.head.verifyOrThrow(keys)
 
       if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
-        const length = this.body.reduce((a, b) => a + b.block.data.get().length, 0)
+        const length = this.body.reduce((a, b) => a + b.block.data.bytes.length, 0)
         const cursor = new Cursor(new Uint8Array(length))
 
-        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.get() }
-        const key = await crypto.subtle.importKey("raw", keys.encrypter.bytes.get(), { name: "AES-CBC" }, false, ["decrypt"])
+        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.bytes }
+        const key = await crypto.subtle.importKey("raw", keys.encrypter.value.bytes, { name: "AES-CBC" }, false, ["decrypt"])
 
         for (const block of this.body) {
           await block.verifyOrThrow(keys)
 
-          const encrypted = block.block.data.get()
+          const encrypted = block.block.data.bytes
           const decrypted = await crypto.subtle.decrypt(alg, key, encrypted)
 
           cursor.writeOrThrow(new Uint8Array(decrypted))
@@ -202,7 +201,7 @@ export namespace Database {
       for (let index = 0n; true; index++) {
         const block = Block.readOrThrow(cursor)
 
-        if (block.data.get().length === 0)
+        if (block.data.bytes.length === 0)
           break
 
         body.push(new BlockWithIndex(index, block))
@@ -224,13 +223,13 @@ export class BlockWithIndexPreHmacData {
   ) { }
 
   sizeOrThrow() {
-    return 8 + 4 + this.block.block.data.get().length
+    return 8 + 4 + this.block.block.data.bytes.length
   }
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeUint64OrThrow(this.block.index, true)
-    cursor.writeUint32OrThrow(this.block.block.data.get().length, true)
-    cursor.writeOrThrow(this.block.block.data.get())
+    cursor.writeUint32OrThrow(this.block.block.data.bytes.length, true)
+    cursor.writeOrThrow(this.block.block.data.bytes)
   }
 
 }
@@ -250,7 +249,7 @@ export class BlockWithIndex {
 
     const data = Writable.writeToBytesOrThrow(new BlockWithIndexPreHmacData(this))
 
-    await key.verifyOrThrow(data, this.block.hmac.get())
+    await key.verifyOrThrow(data, this.block.hmac.bytes)
   }
 
 }
@@ -258,8 +257,8 @@ export class BlockWithIndex {
 export class Block {
 
   constructor(
-    readonly hmac: Copiable<32>,
-    readonly data: Copiable
+    readonly hmac: Opaque<32>,
+    readonly data: Opaque
   ) { }
 
 }
@@ -267,9 +266,9 @@ export class Block {
 export namespace Block {
 
   export function readOrThrow(cursor: Cursor) {
-    const hmac = cursor.readOrThrow(32)
+    const hmac = new Opaque(cursor.readOrThrow(32))
     const size = cursor.readUint32OrThrow(true)
-    const data = cursor.readOrThrow(size)
+    const data = new Opaque(cursor.readOrThrow(size))
 
     return new Block(hmac, data)
   }
