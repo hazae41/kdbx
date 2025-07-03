@@ -1,22 +1,22 @@
 import { Opaque, Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 
-export class Dictionary {
+export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Value }> {
 
   constructor(
     readonly version: Dictionary.Version,
-    readonly records: Record<Value>[],
-    readonly kvvalue: { [key: string]: Value }
+    readonly entries: Entry<Value>[],
+    readonly keyvals: T
   ) { }
 
   sizeOrThrow() {
-    return this.version.sizeOrThrow() + this.records.reduce((x, r) => x + r.sizeOrThrow(), 0)
+    return this.version.sizeOrThrow() + this.entries.reduce((x, r) => x + r.sizeOrThrow(), 0)
   }
 
   writeOrThrow(cursor: Cursor) {
     this.version.writeOrThrow(cursor)
 
-    for (const record of this.records)
+    for (const record of this.entries)
       record.writeOrThrow(cursor)
 
     cursor.writeUint8OrThrow(0x00)
@@ -55,17 +55,26 @@ export namespace Dictionary {
 
   }
 
+  export function initOrThrow<T extends { [key: string]: Value }>(version: Version, keyvals: T) {
+    const entries = new Array<Entry<Value>>()
+
+    for (const key in keyvals)
+      entries.push(new Entry(Key.initOrThrow(key), keyvals[key]))
+
+    return new Dictionary(version, entries, keyvals)
+  }
+
   export function readOrThrow(cursor: Cursor) {
     const version = Version.readOrThrow(cursor)
 
     if (version.major !== 1)
       throw new Error()
 
-    const array = new Array<Record<Value>>()
+    const array = new Array<Entry<Value>>()
     const value: { [key: string]: Value } = {}
 
     while (true) {
-      const record = Record.readOrThrow(cursor)
+      const record = Entry.readOrThrow(cursor)
 
       if (record == null)
         break
@@ -82,7 +91,7 @@ export namespace Dictionary {
 
 }
 
-export class Record<T extends Value> {
+export class Entry<T extends Value> {
 
   constructor(
     readonly key: Key,
@@ -107,7 +116,7 @@ export class Record<T extends Value> {
 
 }
 
-export namespace Record {
+export namespace Entry {
 
   export function readOrThrow(cursor: Cursor) {
     const type = cursor.readUint8OrThrow()
@@ -125,7 +134,7 @@ export namespace Record {
     const key = new Key(new Opaque(kbytes), kstring)
     const value = Value.parseOrThrow(type, new Opaque(vbytes))
 
-    return new Record(key, value)
+    return new Entry(key, value)
   }
 
 }
@@ -143,6 +152,15 @@ export class Key {
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeOrThrow(this.bytes.bytes)
+  }
+
+}
+
+export namespace Key {
+
+  export function initOrThrow(value: string) {
+    const bytes = new TextEncoder().encode(value)
+    return new Key(new Opaque(bytes), value)
   }
 
 }
@@ -183,11 +201,11 @@ export namespace Value {
     throw new Error()
   }
 
-  export class UInt32 {
+  export class UInt32<T extends number = number> {
     readonly #class = UInt32
 
     constructor(
-      readonly value: number
+      readonly value: T
     ) { }
 
     get type() {
@@ -214,11 +232,11 @@ export namespace Value {
 
   }
 
-  export class UInt64 {
+  export class UInt64<T extends bigint = bigint> {
     readonly #class = UInt64
 
     constructor(
-      readonly value: bigint
+      readonly value: T
     ) { }
 
     get type() {
@@ -281,11 +299,11 @@ export namespace Value {
 
   }
 
-  export class Int32 {
+  export class Int32<T extends number = number> {
     readonly #class = Int32
 
     constructor(
-      readonly value: number
+      readonly value: T
     ) { }
 
     get type() {
@@ -315,11 +333,11 @@ export namespace Value {
 
   }
 
-  export class Int64 {
+  export class Int64<T extends bigint = bigint> {
     readonly #class = Int64
 
     constructor(
-      readonly value: bigint
+      readonly value: T
     ) { }
 
     get type() {
@@ -384,11 +402,11 @@ export namespace Value {
 
   }
 
-  export class Bytes {
+  export class Bytes<N extends number = number> {
     readonly #class = Bytes
 
     constructor(
-      readonly value: Opaque
+      readonly value: Opaque<N>
     ) { }
 
     get type() {

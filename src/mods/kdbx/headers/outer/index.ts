@@ -6,6 +6,7 @@ import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { Bytes } from "libs/bytes/index.js"
+import { Mutable } from "libs/mutable/index.js"
 import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
@@ -215,6 +216,15 @@ export namespace MagicAndVersionAndHeaders {
 
 }
 
+export interface HeadersInit {
+  readonly cipher: TLV<2, Cipher>
+  readonly compression: Compression
+  readonly seed: Opaque<32>
+  readonly iv: Opaque
+  readonly kdf: KdfParameters
+  readonly custom?: Dictionary
+}
+
 export class Headers {
 
   constructor(
@@ -261,14 +271,7 @@ export class Headers {
 export namespace Headers {
 
   export function readOrThrow(cursor: Cursor) {
-    const fields: {
-      cipher?: Cipher,
-      compression?: Compression
-      seed?: Opaque<32>
-      iv?: Opaque
-      kdf?: KdfParameters
-      custom?: Dictionary
-    } = {}
+    const init: Partial<Mutable<HeadersInit>> = {}
 
     while (true) {
       const tlv = TLV.readOrThrow(cursor)
@@ -277,99 +280,102 @@ export namespace Headers {
         break
 
       if (tlv.type === 2) {
-        fields.cipher = Readable.readFromBytesOrThrow(Cipher, tlv.value.bytes)
+        init.cipher = tlv.readIntoOrThrow(Cipher) as TLV<2, Cipher>
         continue
       }
 
       if (tlv.type === 3) {
-        fields.compression = Readable.readFromBytesOrThrow(Compression, tlv.value.bytes)
+        init.compression = Readable.readFromBytesOrThrow(Compression, tlv.value.bytes)
         continue
       }
 
       if (tlv.type === 4) {
-        fields.seed = tlv.value as Opaque<32>
+        init.seed = tlv.value as Opaque<32>
         continue
       }
 
       if (tlv.type === 7) {
-        fields.iv = tlv.value
+        init.iv = tlv.value
         continue
       }
 
       if (tlv.type === 11) {
         const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
 
-        if (dictionary.kvvalue["$UUID"] instanceof Value.Bytes === false)
+        if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
           throw new Error()
 
-        const $UUID = StringAsUuid.from(dictionary.kvvalue["$UUID"].value.bytes)
+        const $UUID = StringAsUuid.from(dictionary.keyvals["$UUID"].value.bytes)
 
         if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
           throw new Error()
 
         if ($UUID === KdfParameters.AesKdf.$UUID) {
-          if (dictionary.kvvalue["R"] instanceof Value.UInt32 === false)
+          const { version, entries } = dictionary
+
+          if (dictionary.keyvals.R instanceof Value.UInt32 === false)
             throw new Error()
-          const rounds = dictionary.kvvalue["R"].value
+          const R = dictionary.keyvals.R
 
-          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
+          if (dictionary.keyvals.S instanceof Value.Bytes === false)
             throw new Error()
-          const seed = dictionary.kvvalue["S"].value as Opaque<32>
+          const S = dictionary.keyvals.S
 
-          fields.kdf = new KdfParameters.AesKdf(rounds, seed)
-
+          init.kdf = new KdfParameters.AesKdf(new Dictionary(version, entries, { R, S }))
           continue
         }
 
         if ($UUID === KdfParameters.Argon2d.$UUID) {
-          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
+          const { version, entries } = dictionary
+
+          if (dictionary.keyvals.S instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.kvvalue["S"].value as Opaque<32>
+          const S = dictionary.keyvals.S as Value.Bytes<32>
 
-          if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
+          if (dictionary.keyvals.P instanceof Value.UInt32 === false)
             throw new Error()
-          const parallelism = dictionary.kvvalue["P"].value
+          const P = dictionary.keyvals.P
 
-          if (dictionary.kvvalue["M"] instanceof Value.UInt64 === false)
+          if (dictionary.keyvals.M instanceof Value.UInt64 === false)
             throw new Error()
-          const memory = dictionary.kvvalue["M"].value
+          const M = dictionary.keyvals.M
 
-          if (dictionary.kvvalue["I"] instanceof Value.UInt64 === false)
+          if (dictionary.keyvals.I instanceof Value.UInt64 === false)
             throw new Error()
-          const iterations = dictionary.kvvalue["I"].value
+          const I = dictionary.keyvals.I
 
-          if (dictionary.kvvalue["V"] instanceof Value.UInt32 === false)
+          if (dictionary.keyvals.V instanceof Value.UInt32 === false)
             throw new Error()
-          const version = dictionary.kvvalue["V"].value as KdfParameters.Argon2.Version
+          const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-          fields.kdf = new KdfParameters.Argon2d(salt, parallelism, memory, iterations, version)
-
+          init.kdf = new KdfParameters.Argon2d(new Dictionary(version, entries, { S, P, M, I, V }))
           continue
         }
 
         if ($UUID === KdfParameters.Argon2id.$UUID) {
-          if (dictionary.kvvalue["S"] instanceof Value.Bytes === false)
+          const { version, entries } = dictionary
+
+          if (dictionary.keyvals.S instanceof Value.Bytes === false)
             throw new Error()
-          const salt = dictionary.kvvalue["S"].value as Opaque<32>
+          const S = dictionary.keyvals.S as Value.Bytes<32>
 
-          if (dictionary.kvvalue["P"] instanceof Value.UInt32 === false)
+          if (dictionary.keyvals.P instanceof Value.UInt32 === false)
             throw new Error()
-          const parallelism = dictionary.kvvalue["P"].value
+          const P = dictionary.keyvals.P
 
-          if (dictionary.kvvalue["M"] instanceof Value.UInt64 === false)
+          if (dictionary.keyvals.M instanceof Value.UInt64 === false)
             throw new Error()
-          const memory = dictionary.kvvalue["M"].value
+          const M = dictionary.keyvals.M
 
-          if (dictionary.kvvalue["I"] instanceof Value.UInt64 === false)
+          if (dictionary.keyvals.I instanceof Value.UInt64 === false)
             throw new Error()
-          const iterations = dictionary.kvvalue["I"].value
+          const I = dictionary.keyvals.I
 
-          if (dictionary.kvvalue["V"] instanceof Value.UInt32 === false)
+          if (dictionary.keyvals.V instanceof Value.UInt32 === false)
             throw new Error()
-          const version = dictionary.kvvalue["V"].value as KdfParameters.Argon2.Version
+          const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-          fields.kdf = new KdfParameters.Argon2id(salt, parallelism, memory, iterations, version)
-
+          init.kdf = new KdfParameters.Argon2id(new Dictionary(version, entries, { S, P, M, I, V }))
           continue
         }
 
@@ -377,25 +383,25 @@ export namespace Headers {
       }
 
       if (tlv.type === 12) {
-        fields.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
+        init.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
         continue
       }
 
       throw new Error()
     }
 
-    if (fields.cipher == null)
+    if (init.cipher == null)
       throw new Error()
-    if (fields.compression == null)
+    if (init.compression == null)
       throw new Error()
-    if (fields.seed == null)
+    if (init.seed == null)
       throw new Error()
-    if (fields.iv == null)
+    if (init.iv == null)
       throw new Error()
-    if (fields.kdf == null)
+    if (init.kdf == null)
       throw new Error()
 
-    const { cipher, compression, seed, iv, kdf, custom } = fields
+    const { cipher, compression, seed, iv, kdf, custom } = init
     return new Headers(cipher, compression, seed, iv, kdf, custom)
   }
 }
@@ -422,16 +428,26 @@ export namespace KdfParameters {
   export class AesKdf {
 
     constructor(
-      readonly rounds: number,
-      readonly seed: Opaque<32>,
+      readonly value: Dictionary<{ R: Value.UInt32, S: Value.Bytes }>
     ) { }
 
+    get seed() {
+      return this.value.keyvals["S"].value
+    }
+
+    get rounds() {
+      return this.value.keyvals["R"].value
+    }
+
     rotateOrThrow() {
-      const { rounds } = this
+      const { version } = this.value
 
-      const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+      const R = this.value.keyvals["R"]
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
 
-      return new AesKdf(rounds, new Opaque(seed))
+      const value = Dictionary.initOrThrow(version, { R, S })
+
+      return new AesKdf(value)
     }
 
     deriveOrThrow(key: CompositeKey): never {
@@ -459,19 +475,41 @@ export namespace KdfParameters {
   export class Argon2d {
 
     constructor(
-      readonly salt: Opaque<32>,
-      readonly parallelism: number,
-      readonly memory: bigint,
-      readonly iterations: bigint,
-      readonly version: Argon2.Version,
+      readonly value: Dictionary<{ S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
+    get salt() {
+      return this.value.keyvals["S"].value
+    }
+
+    get parallelism() {
+      return this.value.keyvals["P"].value
+    }
+
+    get memory() {
+      return this.value.keyvals["M"].value
+    }
+
+    get iterations() {
+      return this.value.keyvals["I"].value
+    }
+
+    get version() {
+      return this.value.keyvals["V"].value
+    }
+
     rotateOrThrow() {
-      const { parallelism, memory, iterations, version } = this
+      const { version } = this.value
 
-      const salt = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
+      const P = this.value.keyvals.P
+      const M = this.value.keyvals.M
+      const I = this.value.keyvals.I
+      const V = this.value.keyvals.V
 
-      return new Argon2d(new Opaque(salt), parallelism, memory, iterations, version)
+      const value = Dictionary.initOrThrow(version, { S, P, M, I, V })
+
+      return new Argon2d(value)
     }
 
     deriveOrThrow(key: CompositeKey) {
@@ -494,19 +532,41 @@ export namespace KdfParameters {
   export class Argon2id {
 
     constructor(
-      readonly salt: Opaque<32>,
-      readonly parallelism: number,
-      readonly memory: bigint,
-      readonly iterations: bigint,
-      readonly version: Argon2.Version,
+      readonly value: Dictionary<{ S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
+    get salt() {
+      return this.value.keyvals["S"].value
+    }
+
+    get parallelism() {
+      return this.value.keyvals["P"].value
+    }
+
+    get memory() {
+      return this.value.keyvals["M"].value
+    }
+
+    get iterations() {
+      return this.value.keyvals["I"].value
+    }
+
+    get version() {
+      return this.value.keyvals["V"].value
+    }
+
     rotateOrThrow() {
-      const { parallelism, memory, iterations, version } = this
+      const { version } = this.value
 
-      const salt = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
+      const P = this.value.keyvals.P
+      const M = this.value.keyvals.M
+      const I = this.value.keyvals.I
+      const V = this.value.keyvals.V
 
-      return new Argon2id(new Opaque(salt), parallelism, memory, iterations, version)
+      const value = Dictionary.initOrThrow(version, { S, P, M, I, V })
+
+      return new Argon2d(value)
     }
 
     deriveOrThrow(key: CompositeKey) {
