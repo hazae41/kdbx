@@ -227,11 +227,12 @@ export class Headers {
   ) { }
 
   rotateOrThrow() {
-    const { cipher, compression, iv, kdf } = this
+    const { cipher, compression, kdf } = this
 
     const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+    const iv = crypto.getRandomValues(new Uint8Array(16)) as Uint8Array & Lengthed<16> // TODO use size from cipher
 
-    return new Headers(cipher, compression, new Opaque(seed), iv, kdf, this.custom)
+    return new Headers(cipher, compression, new Opaque(seed), new Opaque(iv), kdf.rotateOrThrow(), this.custom)
   }
 
   sizeOrThrow(): number {
@@ -329,7 +330,6 @@ export namespace Headers {
             throw new Error()
           const parallelism = dictionary.kvvalue["P"].value
 
-
           if (dictionary.kvvalue["M"] instanceof Value.UInt64 === false)
             throw new Error()
           const memory = dictionary.kvvalue["M"].value
@@ -426,6 +426,14 @@ export namespace KdfParameters {
       readonly seed: Opaque<32>,
     ) { }
 
+    rotateOrThrow() {
+      const { rounds } = this
+
+      const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+
+      return new AesKdf(rounds, new Opaque(seed))
+    }
+
     deriveOrThrow(key: CompositeKey): never {
       throw new Error()
     }
@@ -458,6 +466,14 @@ export namespace KdfParameters {
       readonly version: Argon2.Version,
     ) { }
 
+    rotateOrThrow() {
+      const { parallelism, memory, iterations, version } = this
+
+      const salt = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+
+      return new Argon2d(new Opaque(salt), parallelism, memory, iterations, version)
+    }
+
     deriveOrThrow(key: CompositeKey) {
       const { version, iterations, parallelism, memory, salt } = this
 
@@ -484,6 +500,14 @@ export namespace KdfParameters {
       readonly iterations: bigint,
       readonly version: Argon2.Version,
     ) { }
+
+    rotateOrThrow() {
+      const { parallelism, memory, iterations, version } = this
+
+      const salt = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
+
+      return new Argon2id(new Opaque(salt), parallelism, memory, iterations, version)
+    }
 
     deriveOrThrow(key: CompositeKey) {
       const { version, iterations, parallelism, memory, salt } = this
