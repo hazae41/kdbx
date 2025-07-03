@@ -1,11 +1,11 @@
-import { Opaque } from "@hazae41/binary"
+import { Clonable, Opaque, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 
-export class TLV {
+export class TLV<T extends Writable & Clonable> {
 
   constructor(
     readonly type: number,
-    readonly value: Opaque
+    readonly value: T
   ) { }
 
   sizeOrThrow() {
