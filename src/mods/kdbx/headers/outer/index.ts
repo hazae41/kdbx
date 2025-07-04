@@ -12,6 +12,7 @@ import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
 import { PreHmacKey } from "mods/kdbx/hmac/index.js"
 import { CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "mods/kdbx/index.js"
+import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
 import { Compression } from "./compression/index.js"
 
@@ -228,13 +229,32 @@ export interface HeadersInit {
 export class Headers {
 
   constructor(
-    readonly cipher: Cipher,
-    readonly compression: Compression,
-    readonly seed: Opaque<32>,
-    readonly iv: Opaque,
-    readonly kdf: KdfParameters,
-    readonly custom?: Dictionary
+    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Opaque<32>], 7: readonly [Opaque], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
   ) { }
+
+  get cipher() {
+    return this.value.indexed[2][0]
+  }
+
+  get compression() {
+    return this.value.indexed[3][0]
+  }
+
+  get seed() {
+    return this.value.indexed[4][0]
+  }
+
+  get iv() {
+    return this.value.indexed[7][0]
+  }
+
+  get kdf() {
+    return this.value.indexed[11][0]
+  }
+
+  get custom() {
+    return this.value.indexed[12]?.[0]
+  }
 
   rotateOrThrow() {
     const { cipher, compression, kdf } = this
@@ -376,6 +396,14 @@ export namespace KdfParameters {
       throw new Error()
     }
 
+    sizeOrThrow() {
+      return this.value.sizeOrThrow()
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      this.value.writeOrThrow(cursor)
+    }
+
   }
 
   export namespace AesKdf {
@@ -455,6 +483,14 @@ export namespace KdfParameters {
       const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
 
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
+    }
+
+    sizeOrThrow() {
+      return this.value.sizeOrThrow()
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      this.value.writeOrThrow(cursor)
     }
 
   }
@@ -538,6 +574,14 @@ export namespace KdfParameters {
       const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
 
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
+    }
+
+    sizeOrThrow() {
+      return this.value.sizeOrThrow()
+    }
+
+    writeOrThrow(cursor: Cursor) {
+      this.value.writeOrThrow(cursor)
     }
 
   }

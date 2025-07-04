@@ -2,7 +2,7 @@ import { Opaque, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
 import { TLV } from "libs/tlv/index.js";
 
-export class Vector<T extends { [index: number]: readonly Writable[] }> {
+export class Vector<T extends { [index: number]: (readonly Writable[]) | undefined }> {
 
   constructor(
     readonly entries: TLV[],

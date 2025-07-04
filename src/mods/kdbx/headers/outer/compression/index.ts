@@ -10,6 +10,10 @@ export namespace Compression {
 
     export const type = 0x00
 
+    export function sizeOrThrow() {
+      return 4
+    }
+
     export function writeOrThrow(cursor: Cursor) {
       cursor.writeUint32OrThrow(type, true)
     }
@@ -19,6 +23,10 @@ export namespace Compression {
   export namespace Gzip {
 
     export const type = 0x01
+
+    export function sizeOrThrow() {
+      return 4
+    }
 
     export function writeOrThrow(cursor: Cursor) {
       cursor.writeUint32OrThrow(type, true)
