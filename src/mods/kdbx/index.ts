@@ -191,6 +191,10 @@ export namespace Database {
       this.body.writeOrThrow(cursor)
     }
 
+    cloneOrThrow() {
+      return new Encrypted(this.head.cloneOrThrow(), this.body.cloneOrThrow())
+    }
+
     async deriveOrThrow(composite: CompositeKey) {
       return await this.head.deriveOrThrow(composite)
     }
@@ -250,6 +254,10 @@ export class Blocks {
     return
   }
 
+  cloneOrThrow() {
+    return new Blocks(this.blocks.map(block => block.cloneOrThrow()))
+  }
+
 }
 
 export namespace Blocks {
@@ -307,6 +315,10 @@ export class BlockWithIndex {
     this.block.writeOrThrow(cursor)
   }
 
+  cloneOrThrow() {
+    return new BlockWithIndex(this.index, this.block.cloneOrThrow())
+  }
+
   async verifyOrThrow(keys: MasterKeys) {
     const { index } = this
 
@@ -356,6 +368,10 @@ export class Block {
     cursor.writeOrThrow(this.hmac.bytes)
     cursor.writeUint32OrThrow(this.data.bytes.length, true)
     cursor.writeOrThrow(this.data.bytes)
+  }
+
+  cloneOrThrow() {
+    return new Block(this.hmac.cloneOrThrow(), this.data.cloneOrThrow())
   }
 
 }

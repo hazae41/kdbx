@@ -62,7 +62,7 @@ globalThis.XMLSerializer = XMLSerializer as any
 
 const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
-const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test2.kdbx")))
+const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test2.kdbx"))).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(composite))
 
 // console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test.kdbx")))

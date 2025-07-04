@@ -1,9 +1,10 @@
-import { Opaque, Writable } from "@hazae41/binary";
+import { Opaque, Readable, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
 import { Optional } from "libs/optional/index.js";
+import { Struct } from "libs/struct/index.js";
 import { TLV } from "libs/tlv/index.js";
 
-export class Vector<T extends { [index: number]: Optional<readonly Writable[]> }> {
+export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> {
 
   constructor(
     readonly entries: TLV[],
@@ -20,11 +21,15 @@ export class Vector<T extends { [index: number]: Optional<readonly Writable[]> }
     TLV.Empty.writeOrThrow(cursor)
   }
 
+  cloneOrThrow() {
+    return Readable.readFromBytesOrThrow(Vector, Writable.writeToBytesOrThrow(this)) as any as this
+  }
+
 }
 
 export namespace Vector {
 
-  export function initOrThrow<T extends { [index: number]: Optional<readonly Writable[]> }>(indexed: T) {
+  export function initOrThrow<T extends { [index: number]: Optional<readonly Struct[]> }>(indexed: T) {
     const entries = new Array<TLV>();
 
     for (const key of Object.keys(indexed)) {

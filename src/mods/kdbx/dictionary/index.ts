@@ -1,4 +1,4 @@
-import { Opaque, Readable } from "@hazae41/binary"
+import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 
 export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Value }> {
@@ -22,6 +22,10 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
     cursor.writeUint8OrThrow(0x00)
   }
 
+  cloneOrThrow() {
+    return Readable.readFromBytesOrThrow(Dictionary, Writable.writeToBytesOrThrow(this)) as this
+  }
+
 }
 
 export namespace Dictionary {
@@ -40,6 +44,10 @@ export namespace Dictionary {
     writeOrThrow(cursor: Cursor) {
       cursor.writeUint8OrThrow(this.minor)
       cursor.writeUint8OrThrow(this.major)
+    }
+
+    cloneOrThrow() {
+      return this
     }
 
   }

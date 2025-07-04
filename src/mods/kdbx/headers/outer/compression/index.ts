@@ -10,6 +10,10 @@ export namespace Compression {
 
     export const type = 0x00
 
+    export function cloneOrThrow() {
+      return None
+    }
+
     export function sizeOrThrow() {
       return 4
     }
@@ -23,6 +27,10 @@ export namespace Compression {
   export namespace Gzip {
 
     export const type = 0x01
+
+    export function cloneOrThrow() {
+      return Gzip
+    }
 
     export function sizeOrThrow() {
       return 4

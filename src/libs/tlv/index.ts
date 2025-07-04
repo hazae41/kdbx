@@ -1,7 +1,8 @@
-import { Clonable, Opaque, Readable, Writable } from "@hazae41/binary"
+import { Opaque, Readable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
+import { Struct } from "libs/struct/index.js"
 
-export class TLV<T extends number = number, V extends Writable = Writable> {
+export class TLV<T extends number = number, V extends Struct = Struct> {
 
   constructor(
     readonly type: T,
@@ -18,11 +19,11 @@ export class TLV<T extends number = number, V extends Writable = Writable> {
     this.value.writeOrThrow(cursor)
   }
 
-  // cloneOrThrow() {
-  //   return new TLV(this.type, this.value.cloneOrThrow())
-  // }
+  cloneOrThrow() {
+    return new TLV(this.type, this.value.cloneOrThrow())
+  }
 
-  readIntoOrThrow<W extends Writable & Clonable>(this: TLV<T, Opaque>, readable: Readable<W>): TLV<T, W> {
+  readIntoOrThrow<W extends Struct>(this: TLV<T, Opaque>, readable: Readable<W>): TLV<T, W> {
     return new TLV(this.type, this.value.readIntoOrThrow(readable))
   }
 

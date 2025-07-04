@@ -30,6 +30,10 @@ export class Version {
     cursor.writeUint16OrThrow(this.major, true)
   }
 
+  cloneOrThrow() {
+    return this
+  }
+
 }
 
 
@@ -78,6 +82,14 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     cursor.writeOrThrow(this.hmac.bytes)
   }
 
+  cloneOrThrow() {
+    const data = this.data.cloneOrThrow()
+    const hash = this.hash.cloneOrThrow()
+    const hmac = this.hmac.cloneOrThrow()
+
+    return new MagicAndVersionAndHeadersWithHashAndHmac(data, hash, hmac)
+  }
+
   async deriveOrThrow(composite: CompositeKey) {
     return await this.data.deriveOrThrow(composite)
   }
@@ -121,6 +133,13 @@ export class MagicAndVersionAndHeadersWithBytes {
 
   writeOrThrow(cursor: Cursor) {
     cursor.writeOrThrow(this.bytes.bytes)
+  }
+
+  cloneOrThrow() {
+    const value = this.value.cloneOrThrow()
+    const bytes = this.bytes.cloneOrThrow()
+
+    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
   async deriveOrThrow(composite: CompositeKey) {
@@ -167,6 +186,13 @@ export class MagicAndVersionAndHeaders {
 
     this.version.writeOrThrow(cursor)
     this.headers.writeOrThrow(cursor)
+  }
+
+  cloneOrThrow() {
+    const version = this.version.cloneOrThrow()
+    const headers = this.headers.cloneOrThrow()
+
+    return new MagicAndVersionAndHeaders(version, headers)
   }
 
   async deriveOrThrow(composite: CompositeKey) {
@@ -258,6 +284,10 @@ export class Headers {
 
   writeOrThrow(cursor: Cursor): void {
     this.value.writeOrThrow(cursor)
+  }
+
+  cloneOrThrow() {
+    return new Headers(this.value.cloneOrThrow())
   }
 
   async deriveOrThrow(composite: CompositeKey) {
@@ -386,6 +416,10 @@ export namespace KdfParameters {
       this.value.writeOrThrow(cursor)
     }
 
+    cloneOrThrow() {
+      return new AesKdf(this.value.cloneOrThrow())
+    }
+
   }
 
   export namespace AesKdf {
@@ -479,6 +513,10 @@ export namespace KdfParameters {
 
     writeOrThrow(cursor: Cursor) {
       this.value.writeOrThrow(cursor)
+    }
+
+    cloneOrThrow() {
+      return new Argon2d(this.value.cloneOrThrow())
     }
 
   }
@@ -576,6 +614,10 @@ export namespace KdfParameters {
 
     writeOrThrow(cursor: Cursor) {
       this.value.writeOrThrow(cursor)
+    }
+
+    cloneOrThrow() {
+      return new Argon2id(this.value.cloneOrThrow())
     }
 
   }
