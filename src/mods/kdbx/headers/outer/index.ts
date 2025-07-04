@@ -2,12 +2,10 @@ export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Opaque, Readable, Writable } from "@hazae41/binary"
+import { Opaque, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { Bytes } from "libs/bytes/index.js"
-import { Mutable } from "libs/mutable/index.js"
-import { TLV } from "libs/tlv/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
 import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
 import { PreHmacKey } from "mods/kdbx/hmac/index.js"
@@ -291,60 +289,37 @@ export class Headers {
 export namespace Headers {
 
   export function readOrThrow(cursor: Cursor) {
-    const init: Partial<Mutable<HeadersInit>> = {}
+    const vector = Vector.readOrThrow(cursor)
 
-    while (true) {
-      const tlv = TLV.readOrThrow(cursor)
-
-      if (tlv.type === 0)
-        break
-
-      if (tlv.type === 2) {
-        init.cipher = tlv.readIntoOrThrow(Cipher)
-        continue
-      }
-
-      if (tlv.type === 3) {
-        init.compression = Readable.readFromBytesOrThrow(Compression, tlv.value.bytes)
-        continue
-      }
-
-      if (tlv.type === 4) {
-        init.seed = tlv.value as Opaque<32>
-        continue
-      }
-
-      if (tlv.type === 7) {
-        init.iv = tlv.value
-        continue
-      }
-
-      if (tlv.type === 11) {
-        init.kdf = Readable.readFromBytesOrThrow(KdfParameters, tlv.value.bytes)
-        continue
-      }
-
-      if (tlv.type === 12) {
-        init.custom = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
-        continue
-      }
-
+    if (vector.indexed[2].length !== 1)
       throw new Error()
-    }
+    const a = [vector.indexed[2][0].readIntoOrThrow(Cipher)] as const
 
-    if (init.cipher == null)
+    if (vector.indexed[3].length !== 1)
       throw new Error()
-    if (init.compression == null)
-      throw new Error()
-    if (init.seed == null)
-      throw new Error()
-    if (init.iv == null)
-      throw new Error()
-    if (init.kdf == null)
-      throw new Error()
+    const b = [vector.indexed[3][0].readIntoOrThrow(Compression)] as const
 
-    const { cipher, compression, seed, iv, kdf, custom } = init
-    return new Headers(cipher, compression, seed, iv, kdf, custom)
+    if (vector.indexed[4].length !== 1)
+      throw new Error()
+    if (vector.indexed[4][0].bytes.length !== 32)
+      throw new Error()
+    const c = [vector.indexed[4][0] as Opaque<32>] as const
+
+    if (vector.indexed[7].length !== 1)
+      throw new Error()
+    const d = [vector.indexed[7][0]] as const
+
+    if (vector.indexed[11].length !== 1)
+      throw new Error()
+    const e = [vector.indexed[11][0].readIntoOrThrow(KdfParameters)] as const
+
+    if (vector.indexed[12] != null && vector.indexed[12].length !== 1)
+      throw new Error()
+    const f = vector.indexed[12] != null ? [vector.indexed[12][0].readIntoOrThrow(Dictionary)] as const : undefined
+
+    const indexed = { 2: a, 3: b, 4: c, 7: d, 11: e, 12: f } as const
+
+    return new Headers(new Vector(vector.entries, indexed))
   }
 }
 

@@ -1,8 +1,9 @@
 import { Opaque, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
+import { Optional } from "libs/optional/index.js";
 import { TLV } from "libs/tlv/index.js";
 
-export class Vector<T extends { [index: number]: (readonly Writable[]) | undefined }> {
+export class Vector<T extends { [index: number]: Optional<readonly Writable[]> }> {
 
   constructor(
     readonly entries: TLV[],
