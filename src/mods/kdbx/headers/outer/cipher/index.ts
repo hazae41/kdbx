@@ -25,6 +25,12 @@ export namespace Cipher {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
+    export namespace IV {
+
+      export const length = 16
+
+    }
+
   }
 
   export namespace Aes256Cbc {
@@ -41,6 +47,12 @@ export namespace Cipher {
 
     export function writeOrThrow(cursor: Cursor) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    }
+
+    export namespace IV {
+
+      export const length = 16
+
     }
 
   }
@@ -61,6 +73,12 @@ export namespace Cipher {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
+    export namespace IV {
+
+      export const length = 16
+
+    }
+
   }
 
   export namespace ChaCha20 {
@@ -77,6 +95,12 @@ export namespace Cipher {
 
     export function writeOrThrow(cursor: Cursor) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    }
+
+    export namespace IV {
+
+      export const length = 12
+
     }
 
   }

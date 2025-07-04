@@ -240,7 +240,7 @@ export class Headers {
     const { cipher, compression, kdf } = this
 
     const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
-    const iv = crypto.getRandomValues(new Uint8Array(16)) as Uint8Array & Lengthed<16> // TODO use size from cipher
+    const iv = crypto.getRandomValues(new Uint8Array(cipher.IV.length))
 
     return new Headers(cipher, compression, new Opaque(seed), new Opaque(iv), kdf.rotateOrThrow(), this.custom)
   }
