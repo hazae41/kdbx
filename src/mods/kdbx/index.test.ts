@@ -70,4 +70,4 @@ console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("
 
 // rename(decrypted.body.content as any, "nom d'utilisateur", "lol")
 
-// console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))
+console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))

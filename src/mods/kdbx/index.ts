@@ -173,22 +173,19 @@ export namespace Database {
     async decryptOrThrow(keys: MasterKeys) {
       await this.head.verifyOrThrow(keys)
 
+      const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
+      const cursor = new Cursor(new Uint8Array(length))
+
+      for (const block of this.body.blocks) {
+        await block.verifyOrThrow(keys)
+
+        cursor.writeOrThrow(block.block.data.bytes)
+
+        continue
+      }
+
       if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
-        const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
-        const cursor = new Cursor(new Uint8Array(length))
-
-        for (const block of this.body.blocks) {
-          await block.verifyOrThrow(keys)
-
-          cursor.writeOrThrow(block.block.data.bytes)
-
-          continue
-        }
-
-        const alg = { name: "AES-CBC", iv: this.head.data.value.headers.iv.bytes }
-        const key = await crypto.subtle.importKey("raw", keys.encrypter.value.bytes, { name: "AES-CBC" }, false, ["decrypt"])
-
-        const decrypted = await crypto.subtle.decrypt(alg, key, cursor.bytes)
+        const decrypted = await this.head.data.value.headers.cipher.decryptOrThrow(keys.encrypter.value.bytes, this.head.data.value.headers.iv.bytes, cursor.bytes)
         const degzipped = gunzipSync(decrypted)
 
         const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)

@@ -55,6 +55,13 @@ export namespace Cipher {
 
     }
 
+    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+      const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
+      const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
+
+      return decrypted
+    }
+
   }
 
   export namespace TwoFishCbc {
