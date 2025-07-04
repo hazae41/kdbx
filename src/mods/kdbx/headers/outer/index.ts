@@ -255,12 +255,13 @@ export class Headers {
   }
 
   rotateOrThrow() {
-    const { cipher, compression, kdf } = this
+    const { cipher, compression, custom } = this
 
-    const seed = crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>
-    const iv = crypto.getRandomValues(new Uint8Array(cipher.IV.length))
+    const seed = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>)
+    const iv = new Opaque(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
+    const kdf = this.kdf.rotateOrThrow()
 
-    return new Headers(cipher, compression, new Opaque(seed), new Opaque(iv), kdf.rotateOrThrow(), this.custom)
+    return Headers.initOrThrow({ cipher, compression, seed, iv, kdf, custom })
   }
 
   sizeOrThrow(): number {
@@ -287,6 +288,24 @@ export class Headers {
 }
 
 export namespace Headers {
+
+  export function initOrThrow(init: HeadersInit) {
+    const { cipher, compression, seed, iv, kdf, custom } = init
+
+    if (iv.bytes.length !== cipher.IV.length)
+      throw new Error()
+
+    const a = [cipher] as const
+    const b = [compression] as const
+    const c = [new Opaque(seed.bytes)] as const
+    const d = [new Opaque(iv.bytes)] as const
+    const e = [kdf] as const
+    const f = custom != null ? [custom] as const : undefined
+
+    const vector = Vector.initOrThrow({ 2: a, 3: b, 4: c, 7: d, 11: e, 12: f })
+
+    return new Headers(vector)
+  }
 
   export function readOrThrow(cursor: Cursor) {
     const vector = Vector.readOrThrow(cursor)

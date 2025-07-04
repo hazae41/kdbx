@@ -24,6 +24,27 @@ export class Vector<T extends { [index: number]: Optional<readonly Writable[]> }
 
 export namespace Vector {
 
+  export function initOrThrow<T extends { [index: number]: Optional<readonly Writable[]> }>(indexed: T) {
+    const entries = new Array<TLV>();
+
+    for (const index in Object.keys(indexed)) {
+      if (typeof index !== "number")
+        continue
+
+      const array = indexed[index]
+
+      if (array == null)
+        continue
+
+      for (const value of array)
+        entries.push(new TLV(index, value))
+
+      continue
+    }
+
+    return new Vector(entries, indexed);
+  }
+
   export function readOrThrow(cursor: Cursor) {
     const entries = new Array<TLV>();
     const indexed: { [index: number]: Opaque[] } = {};

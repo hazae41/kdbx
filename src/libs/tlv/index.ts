@@ -1,7 +1,7 @@
 import { Clonable, Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 
-export class TLV<T extends number = number, V extends Writable & Clonable = Writable & Clonable> {
+export class TLV<T extends number = number, V extends Writable = Writable> {
 
   constructor(
     readonly type: T,
@@ -18,9 +18,9 @@ export class TLV<T extends number = number, V extends Writable & Clonable = Writ
     this.value.writeOrThrow(cursor)
   }
 
-  cloneOrThrow() {
-    return new TLV(this.type, this.value.cloneOrThrow())
-  }
+  // cloneOrThrow() {
+  //   return new TLV(this.type, this.value.cloneOrThrow())
+  // }
 
   readIntoOrThrow<W extends Writable & Clonable>(this: TLV<T, Opaque>, readable: Readable<W>): TLV<T, W> {
     return new TLV(this.type, this.value.readIntoOrThrow(readable))
