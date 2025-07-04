@@ -217,7 +217,7 @@ export namespace MagicAndVersionAndHeaders {
 }
 
 export interface HeadersInit {
-  readonly cipher: TLV<2, Cipher>
+  readonly cipher: Cipher
   readonly compression: Compression
   readonly seed: Opaque<32>
   readonly iv: Opaque
@@ -280,7 +280,7 @@ export namespace Headers {
         break
 
       if (tlv.type === 2) {
-        init.cipher = tlv.readIntoOrThrow(Cipher) as TLV<2, Cipher>
+        init.cipher = tlv.readIntoOrThrow(Cipher)
         continue
       }
 
@@ -300,86 +300,8 @@ export namespace Headers {
       }
 
       if (tlv.type === 11) {
-        const dictionary = Readable.readFromBytesOrThrow(Dictionary, tlv.value.bytes)
-
-        if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
-          throw new Error()
-
-        const $UUID = StringAsUuid.from(dictionary.keyvals["$UUID"].value.bytes)
-
-        if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
-          throw new Error()
-
-        if ($UUID === KdfParameters.AesKdf.$UUID) {
-          const { version, entries } = dictionary
-
-          if (dictionary.keyvals.R instanceof Value.UInt32 === false)
-            throw new Error()
-          const R = dictionary.keyvals.R
-
-          if (dictionary.keyvals.S instanceof Value.Bytes === false)
-            throw new Error()
-          const S = dictionary.keyvals.S
-
-          init.kdf = new KdfParameters.AesKdf(new Dictionary(version, entries, { R, S }))
-          continue
-        }
-
-        if ($UUID === KdfParameters.Argon2d.$UUID) {
-          const { version, entries } = dictionary
-
-          if (dictionary.keyvals.S instanceof Value.Bytes === false)
-            throw new Error()
-          const S = dictionary.keyvals.S as Value.Bytes<32>
-
-          if (dictionary.keyvals.P instanceof Value.UInt32 === false)
-            throw new Error()
-          const P = dictionary.keyvals.P
-
-          if (dictionary.keyvals.M instanceof Value.UInt64 === false)
-            throw new Error()
-          const M = dictionary.keyvals.M
-
-          if (dictionary.keyvals.I instanceof Value.UInt64 === false)
-            throw new Error()
-          const I = dictionary.keyvals.I
-
-          if (dictionary.keyvals.V instanceof Value.UInt32 === false)
-            throw new Error()
-          const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
-
-          init.kdf = new KdfParameters.Argon2d(new Dictionary(version, entries, { S, P, M, I, V }))
-          continue
-        }
-
-        if ($UUID === KdfParameters.Argon2id.$UUID) {
-          const { version, entries } = dictionary
-
-          if (dictionary.keyvals.S instanceof Value.Bytes === false)
-            throw new Error()
-          const S = dictionary.keyvals.S as Value.Bytes<32>
-
-          if (dictionary.keyvals.P instanceof Value.UInt32 === false)
-            throw new Error()
-          const P = dictionary.keyvals.P
-
-          if (dictionary.keyvals.M instanceof Value.UInt64 === false)
-            throw new Error()
-          const M = dictionary.keyvals.M
-
-          if (dictionary.keyvals.I instanceof Value.UInt64 === false)
-            throw new Error()
-          const I = dictionary.keyvals.I
-
-          if (dictionary.keyvals.V instanceof Value.UInt32 === false)
-            throw new Error()
-          const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
-
-          init.kdf = new KdfParameters.Argon2id(new Dictionary(version, entries, { S, P, M, I, V }))
-          continue
-        }
-
-        throw new Error()
+        init.kdf = Readable.readFromBytesOrThrow(KdfParameters, tlv.value.bytes)
+        continue
       }
 
       if (tlv.type === 12) {
@@ -460,6 +382,20 @@ export namespace KdfParameters {
 
     export const $UUID = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
 
+    export function parseOrThrow(dictionary: Dictionary): AesKdf {
+      const { version, entries } = dictionary
+
+      if (dictionary.keyvals.R instanceof Value.UInt32 === false)
+        throw new Error()
+      const R = dictionary.keyvals.R
+
+      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+        throw new Error()
+      const S = dictionary.keyvals.S
+
+      return new KdfParameters.AesKdf(new Dictionary(version, entries, { R, S }))
+    }
+
   }
 
   export type Argon2 =
@@ -527,6 +463,32 @@ export namespace KdfParameters {
 
     export const $UUID = "ef636ddf-8c29-444b-91f7-a9a403e30a0c"
 
+    export function parseOrThrow(dictionary: Dictionary): Argon2d {
+      const { version, entries } = dictionary
+
+      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+        throw new Error()
+      const S = dictionary.keyvals.S as Value.Bytes<32>
+
+      if (dictionary.keyvals.P instanceof Value.UInt32 === false)
+        throw new Error()
+      const P = dictionary.keyvals.P
+
+      if (dictionary.keyvals.M instanceof Value.UInt64 === false)
+        throw new Error()
+      const M = dictionary.keyvals.M
+
+      if (dictionary.keyvals.I instanceof Value.UInt64 === false)
+        throw new Error()
+      const I = dictionary.keyvals.I
+
+      if (dictionary.keyvals.V instanceof Value.UInt32 === false)
+        throw new Error()
+      const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
+
+      return new KdfParameters.Argon2d(new Dictionary(version, entries, { S, P, M, I, V }))
+    }
+
   }
 
   export class Argon2id {
@@ -584,6 +546,55 @@ export namespace KdfParameters {
 
     export const $UUID = "9e298b19-56db-4773-b23d-fc3ec6f0a1e6"
 
+    export function parseOrThrow(dictionary: Dictionary): Argon2id {
+      const { version, entries } = dictionary
+
+      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+        throw new Error()
+      const S = dictionary.keyvals.S as Value.Bytes<32>
+
+      if (dictionary.keyvals.P instanceof Value.UInt32 === false)
+        throw new Error()
+      const P = dictionary.keyvals.P
+
+      if (dictionary.keyvals.M instanceof Value.UInt64 === false)
+        throw new Error()
+      const M = dictionary.keyvals.M
+
+      if (dictionary.keyvals.I instanceof Value.UInt64 === false)
+        throw new Error()
+      const I = dictionary.keyvals.I
+
+      if (dictionary.keyvals.V instanceof Value.UInt32 === false)
+        throw new Error()
+      const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
+
+      return new KdfParameters.Argon2id(new Dictionary(version, entries, { S, P, M, I, V }))
+    }
+
+  }
+
+  export function readOrThrow(cursor: Cursor): KdfParameters {
+    const dictionary = Dictionary.readOrThrow(cursor)
+
+    if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+      throw new Error()
+
+    const $UUID = StringAsUuid.from(dictionary.keyvals["$UUID"].value.bytes)
+
+    if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
+      throw new Error()
+
+    if ($UUID === KdfParameters.AesKdf.$UUID)
+      return KdfParameters.AesKdf.parseOrThrow(dictionary)
+
+    if ($UUID === KdfParameters.Argon2d.$UUID)
+      return KdfParameters.Argon2d.parseOrThrow(dictionary)
+
+    if ($UUID === KdfParameters.Argon2id.$UUID)
+      return KdfParameters.Argon2id.parseOrThrow(dictionary)
+
+    throw new Error()
   }
 
 
