@@ -253,11 +253,11 @@ export class Headers {
   }
 
   sizeOrThrow(): number {
-    throw new Error("Not implemented")
+    return this.value.sizeOrThrow()
   }
 
   writeOrThrow(cursor: Cursor): void {
-    throw new Error("Not implemented")
+    this.value.writeOrThrow(cursor)
   }
 
   async deriveOrThrow(composite: CompositeKey) {
