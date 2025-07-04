@@ -3,8 +3,8 @@ import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { Bytes } from "libs/bytes/index.js"
-import { readFileSync } from "node:fs"
-import { CompositeKey, Database, PasswordKey } from "./index.js"
+import { readFileSync, writeFileSync } from "node:fs"
+import { CompositeKey, Database, Inner, Outer, PasswordKey } from "./index.js"
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -63,31 +63,31 @@ globalThis.XMLSerializer = XMLSerializer as any
 
 const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
-const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test2.kdbx")))
+const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
 const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(composite))
 
-console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test2.kdbx")))
+console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test.kdbx")))
 
 const document = decrypted.body.content.intoOrThrow()
 
-// rename(document, "exmple", "modified lol")
+rename(document, "exmple", "modified lol")
 
 // console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))
 
-// {
-//   const data = decrypted.head.data.rotateOrThrow()
-//   const keys = await data.deriveOrThrow(composite)
+{
+  const data = decrypted.head.data.rotateOrThrow()
+  const keys = await data.deriveOrThrow(composite)
 
-//   const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
-//   await head.verifyOrThrow(keys)
+  const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
+  await head.verifyOrThrow(keys)
 
-//   const headers = decrypted.body.headers
-//   const content = Inner.Content.fromOrThrow(document)
+  const headers = decrypted.body.headers
+  const content = Inner.Content.fromOrThrow(document)
 
-//   const body = new Inner.HeadersAndContent(headers, content)
+  const body = new Inner.HeadersAndContent(headers, content)
 
-//   const decrypted2 = new Database.Decrypted(head, body)
-//   const encrypted2 = await decrypted2.encryptOrThrow(keys)
+  const decrypted2 = new Database.Decrypted(head, body)
+  const encrypted2 = await decrypted2.encryptOrThrow(keys)
 
-//   writeFileSync("./local/test2.kdbx", Writable.writeToBytesOrThrow(encrypted2))
-// }
+  writeFileSync("./local/test2.kdbx", Writable.writeToBytesOrThrow(encrypted2))
+}

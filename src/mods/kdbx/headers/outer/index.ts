@@ -26,8 +26,8 @@ export class Version {
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeUint16OrThrow(this.major, true)
     cursor.writeUint16OrThrow(this.minor, true)
+    cursor.writeUint16OrThrow(this.major, true)
   }
 
 }
