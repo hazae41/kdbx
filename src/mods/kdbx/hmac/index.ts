@@ -36,7 +36,7 @@ export class HmacKey {
   ) { }
 
   async signOrThrow(data: Uint8Array) {
-    return await crypto.subtle.sign("HMAC", this.key, data)
+    return new Uint8Array(await crypto.subtle.sign("HMAC", this.key, data))
   }
 
   async verifyOrThrow(data: Uint8Array, signature: Uint8Array) {

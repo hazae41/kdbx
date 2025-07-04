@@ -7,8 +7,47 @@ export class HeadersAndContent {
 
   constructor(
     readonly headers: Headers,
-    readonly content: Document
+    readonly content: Content
   ) { }
+
+  sizeOrThrow() {
+    return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.headers.writeOrThrow(cursor)
+    this.content.writeOrThrow(cursor)
+  }
+
+}
+
+export class Content {
+
+  constructor(
+    readonly value: Opaque
+  ) { }
+
+  static fromOrThrow(xml: Document) {
+    const text = new XMLSerializer().serializeToString(xml)
+    const data = new TextEncoder().encode(text)
+
+    return new Content(new Opaque(data))
+  }
+
+  intoOrThrow() {
+    const raw = new TextDecoder().decode(this.value.bytes)
+    const xml = new DOMParser().parseFromString(raw, "text/xml")
+
+    return xml
+  }
+
+  sizeOrThrow() {
+    return this.value.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.value.writeOrThrow(cursor)
+  }
 
 }
 
@@ -16,12 +55,9 @@ export namespace HeadersAndContent {
 
   export function readOrThrow(cursor: Cursor) {
     const headers = Headers.readOrThrow(cursor)
-    const content = cursor.readOrThrow(cursor.remaining)
+    const content = new Opaque(cursor.readOrThrow(cursor.remaining))
 
-    const raw = new TextDecoder().decode(content)
-    const xml = new DOMParser().parseFromString(raw, "text/xml")
-
-    return new HeadersAndContent(headers, xml)
+    return new HeadersAndContent(headers, new Content(content))
   }
 
 }
@@ -42,6 +78,14 @@ export class Headers {
 
   get binary() {
     return this.value.indexed[3]
+  }
+
+  sizeOrThrow() {
+    return this.value.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.value.writeOrThrow(cursor)
   }
 
 }

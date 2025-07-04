@@ -4,7 +4,7 @@ export * from "./headers/index.js"
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
-import { gunzipSync } from "node:zlib"
+import { gunzipSync, gzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
 import { MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
@@ -144,6 +144,35 @@ export namespace Database {
       readonly body: Inner.HeadersAndContent
     ) { }
 
+    async encryptOrThrow(keys: MasterKeys) {
+      const { cipher, iv } = this.head.data.value.headers
+
+      const degzipped = Writable.writeToBytesOrThrow(this.body)
+
+      const engzipped = new Uint8Array(gzipSync(degzipped))
+      const encrypted = await cipher.encryptOrThrow(keys.encrypter.value.bytes, iv.bytes, engzipped)
+
+      const blocks = new Array<BlockWithIndex>()
+
+      const cursor = new Cursor(encrypted)
+      const splits = cursor.splitOrThrow(1048576)
+
+      let index = 0n
+
+      for (let x = splits.next(); true; index++, x = splits.next()) {
+        if (x.done)
+          break
+
+        blocks.push(await BlockWithIndex.fromOrThrow(keys, index, x.value))
+
+        continue
+      }
+
+      blocks.push(await BlockWithIndex.fromOrThrow(keys, index, new Uint8Array(0)))
+
+      return new Encrypted(this.head, new Blocks(blocks))
+    }
+
   }
 
   export class Encrypted {
@@ -247,17 +276,18 @@ export namespace Blocks {
 export class BlockWithIndexPreHmacData {
 
   constructor(
-    readonly block: BlockWithIndex,
+    readonly index: bigint,
+    readonly block: Opaque,
   ) { }
 
   sizeOrThrow() {
-    return 8 + 4 + this.block.block.data.bytes.length
+    return 8 + 4 + this.block.bytes.length
   }
 
   writeOrThrow(cursor: Cursor) {
-    cursor.writeUint64OrThrow(this.block.index, true)
-    cursor.writeUint32OrThrow(this.block.block.data.bytes.length, true)
-    cursor.writeOrThrow(this.block.block.data.bytes)
+    cursor.writeUint64OrThrow(this.index, true)
+    cursor.writeUint32OrThrow(this.block.bytes.length, true)
+    cursor.writeOrThrow(this.block.bytes)
   }
 
 }
@@ -278,14 +308,35 @@ export class BlockWithIndex {
   }
 
   async verifyOrThrow(keys: MasterKeys) {
-    const index = this.index
+    const { index } = this
+
     const major = keys.authifier.bytes
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
-    const data = Writable.writeToBytesOrThrow(new BlockWithIndexPreHmacData(this))
+    const preimage = new BlockWithIndexPreHmacData(this.index, this.block.data)
+    const prebytes = Writable.writeToBytesOrThrow(preimage)
 
-    await key.verifyOrThrow(data, this.block.hmac.bytes)
+    await key.verifyOrThrow(prebytes, this.block.hmac.bytes)
+  }
+
+}
+
+export namespace BlockWithIndex {
+
+  export async function fromOrThrow(keys: MasterKeys, index: bigint, data: Uint8Array) {
+    const major = keys.authifier.bytes
+
+    const key = await new PreHmacKey(index, major).digestOrThrow()
+
+    const preimage = new BlockWithIndexPreHmacData(index, new Opaque(data))
+    const prebytes = Writable.writeToBytesOrThrow(preimage)
+
+    const hmac = new Opaque(await key.signOrThrow(prebytes) as Uint8Array & Lengthed<32>)
+
+    const block = new Block(hmac, new Opaque(data))
+
+    return new BlockWithIndex(index, block)
   }
 
 }

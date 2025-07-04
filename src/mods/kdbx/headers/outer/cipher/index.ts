@@ -31,6 +31,13 @@ export namespace Cipher {
 
     }
 
+    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+      const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
+      const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
+
+      return encrypted
+    }
+
     export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
       const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
       const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
@@ -60,6 +67,13 @@ export namespace Cipher {
 
       export const length = 16
 
+    }
+
+    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+      const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
+      const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
+
+      return encrypted
     }
 
     export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
@@ -93,6 +107,10 @@ export namespace Cipher {
 
     }
 
+    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+      throw new Error("TwoFishCbc encryption is not implemented")
+    }
+
     export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
       throw new Error("TwoFishCbc decryption is not implemented")
     }
@@ -119,6 +137,10 @@ export namespace Cipher {
 
       export const length = 12
 
+    }
+
+    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+      throw new Error("ChaCha20 encryption is not implemented")
     }
 
     export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
