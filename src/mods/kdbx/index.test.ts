@@ -69,7 +69,7 @@ const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(c
 
 const document = decrypted.body.content.intoOrThrow()
 
-rename(document, "exmple", "modified lol")
+rename(document, "exemple", "modified lol")
 
 // console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))
 

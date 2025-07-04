@@ -350,7 +350,7 @@ export namespace KdfParameters {
   export class AesKdf {
 
     constructor(
-      readonly value: Dictionary<{ R: Value.UInt32, S: Value.Bytes }>
+      readonly value: Dictionary<{ $UUID: Value.Bytes, R: Value.UInt32, S: Value.Bytes }>
     ) { }
 
     get seed() {
@@ -364,10 +364,12 @@ export namespace KdfParameters {
     rotateOrThrow() {
       const { version } = this.value
 
+      const $UUID = this.value.keyvals["$UUID"]
+
       const R = this.value.keyvals["R"]
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
 
-      const value = Dictionary.initOrThrow(version, { R, S })
+      const value = Dictionary.initOrThrow(version, { $UUID, R, S })
 
       return new AesKdf(value)
     }
@@ -393,6 +395,10 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): AesKdf {
       const { version, entries } = dictionary
 
+      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+        throw new Error()
+      const $UUID = dictionary.keyvals["$UUID"]
+
       if (dictionary.keyvals.R instanceof Value.UInt32 === false)
         throw new Error()
       const R = dictionary.keyvals.R
@@ -401,7 +407,7 @@ export namespace KdfParameters {
         throw new Error()
       const S = dictionary.keyvals.S
 
-      return new KdfParameters.AesKdf(new Dictionary(version, entries, { R, S }))
+      return new KdfParameters.AesKdf(new Dictionary(version, entries, { $UUID, R, S }))
     }
 
   }
@@ -419,7 +425,7 @@ export namespace KdfParameters {
   export class Argon2d {
 
     constructor(
-      readonly value: Dictionary<{ S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
+      readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
     get salt() {
@@ -445,13 +451,15 @@ export namespace KdfParameters {
     rotateOrThrow() {
       const { version } = this.value
 
+      const $UUID = this.value.keyvals["$UUID"]
+
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
       const P = this.value.keyvals.P
       const M = this.value.keyvals.M
       const I = this.value.keyvals.I
       const V = this.value.keyvals.V
 
-      const value = Dictionary.initOrThrow(version, { S, P, M, I, V })
+      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
 
       return new Argon2d(value)
     }
@@ -482,6 +490,10 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): Argon2d {
       const { version, entries } = dictionary
 
+      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+        throw new Error()
+      const $UUID = dictionary.keyvals["$UUID"]
+
       if (dictionary.keyvals.S instanceof Value.Bytes === false)
         throw new Error()
       const S = dictionary.keyvals.S as Value.Bytes<32>
@@ -502,7 +514,7 @@ export namespace KdfParameters {
         throw new Error()
       const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-      return new KdfParameters.Argon2d(new Dictionary(version, entries, { S, P, M, I, V }))
+      return new KdfParameters.Argon2d(new Dictionary(version, entries, { $UUID, S, P, M, I, V }))
     }
 
   }
@@ -510,7 +522,7 @@ export namespace KdfParameters {
   export class Argon2id {
 
     constructor(
-      readonly value: Dictionary<{ S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
+      readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
     get salt() {
@@ -536,13 +548,15 @@ export namespace KdfParameters {
     rotateOrThrow() {
       const { version } = this.value
 
+      const $UUID = this.value.keyvals["$UUID"]
+
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
       const P = this.value.keyvals.P
       const M = this.value.keyvals.M
       const I = this.value.keyvals.I
       const V = this.value.keyvals.V
 
-      const value = Dictionary.initOrThrow(version, { S, P, M, I, V })
+      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
 
       return new Argon2d(value)
     }
@@ -573,6 +587,10 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): Argon2id {
       const { version, entries } = dictionary
 
+      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+        throw new Error()
+      const $UUID = dictionary.keyvals["$UUID"]
+
       if (dictionary.keyvals.S instanceof Value.Bytes === false)
         throw new Error()
       const S = dictionary.keyvals.S as Value.Bytes<32>
@@ -593,7 +611,7 @@ export namespace KdfParameters {
         throw new Error()
       const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-      return new KdfParameters.Argon2id(new Dictionary(version, entries, { S, P, M, I, V }))
+      return new KdfParameters.Argon2id(new Dictionary(version, entries, { $UUID, S, P, M, I, V }))
     }
 
   }
