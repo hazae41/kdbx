@@ -6,7 +6,7 @@ import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { gunzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
-import { Cipher, MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
@@ -167,6 +167,8 @@ export namespace Database {
     }
 
     async decryptOrThrow(keys: MasterKeys) {
+      const { cipher, iv } = this.head.data.value.headers
+
       await this.head.verifyOrThrow(keys)
 
       const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
@@ -180,16 +182,12 @@ export namespace Database {
         continue
       }
 
-      if (this.head.data.value.headers.cipher === Cipher.Aes256Cbc) {
-        const decrypted = await this.head.data.value.headers.cipher.decryptOrThrow(keys.encrypter.value.bytes, this.head.data.value.headers.iv.bytes, cursor.bytes)
-        const degzipped = gunzipSync(decrypted)
+      const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
+      const degzipped = gunzipSync(decrypted)
 
-        const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
+      const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
 
-        return new Decrypted(this.head, body)
-      }
-
-      throw new Error()
+      return new Decrypted(this.head, body)
     }
 
   }

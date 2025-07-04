@@ -93,6 +93,10 @@ export namespace Cipher {
 
     }
 
+    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+      throw new Error("TwoFishCbc decryption is not implemented")
+    }
+
   }
 
   export namespace ChaCha20 {
@@ -115,6 +119,10 @@ export namespace Cipher {
 
       export const length = 12
 
+    }
+
+    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+      throw new Error("ChaCha20 decryption is not implemented")
     }
 
   }
