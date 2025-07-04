@@ -162,12 +162,8 @@ export namespace Database {
       this.body.writeOrThrow(cursor)
     }
 
-    deriveOrThrow(composite: CompositeKey) {
-      return this.head.deriveOrThrow(composite)
-    }
-
-    async digestOrThrow(derived: DerivedKey) {
-      return await this.head.digestOrThrow(derived)
+    async deriveOrThrow(composite: CompositeKey) {
+      return await this.head.deriveOrThrow(composite)
     }
 
     async decryptOrThrow(keys: MasterKeys) {

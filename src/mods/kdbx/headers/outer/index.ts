@@ -78,12 +78,8 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     cursor.writeOrThrow(this.hmac.bytes)
   }
 
-  deriveOrThrow(composite: CompositeKey) {
-    return this.data.deriveOrThrow(composite)
-  }
-
-  async digestOrThrow(derived: DerivedKey) {
-    return await this.data.digestOrThrow(derived)
+  async deriveOrThrow(composite: CompositeKey) {
+    return await this.data.deriveOrThrow(composite)
   }
 
 }
@@ -127,12 +123,8 @@ export class MagicAndVersionAndHeadersWithBytes {
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
-  deriveOrThrow(composite: CompositeKey) {
-    return this.value.deriveOrThrow(composite)
-  }
-
-  async digestOrThrow(derived: DerivedKey) {
-    return await this.value.digestOrThrow(derived)
+  async deriveOrThrow(composite: CompositeKey) {
+    return await this.value.deriveOrThrow(composite)
   }
 
 }
@@ -177,12 +169,8 @@ export class MagicAndVersionAndHeaders {
     this.headers.writeOrThrow(cursor)
   }
 
-  deriveOrThrow(composite: CompositeKey) {
-    return this.headers.deriveOrThrow(composite)
-  }
-
-  async digestOrThrow(derived: DerivedKey) {
-    return await this.headers.digestOrThrow(derived)
+  async deriveOrThrow(composite: CompositeKey) {
+    return await this.headers.deriveOrThrow(composite)
   }
 
 }
@@ -272,12 +260,10 @@ export class Headers {
     throw new Error("Not implemented")
   }
 
-  deriveOrThrow(composite: CompositeKey) {
-    return this.kdf.deriveOrThrow(composite)
-  }
-
-  async digestOrThrow(derived: DerivedKey) {
+  async deriveOrThrow(composite: CompositeKey) {
     const { seed } = this
+
+    const derived = this.kdf.deriveOrThrow(composite)
 
     const encrypter = await new PreMasterKey(seed, derived).digestOrThrow()
     const authifier = await new PreHmacMasterKey(seed, derived).digestOrThrow()
