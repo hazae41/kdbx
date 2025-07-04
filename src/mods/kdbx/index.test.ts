@@ -68,13 +68,14 @@ const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(c
 
 console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test.kdbx")))
 
-const data = decrypted.head.data.rotateOrThrow()
-const keys = await data.deriveOrThrow(composite)
-
-const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
-
-await head.verifyOrThrow(keys)
-
-// rename(decrypted.body.content as any, "nom d'utilisateur", "lol")
-
 console.log(format(new XMLSerializer().serializeToString(decrypted.body.content as any)))
+
+{
+  const data = decrypted.head.data.rotateOrThrow()
+  const keys = await data.deriveOrThrow(composite)
+
+  const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
+  await head.verifyOrThrow(keys)
+
+  const decrypted2 = new Database.Decrypted(head, decrypted.body)
+}
