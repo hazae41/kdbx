@@ -1,7 +1,7 @@
 import { Clonable, Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 
-export class TLV<T extends number, V extends Writable & Clonable> {
+export class TLV<T extends number = number, V extends Writable & Clonable = Writable & Clonable> {
 
   constructor(
     readonly type: T,
@@ -29,6 +29,21 @@ export class TLV<T extends number, V extends Writable & Clonable> {
 }
 
 export namespace TLV {
+
+  export namespace Empty {
+
+    export const type = 0x00
+
+    export function sizeOrThrow() {
+      return 1 + 4
+    }
+
+    export function writeOrThrow(cursor: Cursor) {
+      cursor.writeUint8OrThrow(type)
+      cursor.writeUint32OrThrow(0, true)
+    }
+
+  }
 
   export function readOrThrow(cursor: Cursor) {
     const type = cursor.readUint8OrThrow()

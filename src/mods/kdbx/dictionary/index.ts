@@ -10,7 +10,7 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
   ) { }
 
   sizeOrThrow() {
-    return this.version.sizeOrThrow() + this.entries.reduce((x, r) => x + r.sizeOrThrow(), 0)
+    return this.version.sizeOrThrow() + this.entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + 1
   }
 
   writeOrThrow(cursor: Cursor) {
