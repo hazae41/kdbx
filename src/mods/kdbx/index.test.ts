@@ -2,7 +2,7 @@ import { Argon2 } from "@hazae41/argon2.wasm"
 import { Readable, Writable } from "@hazae41/binary"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
 import { readFileSync, writeFileSync } from "node:fs"
-import { CompositeKey, Database, Outer, PasswordKey } from "./index.js"
+import { CompositeKey, Database, PasswordKey } from "./index.js"
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -62,14 +62,9 @@ globalThis.XMLSerializer = XMLSerializer as any
 const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
-const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(composite))
+const decrypted = await encrypted.decryptOrThrow(composite)
 
-const data = decrypted.head.data.rotateOrThrow()
-const keys = await data.deriveOrThrow(composite)
-
-const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
-
-const decrypted2 = new Database.Decrypted(head, decrypted.body)
-const encrypted2 = await decrypted2.encryptOrThrow(keys)
+const decrypted2 = await decrypted.rotateOrThrow(composite)
+const encrypted2 = await decrypted2.encryptOrThrow()
 
 writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))

@@ -140,17 +140,27 @@ export namespace Database {
   export class Decrypted {
 
     constructor(
+      readonly keys: MasterKeys,
       readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
       readonly body: Inner.HeadersAndContent
     ) { }
 
-    async encryptOrThrow(keys: MasterKeys) {
+    async rotateOrThrow(composite: CompositeKey) {
+      const data = this.head.data.rotateOrThrow()
+      const keys = await data.deriveOrThrow(composite)
+
+      const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
+
+      return new Decrypted(keys, head, this.body)
+    }
+
+    async encryptOrThrow() {
       const { cipher, iv } = this.head.data.value.headers
 
       const degzipped = Writable.writeToBytesOrThrow(this.body)
 
       const engzipped = new Uint8Array(gzipSync(degzipped))
-      const encrypted = await cipher.encryptOrThrow(keys.encrypter.value.bytes, iv.bytes, engzipped)
+      const encrypted = await cipher.encryptOrThrow(this.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
       const blocks = new Array<BlockWithIndex>()
 
@@ -163,12 +173,12 @@ export namespace Database {
         if (x.done)
           break
 
-        blocks.push(await BlockWithIndex.fromOrThrow(keys, index, x.value))
+        blocks.push(await BlockWithIndex.fromOrThrow(this.keys, index, x.value))
 
         continue
       }
 
-      blocks.push(await BlockWithIndex.fromOrThrow(keys, index, new Uint8Array(0)))
+      blocks.push(await BlockWithIndex.fromOrThrow(this.keys, index, new Uint8Array(0)))
 
       return new Encrypted(this.head, new Blocks(blocks))
     }
@@ -195,12 +205,10 @@ export namespace Database {
       return new Encrypted(this.head.cloneOrThrow(), this.body.cloneOrThrow())
     }
 
-    async deriveOrThrow(composite: CompositeKey) {
-      return await this.head.deriveOrThrow(composite)
-    }
-
-    async decryptOrThrow(keys: MasterKeys) {
+    async decryptOrThrow(composite: CompositeKey) {
       const { cipher, iv } = this.head.data.value.headers
+
+      const keys = await this.head.deriveOrThrow(composite)
 
       await this.head.verifyOrThrow(keys)
 
@@ -220,7 +228,7 @@ export namespace Database {
 
       const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
 
-      return new Decrypted(this.head, body)
+      return new Decrypted(keys, this.head, body)
     }
 
   }
