@@ -59,12 +59,12 @@ await Argon2.initBundled()
 globalThis.DOMParser = DOMParser as any
 globalThis.XMLSerializer = XMLSerializer as any
 
-const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
+const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
-const decrypted = await encrypted.decryptOrThrow(composite)
+const decrypted = await encrypted.decryptOrThrow(password)
 
-const decrypted2 = await decrypted.rotateOrThrow(composite)
+const decrypted2 = await decrypted.rotateOrThrow(password)
 const encrypted2 = await decrypted2.encryptOrThrow()
 
 writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))
