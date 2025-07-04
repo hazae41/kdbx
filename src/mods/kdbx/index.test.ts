@@ -2,7 +2,6 @@ import { Argon2 } from "@hazae41/argon2.wasm"
 import { Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
-import { Bytes } from "libs/bytes/index.js"
 import { readFileSync, writeFileSync } from "node:fs"
 import { CompositeKey, Database, Inner, Outer, PasswordKey } from "./index.js"
 
@@ -66,7 +65,7 @@ const composite = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThr
 const encrypted = Database.Encrypted.readOrThrow(new Cursor(readFileSync("./local/test.kdbx")))
 const decrypted = await encrypted.decryptOrThrow(await encrypted.deriveOrThrow(composite))
 
-console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test.kdbx")))
+// console.log(Bytes.equals(Writable.writeToBytesOrThrow(encrypted), readFileSync("./local/test.kdbx")))
 
 const document = decrypted.body.content.intoOrThrow()
 

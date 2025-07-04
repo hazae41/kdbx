@@ -27,10 +27,8 @@ export namespace Vector {
   export function initOrThrow<T extends { [index: number]: Optional<readonly Writable[]> }>(indexed: T) {
     const entries = new Array<TLV>();
 
-    for (const index in Object.keys(indexed)) {
-      if (typeof index !== "number")
-        continue
-
+    for (const key of Object.keys(indexed)) {
+      const index = Number(key)
       const array = indexed[index]
 
       if (array == null)
