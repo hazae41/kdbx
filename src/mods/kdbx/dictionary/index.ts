@@ -5,25 +5,22 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
 
   constructor(
     readonly version: Dictionary.Version,
-    readonly entries: Entry<Value>[],
-    readonly keyvals: T
+    readonly entries: Entries<T>
   ) { }
 
   sizeOrThrow() {
-    return this.version.sizeOrThrow() + this.entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + 1
+    return this.version.sizeOrThrow() + this.entries.sizeOrThrow() + 1
   }
 
   writeOrThrow(cursor: Cursor) {
     this.version.writeOrThrow(cursor)
-
-    for (const record of this.entries)
-      record.writeOrThrow(cursor)
+    this.entries.writeOrThrow(cursor)
 
     cursor.writeUint8OrThrow(0x00)
   }
 
   cloneOrThrow() {
-    return Readable.readFromBytesOrThrow(Dictionary, Writable.writeToBytesOrThrow(this)) as this
+    return new Dictionary(this.version.cloneOrThrow(), this.entries.cloneOrThrow())
   }
 
 }
@@ -63,13 +60,8 @@ export namespace Dictionary {
 
   }
 
-  export function initOrThrow<T extends { [key: string]: Value }>(version: Version, keyvals: T) {
-    const entries = new Array<Entry<Value>>()
-
-    for (const key in keyvals)
-      entries.push(new Entry(Key.initOrThrow(key), keyvals[key]))
-
-    return new Dictionary(version, entries, keyvals)
+  export function initOrThrow<T extends { [key: string]: Value }>(version: Version, entries: T) {
+    return new Dictionary(version, Entries.initOrThrow(entries))
   }
 
   export function readOrThrow(cursor: Cursor) {
@@ -77,6 +69,56 @@ export namespace Dictionary {
 
     if (version.major !== 1)
       throw new Error()
+
+    const entries = Entries.readOrThrow(cursor)
+
+    return new Dictionary(version, entries)
+  }
+
+}
+
+export class Entries<T extends { [key: string]: Value } = { [key: string]: Value }> {
+
+  constructor(
+    readonly bytes: Opaque,
+    readonly value: T,
+  ) { }
+
+  sizeOrThrow() {
+    return this.bytes.bytes.length
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    cursor.writeOrThrow(this.bytes.bytes)
+  }
+
+  cloneOrThrow() {
+    return Readable.readFromBytesOrThrow(Entries, Writable.writeToBytesOrThrow(this)) as this
+  }
+
+}
+
+export namespace Entries {
+
+  export function initOrThrow<T extends { [key: string]: Value }>(value: T) {
+    const array = new Array<Entry<Value>>()
+
+    for (const key in value)
+      array.push(new Entry(Key.initOrThrow(key), value[key]))
+
+    const length = array.reduce((x, r) => x + r.sizeOrThrow(), 0)
+    const bytes = new Opaque(new Uint8Array(length))
+
+    const cursor = new Cursor(bytes.bytes)
+
+    for (const entry of array)
+      entry.writeOrThrow(cursor)
+
+    return new Entries(bytes, value)
+  }
+
+  export function readOrThrow(cursor: Cursor) {
+    const start = cursor.offset
 
     const array = new Array<Entry<Value>>()
     const value: { [key: string]: Value } = {}
@@ -94,11 +136,12 @@ export namespace Dictionary {
       continue
     }
 
-    return new Dictionary(version, array, value)
+    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
+
+    return new Entries(bytes, value)
   }
 
 }
-
 export class Entry<T extends Value> {
 
   constructor(
