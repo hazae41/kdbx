@@ -73,7 +73,7 @@ export namespace Cipher {
       this.cipher[Symbol.dispose]()
     }
 
-    decryptOrThrow(data: Uint8Array): Uint8Array {
+    applyOrThrow(data: Uint8Array): Uint8Array {
       using mdata = new ChaCha20Poly1305Wasm.Memory(data)
 
       this.cipher.apply_keystream(mdata)

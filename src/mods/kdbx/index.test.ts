@@ -63,7 +63,7 @@ for (let i = 0; i < $$values.length; i++) {
   const $value = $$values[i]
 
   const encrypted = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
-  const decrypted = cipher.decryptOrThrow(encrypted)
+  const decrypted = cipher.applyOrThrow(encrypted)
 
   console.log(new TextDecoder().decode(decrypted))
 }
