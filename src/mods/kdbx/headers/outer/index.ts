@@ -2,7 +2,7 @@ export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Opaque, Writable } from "@hazae41/binary"
+import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { Bytes } from "libs/bytes/index.js"
@@ -287,7 +287,7 @@ export class Headers {
   }
 
   cloneOrThrow() {
-    return new Headers(this.value.cloneOrThrow())
+    return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
   async deriveOrThrow(composite: CompositeKey) {

@@ -1,4 +1,4 @@
-import { Opaque } from "@hazae41/binary"
+import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
@@ -89,7 +89,7 @@ export class Headers {
   }
 
   cloneOrThrow() {
-    return new Headers(this.value.cloneOrThrow())
+    return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
 }
