@@ -1,8 +1,12 @@
 import { Argon2 } from "@hazae41/argon2.wasm"
+import { Base64 } from "@hazae41/base64"
 import { Readable, Writable } from "@hazae41/binary"
-import { DOMParser, XMLSerializer } from "@xmldom/xmldom"
+import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
+import { JSDOM } from "jsdom"
 import { readFileSync, writeFileSync } from "node:fs"
 import { CompositeKey, Database, PasswordKey } from "./index.js"
+
+const { window } = new JSDOM(`<!DOCTYPE html><body></body>`);
 
 async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   const dezipper = new DecompressionStream("gzip")
@@ -20,27 +24,6 @@ async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   return result.value
 }
 
-function format(text: string, tab: string = "  ") {
-  let result = ""
-  let indent = 0
-
-  const nodes = text.split(/>\s*</)
-
-  for (const node of nodes) {
-    if (node.match(/^\/\w/))
-      indent--
-
-    result += tab.repeat(indent) + '<' + node + '>\r\n';
-
-    if (node.match(/^<?\w[^>]*[^\/]$/))
-      indent++
-
-    continue
-  }
-
-  return result.slice(1, result.length - 3);
-}
-
 function rename(node: Node, oldName: string, newName: string) {
   if (node.nodeName === "Value") {
     if (node.textContent === oldName)
@@ -55,22 +38,46 @@ function rename(node: Node, oldName: string, newName: string) {
 
 
 await Argon2.initBundled()
+await ChaCha20Poly1305Wasm.initBundled()
 
-globalThis.DOMParser = DOMParser as any
-globalThis.XMLSerializer = XMLSerializer as any
+globalThis.DOMParser = window.DOMParser
+globalThis.XMLSerializer = window.XMLSerializer
 
 const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const document = decrypted.body.content.intoOrThrow()
+const seed = decrypted.body.headers.key.bytes
+const hash = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
 
-console.log(format(new XMLSerializer().serializeToString(document as any)))
+const key = hash.slice(0, 32)
+const nonce = hash.slice(32, 32 + 12)
+
+using mkey = new ChaCha20Poly1305Wasm.Memory(key)
+using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
+
+using cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
+
+const document = decrypted.body.content.intoOrThrow()
+const $$values = document.querySelectorAll("Value[Protected='True']")
+
+for (let i = 0; i < $$values.length; i++) {
+  const $value = $$values[i]
+
+  const data = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
+  using mdata = new ChaCha20Poly1305Wasm.Memory(data)
+
+  cipher.apply_keystream(mdata)
+
+  console.log($value.textContent, new TextDecoder().decode(mdata.bytes))
+}
+
+// console.log(XML.format(document))
 
 const decrypted2 = await decrypted.rotateOrThrow(password)
 const encrypted2 = await decrypted2.encryptOrThrow()
 
-console.log(decrypted.body.headers.value.value)
+// console.log(decrypted.body.headers.value.value)
 
 writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))

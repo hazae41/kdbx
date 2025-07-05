@@ -1,3 +1,4 @@
+import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
 import { Cursor } from "@hazae41/cursor"
 
 export type Cipher =
@@ -23,6 +24,10 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
+    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): never {
+      throw new Error("ArcFourVariant is not implemented yet")
+    }
+
   }
 
   export namespace Salsa20 {
@@ -41,6 +46,10 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
+    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): never {
+      throw new Error("Salsa20 is not implemented yet")
+    }
+
   }
 
   export namespace ChaCha20 {
@@ -57,6 +66,18 @@ export namespace Cipher {
 
     export function writeOrThrow(cursor: Cursor) {
       cursor.writeUint32OrThrow(type, true)
+    }
+
+    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): Uint8Array {
+      using mkey = new ChaCha20Poly1305Wasm.Memory(key)
+      using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
+      using mdata = new ChaCha20Poly1305Wasm.Memory(data)
+
+      using cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
+
+      cipher.apply_keystream(mdata)
+
+      return new Uint8Array(mdata.bytes)
     }
 
   }
