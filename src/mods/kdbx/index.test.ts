@@ -64,7 +64,13 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
+const document = decrypted.body.content.intoOrThrow()
+
+console.log(format(new XMLSerializer().serializeToString(document as any)))
+
 const decrypted2 = await decrypted.rotateOrThrow(password)
 const encrypted2 = await decrypted2.encryptOrThrow()
+
+console.log(decrypted.body.headers.value.value)
 
 writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))
