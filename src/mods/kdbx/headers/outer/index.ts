@@ -7,7 +7,7 @@ import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { Bytes } from "libs/bytes/index.js"
 import { StringAsUuid } from "libs/uuid/index.js"
-import { Dictionary, Value } from "mods/kdbx/dictionary/index.js"
+import { Dictionary, Entries, Value } from "mods/kdbx/dictionary/index.js"
 import { PreHmacKey } from "mods/kdbx/hmac/index.js"
 import { CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "mods/kdbx/index.js"
 import { Vector } from "mods/kdbx/vector/index.js"
@@ -384,19 +384,19 @@ export namespace KdfParameters {
     ) { }
 
     get seed() {
-      return this.value.keyvals["S"].value
+      return this.value.entries.value["S"].value
     }
 
     get rounds() {
-      return this.value.keyvals["R"].value
+      return this.value.entries.value["R"].value
     }
 
     rotateOrThrow() {
       const { version } = this.value
 
-      const $UUID = this.value.keyvals["$UUID"]
+      const $UUID = this.value.entries.value["$UUID"]
 
-      const R = this.value.keyvals["R"]
+      const R = this.value.entries.value["R"]
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
 
       const value = Dictionary.initOrThrow(version, { $UUID, R, S })
@@ -429,19 +429,19 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): AesKdf {
       const { version, entries } = dictionary
 
-      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+      if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
         throw new Error()
-      const $UUID = dictionary.keyvals["$UUID"]
+      const $UUID = dictionary.entries.value["$UUID"]
 
-      if (dictionary.keyvals.R instanceof Value.UInt32 === false)
+      if (dictionary.entries.value.R instanceof Value.UInt32 === false)
         throw new Error()
-      const R = dictionary.keyvals.R
+      const R = dictionary.entries.value.R
 
-      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+      if (dictionary.entries.value.S instanceof Value.Bytes === false)
         throw new Error()
-      const S = dictionary.keyvals.S
+      const S = dictionary.entries.value.S
 
-      return new KdfParameters.AesKdf(new Dictionary(version, entries, { $UUID, R, S }))
+      return new KdfParameters.AesKdf(new Dictionary(version, new Entries(entries.bytes, { $UUID, R, S })))
     }
 
   }
@@ -463,35 +463,35 @@ export namespace KdfParameters {
     ) { }
 
     get salt() {
-      return this.value.keyvals["S"].value
+      return this.value.entries.value["S"].value
     }
 
     get parallelism() {
-      return this.value.keyvals["P"].value
+      return this.value.entries.value["P"].value
     }
 
     get memory() {
-      return this.value.keyvals["M"].value
+      return this.value.entries.value["M"].value
     }
 
     get iterations() {
-      return this.value.keyvals["I"].value
+      return this.value.entries.value["I"].value
     }
 
     get version() {
-      return this.value.keyvals["V"].value
+      return this.value.entries.value["V"].value
     }
 
     rotateOrThrow() {
       const { version } = this.value
 
-      const $UUID = this.value.keyvals["$UUID"]
+      const $UUID = this.value.entries.value["$UUID"]
 
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
-      const P = this.value.keyvals.P
-      const M = this.value.keyvals.M
-      const I = this.value.keyvals.I
-      const V = this.value.keyvals.V
+      const P = this.value.entries.value.P
+      const M = this.value.entries.value.M
+      const I = this.value.entries.value.I
+      const V = this.value.entries.value.V
 
       const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
 
@@ -528,31 +528,31 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): Argon2d {
       const { version, entries } = dictionary
 
-      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+      if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
         throw new Error()
-      const $UUID = dictionary.keyvals["$UUID"]
+      const $UUID = dictionary.entries.value["$UUID"]
 
-      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+      if (dictionary.entries.value.S instanceof Value.Bytes === false)
         throw new Error()
-      const S = dictionary.keyvals.S as Value.Bytes<32>
+      const S = dictionary.entries.value.S as Value.Bytes<32>
 
-      if (dictionary.keyvals.P instanceof Value.UInt32 === false)
+      if (dictionary.entries.value.P instanceof Value.UInt32 === false)
         throw new Error()
-      const P = dictionary.keyvals.P
+      const P = dictionary.entries.value.P
 
-      if (dictionary.keyvals.M instanceof Value.UInt64 === false)
+      if (dictionary.entries.value.M instanceof Value.UInt64 === false)
         throw new Error()
-      const M = dictionary.keyvals.M
+      const M = dictionary.entries.value.M
 
-      if (dictionary.keyvals.I instanceof Value.UInt64 === false)
+      if (dictionary.entries.value.I instanceof Value.UInt64 === false)
         throw new Error()
-      const I = dictionary.keyvals.I
+      const I = dictionary.entries.value.I
 
-      if (dictionary.keyvals.V instanceof Value.UInt32 === false)
+      if (dictionary.entries.value.V instanceof Value.UInt32 === false)
         throw new Error()
-      const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
+      const V = dictionary.entries.value.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-      return new KdfParameters.Argon2d(new Dictionary(version, entries, { $UUID, S, P, M, I, V }))
+      return new KdfParameters.Argon2d(new Dictionary(version, new Entries(entries.bytes, { $UUID, S, P, M, I, V })))
     }
 
   }
@@ -564,35 +564,35 @@ export namespace KdfParameters {
     ) { }
 
     get salt() {
-      return this.value.keyvals["S"].value
+      return this.value.entries.value["S"].value
     }
 
     get parallelism() {
-      return this.value.keyvals["P"].value
+      return this.value.entries.value["P"].value
     }
 
     get memory() {
-      return this.value.keyvals["M"].value
+      return this.value.entries.value["M"].value
     }
 
     get iterations() {
-      return this.value.keyvals["I"].value
+      return this.value.entries.value["I"].value
     }
 
     get version() {
-      return this.value.keyvals["V"].value
+      return this.value.entries.value["V"].value
     }
 
     rotateOrThrow() {
       const { version } = this.value
 
-      const $UUID = this.value.keyvals["$UUID"]
+      const $UUID = this.value.entries.value["$UUID"]
 
       const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
-      const P = this.value.keyvals.P
-      const M = this.value.keyvals.M
-      const I = this.value.keyvals.I
-      const V = this.value.keyvals.V
+      const P = this.value.entries.value.P
+      const M = this.value.entries.value.M
+      const I = this.value.entries.value.I
+      const V = this.value.entries.value.V
 
       const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
 
@@ -629,31 +629,31 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): Argon2id {
       const { version, entries } = dictionary
 
-      if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+      if (entries.value["$UUID"] instanceof Value.Bytes === false)
         throw new Error()
-      const $UUID = dictionary.keyvals["$UUID"]
+      const $UUID = entries.value["$UUID"]
 
-      if (dictionary.keyvals.S instanceof Value.Bytes === false)
+      if (entries.value.S instanceof Value.Bytes === false)
         throw new Error()
-      const S = dictionary.keyvals.S as Value.Bytes<32>
+      const S = entries.value.S as Value.Bytes<32>
 
-      if (dictionary.keyvals.P instanceof Value.UInt32 === false)
+      if (entries.value.P instanceof Value.UInt32 === false)
         throw new Error()
-      const P = dictionary.keyvals.P
+      const P = entries.value.P
 
-      if (dictionary.keyvals.M instanceof Value.UInt64 === false)
+      if (entries.value.M instanceof Value.UInt64 === false)
         throw new Error()
-      const M = dictionary.keyvals.M
+      const M = entries.value.M
 
-      if (dictionary.keyvals.I instanceof Value.UInt64 === false)
+      if (entries.value.I instanceof Value.UInt64 === false)
         throw new Error()
-      const I = dictionary.keyvals.I
+      const I = entries.value.I
 
-      if (dictionary.keyvals.V instanceof Value.UInt32 === false)
+      if (entries.value.V instanceof Value.UInt32 === false)
         throw new Error()
-      const V = dictionary.keyvals.V as Value.UInt32<KdfParameters.Argon2.Version>
+      const V = entries.value.V as Value.UInt32<KdfParameters.Argon2.Version>
 
-      return new KdfParameters.Argon2id(new Dictionary(version, entries, { $UUID, S, P, M, I, V }))
+      return new KdfParameters.Argon2id(new Dictionary(version, new Entries(entries.bytes, { $UUID, S, P, M, I, V })))
     }
 
   }
@@ -661,10 +661,10 @@ export namespace KdfParameters {
   export function readOrThrow(cursor: Cursor): KdfParameters {
     const dictionary = Dictionary.readOrThrow(cursor)
 
-    if (dictionary.keyvals["$UUID"] instanceof Value.Bytes === false)
+    if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
       throw new Error()
 
-    const $UUID = StringAsUuid.from(dictionary.keyvals["$UUID"].value.bytes)
+    const $UUID = StringAsUuid.from(dictionary.entries.value["$UUID"].value.bytes)
 
     if (![KdfParameters.AesKdf.$UUID, KdfParameters.Argon2d.$UUID, KdfParameters.Argon2id.$UUID].includes($UUID))
       throw new Error()
