@@ -6,7 +6,7 @@ import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { gunzipSync, gzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
-import { MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { Compression, MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
@@ -155,11 +155,11 @@ export namespace Database {
     }
 
     async encryptOrThrow() {
-      const { cipher, iv } = this.head.data.value.headers
+      const { cipher, iv, compression } = this.head.data.value.headers
 
       const degzipped = Writable.writeToBytesOrThrow(this.body)
 
-      const engzipped = new Uint8Array(gzipSync(degzipped))
+      const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
       const encrypted = await cipher.encryptOrThrow(this.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
       const blocks = new Array<BlockWithIndex>()
@@ -206,7 +206,7 @@ export namespace Database {
     }
 
     async decryptOrThrow(composite: CompositeKey) {
-      const { cipher, iv } = this.head.data.value.headers
+      const { cipher, iv, compression } = this.head.data.value.headers
 
       const keys = await this.head.deriveOrThrow(composite)
 
@@ -224,7 +224,7 @@ export namespace Database {
       }
 
       const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
-      const degzipped = gunzipSync(decrypted)
+      const degzipped = compression === Compression.Gzip ? gunzipSync(decrypted) : decrypted
 
       const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
 
