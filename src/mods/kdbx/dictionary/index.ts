@@ -101,17 +101,17 @@ export class Entries<T extends { [key: string]: Value } = { [key: string]: Value
 export namespace Entries {
 
   export function initOrThrow<T extends { [key: string]: Value }>(value: T) {
-    const array = new Array<Entry<Value>>()
+    const entries = new Array<Entry<Value>>()
 
     for (const key in value)
-      array.push(new Entry(Key.initOrThrow(key), value[key]))
+      entries.push(new Entry(Key.initOrThrow(key), value[key]))
 
-    const length = array.reduce((x, r) => x + r.sizeOrThrow(), 0)
-    const bytes = new Opaque(new Uint8Array(length))
+    const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0)
+    const bytes = new Opaque(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
-    for (const entry of array)
+    for (const entry of entries)
       entry.writeOrThrow(cursor)
 
     return new Entries(bytes, value)
@@ -120,8 +120,8 @@ export namespace Entries {
   export function readOrThrow(cursor: Cursor) {
     const start = cursor.offset
 
-    const array = new Array<Entry<Value>>()
-    const value: { [key: string]: Value } = {}
+    const entries = new Array<Entry<Value>>()
+    const indexed: { [key: string]: Value } = {}
 
     while (true) {
       const record = Entry.readOrThrow(cursor)
@@ -129,16 +129,16 @@ export namespace Entries {
       if (record == null)
         break
 
-      array.push(record)
+      entries.push(record)
 
-      value[record.key.value] = record.val
+      indexed[record.key.value] = record.val
 
       continue
     }
 
     const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
 
-    return new Entries(bytes, value)
+    return new Entries(bytes, indexed)
   }
 
 }

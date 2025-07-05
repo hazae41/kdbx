@@ -7,18 +7,16 @@ import { TLV } from "libs/tlv/index.js";
 export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> {
 
   constructor(
-    readonly entries: TLV[],
-    readonly indexed: T
+    readonly bytes: Opaque,
+    readonly value: T
   ) { }
 
   sizeOrThrow() {
-    return this.entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + TLV.Empty.sizeOrThrow()
+    return this.bytes.sizeOrThrow();
   }
 
   writeOrThrow(cursor: Cursor) {
-    for (const tlv of this.entries)
-      tlv.writeOrThrow(cursor)
-    TLV.Empty.writeOrThrow(cursor)
+    this.bytes.writeOrThrow(cursor)
   }
 
   cloneOrThrow() {
@@ -45,10 +43,22 @@ export namespace Vector {
       continue
     }
 
-    return new Vector(entries, indexed);
+    const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + TLV.Empty.sizeOrThrow()
+    const bytes = new Opaque(new Uint8Array(sized))
+
+    const cursor = new Cursor(bytes.bytes)
+
+    for (const entry of entries)
+      entry.writeOrThrow(cursor)
+
+    TLV.Empty.writeOrThrow(cursor)
+
+    return new Vector(bytes, indexed);
   }
 
   export function readOrThrow(cursor: Cursor) {
+    const start = cursor.offset
+
     const entries = new Array<TLV>();
     const indexed: { [index: number]: Opaque[] } = {};
 
@@ -66,7 +76,9 @@ export namespace Vector {
       continue
     }
 
-    return new Vector(entries, indexed);
+    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset));
+
+    return new Vector(bytes, indexed);
   }
 
 }
