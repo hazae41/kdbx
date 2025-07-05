@@ -88,6 +88,10 @@ export class Headers {
     this.value.writeOrThrow(cursor)
   }
 
+  cloneOrThrow() {
+    return new Headers(this.value.cloneOrThrow())
+  }
+
 }
 
 export namespace Headers {
