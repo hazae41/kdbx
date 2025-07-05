@@ -8,6 +8,10 @@ export type Cipher =
 
 export namespace Cipher {
 
+  export class ArcFourVariant {
+    constructor() { }
+  }
+
   export namespace ArcFourVariant {
 
     export const type = 0x01
@@ -24,10 +28,17 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): never {
+    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): never {
       throw new Error("ArcFourVariant is not implemented yet")
     }
 
+  }
+
+  export class Salsa20 {
+    constructor(
+      readonly key: Uint8Array,
+      readonly nonce: Uint8Array,
+    ) { }
   }
 
   export namespace Salsa20 {
@@ -46,8 +57,28 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): never {
+    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): never {
       throw new Error("Salsa20 is not implemented yet")
+    }
+
+  }
+
+  export class ChaCha20 {
+
+    constructor(
+      readonly cipher: ChaCha20Poly1305Wasm.ChaCha20Cipher,
+    ) { }
+
+    [Symbol.dispose]() {
+      this.cipher[Symbol.dispose]()
+    }
+
+    decryptOrThrow(data: Uint8Array): Uint8Array {
+      using mdata = new ChaCha20Poly1305Wasm.Memory(data)
+
+      this.cipher.apply_keystream(mdata)
+
+      return new Uint8Array(mdata.bytes)
     }
 
   }
@@ -68,16 +99,13 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function decryptOrThrow(key: Uint8Array, nonce: Uint8Array, data: Uint8Array): Uint8Array {
+    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): ChaCha20 {
       using mkey = new ChaCha20Poly1305Wasm.Memory(key)
       using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
-      using mdata = new ChaCha20Poly1305Wasm.Memory(data)
 
-      using cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
+      const cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
 
-      cipher.apply_keystream(mdata)
-
-      return new Uint8Array(mdata.bytes)
+      return new ChaCha20(cipher)
     }
 
   }

@@ -54,10 +54,7 @@ const hash = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
 const key = hash.slice(0, 32)
 const nonce = hash.slice(32, 32 + 12)
 
-using mkey = new ChaCha20Poly1305Wasm.Memory(key)
-using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
-
-using cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
+const cipher = decrypted.body.headers.cipher.initOrThrow(key, nonce)
 
 const document = decrypted.body.content.intoOrThrow()
 const $$values = document.querySelectorAll("Value[Protected='True']")
@@ -65,12 +62,10 @@ const $$values = document.querySelectorAll("Value[Protected='True']")
 for (let i = 0; i < $$values.length; i++) {
   const $value = $$values[i]
 
-  const data = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
-  using mdata = new ChaCha20Poly1305Wasm.Memory(data)
+  const encrypted = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
+  const decrypted = cipher.decryptOrThrow(encrypted)
 
-  cipher.apply_keystream(mdata)
-
-  console.log($value.textContent, new TextDecoder().decode(mdata.bytes))
+  console.log(new TextDecoder().decode(decrypted))
 }
 
 // console.log(XML.format(document))
