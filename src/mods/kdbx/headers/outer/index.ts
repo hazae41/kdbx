@@ -245,27 +245,27 @@ export class Headers {
   ) { }
 
   get cipher() {
-    return this.value.indexed[2][0]
+    return this.value.value[2][0]
   }
 
   get compression() {
-    return this.value.indexed[3][0]
+    return this.value.value[3][0]
   }
 
   get seed() {
-    return this.value.indexed[4][0]
+    return this.value.value[4][0]
   }
 
   get iv() {
-    return this.value.indexed[7][0]
+    return this.value.value[7][0]
   }
 
   get kdf() {
-    return this.value.indexed[11][0]
+    return this.value.value[11][0]
   }
 
   get custom() {
-    return this.value.indexed[12]?.[0]
+    return this.value.value[12]?.[0]
   }
 
   rotateOrThrow() {
@@ -326,35 +326,35 @@ export namespace Headers {
   export function readOrThrow(cursor: Cursor) {
     const vector = Vector.readOrThrow(cursor)
 
-    if (vector.indexed[2].length !== 1)
+    if (vector.value[2].length !== 1)
       throw new Error()
-    const a = [vector.indexed[2][0].readIntoOrThrow(Cipher)] as const
+    const a = [vector.value[2][0].readIntoOrThrow(Cipher)] as const
 
-    if (vector.indexed[3].length !== 1)
+    if (vector.value[3].length !== 1)
       throw new Error()
-    const b = [vector.indexed[3][0].readIntoOrThrow(Compression)] as const
+    const b = [vector.value[3][0].readIntoOrThrow(Compression)] as const
 
-    if (vector.indexed[4].length !== 1)
+    if (vector.value[4].length !== 1)
       throw new Error()
-    if (vector.indexed[4][0].bytes.length !== 32)
+    if (vector.value[4][0].bytes.length !== 32)
       throw new Error()
-    const c = [vector.indexed[4][0] as Opaque<32>] as const
+    const c = [vector.value[4][0] as Opaque<32>] as const
 
-    if (vector.indexed[7].length !== 1)
+    if (vector.value[7].length !== 1)
       throw new Error()
-    const d = [vector.indexed[7][0]] as const
+    const d = [vector.value[7][0]] as const
 
-    if (vector.indexed[11].length !== 1)
+    if (vector.value[11].length !== 1)
       throw new Error()
-    const e = [vector.indexed[11][0].readIntoOrThrow(KdfParameters)] as const
+    const e = [vector.value[11][0].readIntoOrThrow(KdfParameters)] as const
 
-    if (vector.indexed[12] != null && vector.indexed[12].length !== 1)
+    if (vector.value[12] != null && vector.value[12].length !== 1)
       throw new Error()
-    const f = vector.indexed[12] != null ? [vector.indexed[12][0].readIntoOrThrow(Dictionary)] as const : undefined
+    const f = vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
 
     const indexed = { 2: a, 3: b, 4: c, 7: d, 11: e, 12: f } as const
 
-    return new Headers(new Vector(vector.entries, indexed))
+    return new Headers(new Vector(vector.bytes, indexed))
   }
 }
 
@@ -429,17 +429,17 @@ export namespace KdfParameters {
     export function parseOrThrow(dictionary: Dictionary): AesKdf {
       const { version, entries } = dictionary
 
-      if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
+      if (entries.value["$UUID"] instanceof Value.Bytes === false)
         throw new Error()
-      const $UUID = dictionary.entries.value["$UUID"]
+      const $UUID = entries.value["$UUID"]
 
-      if (dictionary.entries.value.R instanceof Value.UInt32 === false)
+      if (entries.value.R instanceof Value.UInt32 === false)
         throw new Error()
-      const R = dictionary.entries.value.R
+      const R = entries.value.R
 
-      if (dictionary.entries.value.S instanceof Value.Bytes === false)
+      if (entries.value.S instanceof Value.Bytes === false)
         throw new Error()
-      const S = dictionary.entries.value.S
+      const S = entries.value.S
 
       return new KdfParameters.AesKdf(new Dictionary(version, new Entries(entries.bytes, { $UUID, R, S })))
     }

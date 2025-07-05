@@ -69,15 +69,15 @@ export class Headers {
   ) { }
 
   get cipher() {
-    return this.value.indexed[1][0]
+    return this.value.value[1][0]
   }
 
   get key() {
-    return this.value.indexed[2][0]
+    return this.value.value[2][0]
   }
 
   get binary() {
-    return this.value.indexed[3]
+    return this.value.value[3]
   }
 
   sizeOrThrow() {
@@ -95,21 +95,21 @@ export namespace Headers {
   export function readOrThrow(cursor: Cursor) {
     const vector = Vector.readOrThrow(cursor)
 
-    if (vector.indexed[1].length !== 1)
+    if (vector.value[1].length !== 1)
       throw new Error()
-    const a = [vector.indexed[1][0].readIntoOrThrow(Cipher)] as const
+    const a = [vector.value[1][0].readIntoOrThrow(Cipher)] as const
 
-    if (vector.indexed[2].length !== 1)
+    if (vector.value[2].length !== 1)
       throw new Error()
-    const b = [vector.indexed[2][0]] as const
+    const b = [vector.value[2][0]] as const
 
-    if (vector.indexed[3].length === 0)
+    if (vector.value[3].length === 0)
       throw new Error()
-    const c = vector.indexed[3]
+    const c = vector.value[3]
 
     const indexed = { 1: a, 2: b, 3: c }
 
-    return new Headers(new Vector(vector.entries, indexed))
+    return new Headers(new Vector(vector.bytes, indexed))
   }
 
 }
