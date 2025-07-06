@@ -12,6 +12,10 @@ export class HeadersAndContentWithBytes {
     readonly content: ContentWithBytes
   ) { }
 
+  rotateOrThrow() {
+    // TODO
+  }
+
   sizeOrThrow() {
     return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
   }

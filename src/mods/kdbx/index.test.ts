@@ -60,7 +60,7 @@ entry0.cloneToHistory()
 
 console.log(entry0.getHistoryOrNull()?.getEntries().reduce(x => x + 1, 0))
 
-// entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned lol")
+entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned lol")
 entry0.getStringByKeyOrThrow("Password").getKeyOrThrow().set("PrivateKey")
 
 console.log(XML.format(decrypted.inner.content.value))
