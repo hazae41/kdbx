@@ -19,6 +19,13 @@ export class HeadersAndContentWithBytes {
     this.content.writeOrThrow(cursor)
   }
 
+  computeOrThrow() {
+    const headers = this.headers
+    const content = this.content.computeOrThrow()
+
+    return new HeadersAndContentWithBytes(headers, content)
+  }
+
 }
 
 export class ContentWithBytes {

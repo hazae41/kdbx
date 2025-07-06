@@ -145,6 +145,13 @@ export namespace Database {
       readonly inner: Inner.HeadersAndContentWithBytes
     ) { }
 
+    computeOrThrow() {
+      const outer = this.outer
+      const inner = this.inner.computeOrThrow()
+
+      return new Decrypted(outer, inner)
+    }
+
     async rotateOrThrow(composite: CompositeKey) {
       return new Decrypted(await this.outer.rotateOrThrow(composite), this.inner)
     }
