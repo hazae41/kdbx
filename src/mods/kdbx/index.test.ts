@@ -1,8 +1,9 @@
 import { Argon2 } from "@hazae41/argon2.wasm"
-import { Readable } from "@hazae41/binary"
+import { Readable, Writable } from "@hazae41/binary"
 import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
 import { JSDOM } from "jsdom"
-import { readFileSync } from "node:fs"
+import { XML } from "libs/xml/index.js"
+import { readFileSync, writeFileSync } from "node:fs"
 import { CompositeKey, Database, PasswordKey } from "./index.js"
 
 const { window } = new JSDOM(`<!DOCTYPE html><body></body>`);
@@ -47,18 +48,9 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const $$values = decrypted.inner.content.value.querySelectorAll("Value[Protected='True']")
+console.log(XML.format(decrypted.inner.content.value))
 
-for (let i = 0; i < $$values.length; i++) {
-  const $value = $$values[i]
-  console.log($value.innerHTML)
-}
+const decrypted2 = await decrypted.rotateOrThrow(password)
+const encrypted2 = await decrypted2.encryptOrThrow()
 
-// console.log(XML.format(document))
-
-// const decrypted2 = await decrypted.rotateOrThrow(password)
-// const encrypted2 = await decrypted2.encryptOrThrow()
-
-// console.log(decrypted.body.headers.value.value)
-
-// writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))
+writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))

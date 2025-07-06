@@ -150,32 +150,47 @@ export namespace Database {
     }
 
     async encryptOrThrow() {
-      const { cipher, iv, compression } = this.outer.data.data.value.headers
+      const cipher = await this.inner.headers.getCipherOrThrow()
 
-      const degzipped = Writable.writeToBytesOrThrow(this.inner.computeOrThrow())
+      const $$values = this.inner.content.value.querySelectorAll("Value[Protected='True']")
 
-      const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
-      const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
+      for (let i = 0; i < $$values.length; i++) {
+        const $value = $$values[i]
 
-      const blocks = new Array<BlockWithIndex>()
+        const decrypted = new TextEncoder().encode($value.innerHTML)
+        const encrypted = cipher.applyOrThrow(decrypted)
 
-      const cursor = new Cursor(encrypted)
-      const splits = cursor.splitOrThrow(1048576)
-
-      let index = 0n
-
-      for (let x = splits.next(); true; index++, x = splits.next()) {
-        if (x.done)
-          break
-
-        blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, x.value))
-
-        continue
+        $value.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(encrypted)
       }
 
-      blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, new Uint8Array(0)))
+      {
+        const { cipher, iv, compression } = this.outer.data.data.value.headers
 
-      return new Encrypted(this.outer.data, new Blocks(blocks))
+        const degzipped = Writable.writeToBytesOrThrow(this.inner.computeOrThrow())
+
+        const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
+        const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
+
+        const blocks = new Array<BlockWithIndex>()
+
+        const cursor = new Cursor(encrypted)
+        const splits = cursor.splitOrThrow(1048576)
+
+        let index = 0n
+
+        for (let x = splits.next(); true; index++, x = splits.next()) {
+          if (x.done)
+            break
+
+          blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, x.value))
+
+          continue
+        }
+
+        blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, new Uint8Array(0)))
+
+        return new Encrypted(this.outer.data, new Blocks(blocks))
+      }
     }
 
   }
@@ -221,17 +236,17 @@ export namespace Database {
       const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
       const degzipped = compression === Compression.Gzip ? gunzipSync(decrypted) : decrypted
 
-      const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContentWithBytes, degzipped)
+      const inner = Readable.readFromBytesOrThrow(Inner.HeadersAndContentWithBytes, degzipped)
 
       {
-        const cipher = await body.headers.getCipherOrThrow()
+        const cipher = await inner.headers.getCipherOrThrow()
 
-        const $$values = body.content.value.querySelectorAll("Value[Protected='True']")
+        const $$values = inner.content.value.querySelectorAll("Value[Protected='True']")
 
         for (let i = 0; i < $$values.length; i++) {
           const $value = $$values[i]
 
-          const encrypted = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
+          const encrypted = Base64.get().getOrThrow().decodePaddedOrThrow($value.innerHTML).bytes
           const decrypted = cipher.applyOrThrow(encrypted)
 
           $value.innerHTML = new TextDecoder().decode(decrypted)
@@ -239,7 +254,7 @@ export namespace Database {
 
         const outer = new Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(this.outer, keys)
 
-        return new Decrypted(outer, body)
+        return new Decrypted(outer, inner)
       }
     }
 
