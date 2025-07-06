@@ -92,6 +92,10 @@ export class Headers {
     return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
+  async getCipherOrThrow() {
+    return await this.cipher.initOrThrow(this.key.bytes)
+  }
+
 }
 
 export namespace Headers {

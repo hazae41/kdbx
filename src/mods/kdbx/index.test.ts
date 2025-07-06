@@ -48,13 +48,7 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const seed = decrypted.body.headers.key.bytes
-const hash = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
-
-const key = hash.slice(0, 32)
-const nonce = hash.slice(32, 32 + 12)
-
-const cipher = decrypted.body.headers.cipher.initOrThrow(key, nonce)
+const cipher = await decrypted.body.headers.getCipherOrThrow()
 
 const document = decrypted.body.content.intoOrThrow()
 const $$values = document.querySelectorAll("Value[Protected='True']")

@@ -28,7 +28,7 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): never {
+    export async function initOrThrow(seed: Uint8Array): Promise<never> {
       throw new Error("ArcFourVariant is not implemented yet")
     }
 
@@ -57,7 +57,7 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): never {
+    export async function initOrThrow(seed: Uint8Array): Promise<never> {
       throw new Error("Salsa20 is not implemented yet")
     }
 
@@ -99,7 +99,13 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export function initOrThrow(key: Uint8Array, nonce: Uint8Array): ChaCha20 {
+    export async function initOrThrow(seed: Uint8Array): Promise<ChaCha20> {
+      const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
+      const cursor = new Cursor(hashed)
+
+      const key = cursor.readOrThrow(32)
+      const nonce = cursor.readOrThrow(12)
+
       using mkey = new ChaCha20Poly1305Wasm.Memory(key)
       using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
 
