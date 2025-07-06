@@ -684,6 +684,24 @@ export class Entry {
     return new Times(element)
   }
 
+  getHistoryOrThrow() {
+    const element = this.element.querySelector(":scope > History")
+
+    if (element == null)
+      throw new Error()
+
+    return new History(element)
+  }
+
+  getHistoryOrNull() {
+    const element = this.element.querySelector(":scope > History")
+
+    if (element == null)
+      return
+
+    return new History(element)
+  }
+
   *getStrings() {
     const elements = this.element.querySelectorAll(`:scope > String`);
 
@@ -792,6 +810,41 @@ export class Value {
       this.element.removeAttribute("Protected")
     else
       this.element.setAttribute("Protected", value)
+  }
+
+}
+
+export class History {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  *getEntries() {
+    const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+    for (const element of elements)
+      yield new Entry(element)
+
+    return
+  }
+
+  getEntryByIndexOrThrow(index: number) {
+    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      throw new Error();
+
+    return new Entry(element);
+  }
+
+  getEntryByIndexOrNull(index: number) {
+    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      return
+
+    return new Entry(element)
   }
 
 }
