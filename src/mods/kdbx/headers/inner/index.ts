@@ -51,6 +51,15 @@ export class ContentWithBytes {
     return new ContentWithBytes(new Opaque(bytes), this.value)
   }
 
+  getMetaOrThrow() {
+    const element = this.value.querySelector("Meta")
+
+    if (element === null)
+      throw new Error()
+
+    return new Meta(element)
+  }
+
 }
 
 export namespace ContentWithBytes {
@@ -133,6 +142,58 @@ export namespace Headers {
     const indexed = { 1: a, 2: b, 3: c }
 
     return new Headers(new Vector(vector.bytes, indexed))
+  }
+
+}
+
+
+export class Meta {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  setNameOrThrow(name: string) {
+    const value = this.getDatabaseNameOrThrow()
+    const stamp = this.getDatabaseNameChangedOrThrow()
+
+    value.set(name)
+    stamp.set("TODO") // TODO
+  }
+
+  getDatabaseNameOrThrow() {
+    const element = this.element.querySelector("DatabaseName")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getDatabaseNameChangedOrThrow() {
+    const element = this.element.querySelector("DatabaseNameChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+
+}
+
+export class Unknown {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  get() {
+    return this.element.innerHTML
+  }
+
+  set(value: string) {
+    this.element.innerHTML = value
   }
 
 }
