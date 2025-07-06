@@ -1,5 +1,6 @@
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
+import { now } from "libs/time/index.js"
 import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
 
@@ -146,20 +147,27 @@ export namespace Headers {
 
 }
 
+export class Unknown {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  get() {
+    return this.element.innerHTML
+  }
+
+  set(value: string) {
+    this.element.innerHTML = value
+  }
+
+}
 
 export class Meta {
 
   constructor(
     readonly element: Element
   ) { }
-
-  setNameOrThrow(name: string) {
-    const value = this.getDatabaseNameOrThrow()
-    const stamp = this.getDatabaseNameChangedOrThrow()
-
-    value.set(name)
-    stamp.set("TODO") // TODO
-  }
 
   getDatabaseNameOrThrow() {
     const element = this.element.querySelector("DatabaseName")
@@ -179,21 +187,162 @@ export class Meta {
     return new Unknown(element)
   }
 
+  setDatabaseNameWithTimeOrThrow(name: string) {
+    const value = this.getDatabaseNameOrThrow()
+    const stamp = this.getDatabaseNameChangedOrThrow()
 
-}
-
-export class Unknown {
-
-  constructor(
-    readonly element: Element
-  ) { }
-
-  get() {
-    return this.element.innerHTML
+    value.set(name)
+    stamp.set(now())
   }
 
-  set(value: string) {
-    this.element.innerHTML = value
+  getGeneratorOrThrow() {
+    const element = this.element.querySelector("Generator")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getHistoryMaxItemsOrThrow() {
+    const element = this.element.querySelector("HistoryMaxItems")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getHistoryMaxSizeOrThrow() {
+    const element = this.element.querySelector("HistoryMaxSize")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getRecycleBinEnabledOrThrow() {
+    const element = this.element.querySelector("RecycleBinEnabled")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getRecycleBinUuidOrThrow() {
+    const element = this.element.querySelector("RecycleBinUUID")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getRecycleBinChangedOrThrow() {
+    const element = this.element.querySelector("RecycleBinChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getSettingsChangedOrThrow() {
+    const element = this.element.querySelector("SettingsChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getDatabaseDescriptionOrThrow() {
+    const element = this.element.querySelector("DatabaseDescription")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getDatabaseDescriptionChangedOrThrow() {
+    const element = this.element.querySelector("DatabaseDescriptionChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  setDatabaseDescriptionWithTimeOrThrow(description: string) {
+    const value = this.getDatabaseDescriptionOrThrow()
+    const stamp = this.getDatabaseDescriptionChangedOrThrow()
+
+    value.set(description)
+    stamp.set(now())
+  }
+
+  getDefaultUserNameOrThrow() {
+    const element = this.element.querySelector("DefaultUserName")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getDefaultUserNameChangedOrThrow() {
+    const element = this.element.querySelector("DefaultUserNameChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  setDefaultUserNameWithTimeOrThrow(name: string) {
+    const value = this.getDefaultUserNameOrThrow()
+    const stamp = this.getDefaultUserNameChangedOrThrow()
+
+    value.set(name)
+    stamp.set(now())
+  }
+
+  getColorOrThrow() {
+    const element = this.element.querySelector("Color")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getEntryTemplatesGroupOrThrow() {
+    const element = this.element.querySelector("EntryTemplatesGroup")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getEntryTemplatesGroupChangedOrThrow() {
+    const element = this.element.querySelector("EntryTemplatesGroupChanged")
+
+    if (element === null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  setEntryTemplatesGroupWithTimeOrThrow(uuid: string) {
+    const value = this.getEntryTemplatesGroupOrThrow()
+    const stamp = this.getEntryTemplatesGroupChangedOrThrow()
+
+    value.set(uuid)
+    stamp.set(now())
   }
 
 }
