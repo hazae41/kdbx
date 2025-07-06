@@ -381,3 +381,100 @@ export class Root {
   }
 
 }
+
+export class Group {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  getNameOrThrow() {
+    const element = this.element.querySelector(":scope > Name")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getUuidOrThrow() {
+    const element = this.element.querySelector(":scope > UUID")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getTimesOrThrow() {
+    const element = this.element.querySelector(":scope > Times")
+
+    if (element == null)
+      throw new Error()
+
+    return new Times(element)
+  }
+
+}
+
+export class Times {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  getLastModificationTimeOrThrow() {
+    const element = this.element.querySelector(":scope > LastModificationTime")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getCreationTimeOrThrow() {
+    const element = this.element.querySelector(":scope > CreationTime")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getLastAccessTimeOrThrow() {
+    const element = this.element.querySelector(":scope > LastAccessTime")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getExpiresOrThrow() {
+    const element = this.element.querySelector(":scope > Expires")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getUsageCountOrThrow() {
+    const element = this.element.querySelector(":scope > UsageCount")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getLocationChangedOrThrow() {
+    const element = this.element.querySelector(":scope > LocationChanged")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+}
