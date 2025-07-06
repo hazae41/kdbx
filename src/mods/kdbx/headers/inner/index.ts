@@ -53,12 +53,21 @@ export class ContentWithBytes {
   }
 
   getMetaOrThrow() {
-    const element = this.value.querySelector("Meta")
+    const element = this.value.querySelector(":scope > Meta")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Meta(element)
+  }
+
+  getRootOrThrow() {
+    const element = this.value.querySelector(":scope > Root")
+
+    if (element == null)
+      throw new Error()
+
+    return new Root(element)
   }
 
 }
@@ -170,18 +179,18 @@ export class Meta {
   ) { }
 
   getDatabaseNameOrThrow() {
-    const element = this.element.querySelector("DatabaseName")
+    const element = this.element.querySelector(":scope > DatabaseName")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getDatabaseNameChangedOrThrow() {
-    const element = this.element.querySelector("DatabaseNameChanged")
+    const element = this.element.querySelector(":scope > DatabaseNameChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
@@ -196,81 +205,81 @@ export class Meta {
   }
 
   getGeneratorOrThrow() {
-    const element = this.element.querySelector("Generator")
+    const element = this.element.querySelector(":scope > Generator")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getHistoryMaxItemsOrThrow() {
-    const element = this.element.querySelector("HistoryMaxItems")
+    const element = this.element.querySelector(":scope > HistoryMaxItems")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getHistoryMaxSizeOrThrow() {
-    const element = this.element.querySelector("HistoryMaxSize")
+    const element = this.element.querySelector(":scope > HistoryMaxSize")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getRecycleBinEnabledOrThrow() {
-    const element = this.element.querySelector("RecycleBinEnabled")
+    const element = this.element.querySelector(":scope > RecycleBinEnabled")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getRecycleBinUuidOrThrow() {
-    const element = this.element.querySelector("RecycleBinUUID")
+    const element = this.element.querySelector(":scope > RecycleBinUUID")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getRecycleBinChangedOrThrow() {
-    const element = this.element.querySelector("RecycleBinChanged")
+    const element = this.element.querySelector(":scope > RecycleBinChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getSettingsChangedOrThrow() {
-    const element = this.element.querySelector("SettingsChanged")
+    const element = this.element.querySelector(":scope > SettingsChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getDatabaseDescriptionOrThrow() {
-    const element = this.element.querySelector("DatabaseDescription")
+    const element = this.element.querySelector(":scope > DatabaseDescription")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getDatabaseDescriptionChangedOrThrow() {
-    const element = this.element.querySelector("DatabaseDescriptionChanged")
+    const element = this.element.querySelector(":scope > DatabaseDescriptionChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
@@ -285,18 +294,18 @@ export class Meta {
   }
 
   getDefaultUserNameOrThrow() {
-    const element = this.element.querySelector("DefaultUserName")
+    const element = this.element.querySelector(":scope > DefaultUserName")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getDefaultUserNameChangedOrThrow() {
-    const element = this.element.querySelector("DefaultUserNameChanged")
+    const element = this.element.querySelector(":scope > DefaultUserNameChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
@@ -311,27 +320,27 @@ export class Meta {
   }
 
   getColorOrThrow() {
-    const element = this.element.querySelector("Color")
+    const element = this.element.querySelector(":scope > Color")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getEntryTemplatesGroupOrThrow() {
-    const element = this.element.querySelector("EntryTemplatesGroup")
+    const element = this.element.querySelector(":scope > EntryTemplatesGroup")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
   }
 
   getEntryTemplatesGroupChangedOrThrow() {
-    const element = this.element.querySelector("EntryTemplatesGroupChanged")
+    const element = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
 
-    if (element === null)
+    if (element == null)
       throw new Error()
 
     return new Unknown(element)
@@ -343,6 +352,32 @@ export class Meta {
 
     value.set(uuid)
     stamp.set(now())
+  }
+
+}
+
+export class Root {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  getGroupByIndexOrThrow(index: number) {
+    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      throw new Error();
+
+    return new Unknown(element);
+  }
+
+  getGroupByIndexOrNull(index: number) {
+    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      return
+
+    return new Unknown(element)
   }
 
 }

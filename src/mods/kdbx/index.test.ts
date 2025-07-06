@@ -48,7 +48,8 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-decrypted.inner.content.getMetaOrThrow().setDatabaseNameWithTimeOrThrow("Test")
+decrypted.inner.content.getMetaOrThrow().getGeneratorOrThrow().set("Test")
+console.log(decrypted.inner.content.getRootOrThrow().getGroupByIndexOrThrow(0))
 
 console.log(XML.format(decrypted.inner.content.value))
 
