@@ -7,7 +7,7 @@ import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { gunzipSync, gzipSync } from "node:zlib"
 import { Inner, Outer } from "./headers/index.js"
-import { Compression, MagicAndVersionAndHeadersWithHashAndHmac } from "./headers/outer/index.js"
+import { Compression, MagicAndVersionAndHeadersWithBytesWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
 
 export class PasswordKey {
@@ -141,24 +141,18 @@ export namespace Database {
   export class Decrypted {
 
     constructor(
-      readonly keys: MasterKeys,
-      readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
-      readonly body: Inner.HeadersAndContent
+      readonly outer: Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys,
+      readonly inner: Inner.HeadersAndContent
     ) { }
 
     async rotateOrThrow(composite: CompositeKey) {
-      const data = this.head.data.rotateOrThrow()
-      const keys = await data.deriveOrThrow(composite)
-
-      const head = await Outer.MagicAndVersionAndHeadersWithHashAndHmac.computeOrThrow(data, keys)
-
-      return new Decrypted(keys, head, this.body)
+      return new Decrypted(await this.outer.rotateOrThrow(composite), this.inner)
     }
 
     async encryptOrThrow() {
-      const { cipher, iv, compression } = this.head.data.value.headers
+      const { cipher, iv, compression } = this.outer.data.data.value.headers
 
-      const degzipped = Writable.writeToBytesOrThrow(this.body)
+      const degzipped = Writable.writeToBytesOrThrow(this.inner)
 
       const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
       const encrypted = await cipher.encryptOrThrow(this.keys.encrypter.value.bytes, iv.bytes, engzipped)
@@ -181,7 +175,7 @@ export namespace Database {
 
       blocks.push(await BlockWithIndex.fromOrThrow(this.keys, index, new Uint8Array(0)))
 
-      return new Encrypted(this.head, new Blocks(blocks))
+      return new Encrypted(this.outer, new Blocks(blocks))
     }
 
   }
@@ -189,34 +183,34 @@ export namespace Database {
   export class Encrypted {
 
     constructor(
-      readonly head: Outer.MagicAndVersionAndHeadersWithHashAndHmac,
-      readonly body: Blocks
+      readonly outer: Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmac,
+      readonly inner: Blocks
     ) { }
 
     sizeOrThrow() {
-      return this.head.sizeOrThrow() + this.body.sizeOrThrow()
+      return this.outer.sizeOrThrow() + this.inner.sizeOrThrow()
     }
 
     writeOrThrow(cursor: Cursor) {
-      this.head.writeOrThrow(cursor)
-      this.body.writeOrThrow(cursor)
+      this.outer.writeOrThrow(cursor)
+      this.inner.writeOrThrow(cursor)
     }
 
     cloneOrThrow() {
-      return new Encrypted(this.head.cloneOrThrow(), this.body.cloneOrThrow())
+      return new Encrypted(this.outer.cloneOrThrow(), this.inner.cloneOrThrow())
     }
 
     async decryptOrThrow(composite: CompositeKey) {
-      const { cipher, iv, compression } = this.head.data.value.headers
+      const { cipher, iv, compression } = this.outer.data.value.headers
 
-      const keys = await this.head.deriveOrThrow(composite)
+      const keys = await this.outer.deriveOrThrow(composite)
 
-      await this.head.verifyOrThrow(keys)
+      await this.outer.verifyOrThrow(keys)
 
-      const length = this.body.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
+      const length = this.inner.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
       const cursor = new Cursor(new Uint8Array(length))
 
-      for (const block of this.body.blocks) {
+      for (const block of this.inner.blocks) {
         await block.verifyOrThrow(keys)
 
         cursor.writeOrThrow(block.block.data.bytes)
@@ -243,7 +237,7 @@ export namespace Database {
           $value.innerHTML = new TextDecoder().decode(decrypted)
         }
 
-        return new Decrypted(keys, this.head, body)
+        return new Decrypted(keys, this.outer, body)
       }
     }
 
@@ -252,7 +246,7 @@ export namespace Database {
   export namespace Encrypted {
 
     export function readOrThrow(cursor: Cursor) {
-      const head = MagicAndVersionAndHeadersWithHashAndHmac.readOrThrow(cursor)
+      const head = MagicAndVersionAndHeadersWithBytesWithHashAndHmac.readOrThrow(cursor)
       const body = Blocks.readOrThrow(cursor)
 
       return new Encrypted(head, body)

@@ -36,8 +36,34 @@ export class Version {
 
 }
 
+export class MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys {
 
-export class MagicAndVersionAndHeadersWithHashAndHmac {
+  constructor(
+    readonly data: MagicAndVersionAndHeadersWithBytesWithHashAndHmac,
+    readonly keys: MasterKeys
+  ) { }
+
+  sizeOrThrow() {
+    return this.data.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.data.writeOrThrow(cursor)
+  }
+
+  async rotateOrThrow(composite: CompositeKey) {
+    const data = this.data.data.rotateOrThrow()
+    const keys = await data.deriveOrThrow(composite)
+
+    const dataWithHashAndHmac = await MagicAndVersionAndHeadersWithBytesWithHashAndHmac.computeOrThrow(data, keys)
+
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(dataWithHashAndHmac, keys)
+  }
+
+}
+
+
+export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   constructor(
     readonly data: MagicAndVersionAndHeadersWithBytes,
@@ -54,7 +80,7 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array & Lengthed<32>
     const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array & Lengthed<32>
 
-    return new MagicAndVersionAndHeadersWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
   }
 
   async verifyOrThrow(keys: MasterKeys) {
@@ -87,7 +113,7 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
     const hash = this.hash.cloneOrThrow()
     const hmac = this.hmac.cloneOrThrow()
 
-    return new MagicAndVersionAndHeadersWithHashAndHmac(data, hash, hmac)
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
   }
 
   async deriveOrThrow(composite: CompositeKey) {
@@ -96,14 +122,14 @@ export class MagicAndVersionAndHeadersWithHashAndHmac {
 
 }
 
-export namespace MagicAndVersionAndHeadersWithHashAndHmac {
+export namespace MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   export function readOrThrow(cursor: Cursor) {
     const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
     const hash = new Opaque(cursor.readOrThrow(32))
     const hmac = new Opaque(cursor.readOrThrow(32))
 
-    return new MagicAndVersionAndHeadersWithHashAndHmac(data, hash, hmac)
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
   }
 
 }

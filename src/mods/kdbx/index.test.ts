@@ -47,7 +47,7 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const $$values = decrypted.body.content.value.querySelectorAll("Value[Protected='True']")
+const $$values = decrypted.inner.content.value.querySelectorAll("Value[Protected='True']")
 
 for (let i = 0; i < $$values.length; i++) {
   const $value = $$values[i]

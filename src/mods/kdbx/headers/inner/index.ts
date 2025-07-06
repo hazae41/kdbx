@@ -10,15 +10,6 @@ export class HeadersAndContent {
     readonly content: Content
   ) { }
 
-  sizeOrThrow() {
-    return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
-  }
-
-  writeOrThrow(cursor: Cursor) {
-    this.headers.writeOrThrow(cursor)
-    this.content.writeOrThrow(cursor)
-  }
-
 }
 
 export class Content {
@@ -28,15 +19,11 @@ export class Content {
     readonly value: Document
   ) { }
 
-  sizeOrThrow() {
-    return this.bytes.sizeOrThrow()
-  }
-
-  writeOrThrow(cursor: Cursor) {
-    this.bytes.writeOrThrow(cursor)
-  }
-
 }
+
+export class ContentWithBytes (
+
+)
 
 export namespace Content {
 
