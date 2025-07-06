@@ -145,13 +145,6 @@ export namespace Database {
       readonly inner: Inner.HeadersAndContentWithBytes
     ) { }
 
-    computeOrThrow() {
-      const outer = this.outer
-      const inner = this.inner.computeOrThrow()
-
-      return new Decrypted(outer, inner)
-    }
-
     async rotateOrThrow(composite: CompositeKey) {
       return new Decrypted(await this.outer.rotateOrThrow(composite), this.inner)
     }
@@ -159,7 +152,7 @@ export namespace Database {
     async encryptOrThrow() {
       const { cipher, iv, compression } = this.outer.data.data.value.headers
 
-      const degzipped = Writable.writeToBytesOrThrow(this.inner)
+      const degzipped = Writable.writeToBytesOrThrow(this.inner.computeOrThrow())
 
       const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
       const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
