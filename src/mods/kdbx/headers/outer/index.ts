@@ -55,9 +55,9 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys {
     const data = this.data.data.rotateOrThrow()
     const keys = await data.deriveOrThrow(composite)
 
-    const dataWithHashAndHmac = await MagicAndVersionAndHeadersWithBytesWithHashAndHmac.computeOrThrow(data, keys)
+    const hash = await data.computeOrThrow(keys)
 
-    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(dataWithHashAndHmac, keys)
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(hash, keys)
   }
 
 }
@@ -70,18 +70,6 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     readonly hash: Opaque<32>,
     readonly hmac: Opaque<32>
   ) { }
-
-  static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys) {
-    const index = 0xFFFFFFFFFFFFFFFFn
-    const major = keys.authifier.bytes
-
-    const key = await new PreHmacKey(index, major).digestOrThrow()
-
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array & Lengthed<32>
-    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array & Lengthed<32>
-
-    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
-  }
 
   async verifyOrThrow(keys: MasterKeys) {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.bytes))
@@ -141,16 +129,8 @@ export class MagicAndVersionAndHeadersWithBytes {
     readonly bytes: Opaque,
   ) { }
 
-  static computeOrThrow(value: MagicAndVersionAndHeaders) {
-    const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
-    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
-  }
-
   rotateOrThrow() {
-    const value = this.value.rotateOrThrow()
-    const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
-
-    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
+    return this.value.rotateOrThrow().computeOrThrow()
   }
 
   sizeOrThrow() {
@@ -171,6 +151,19 @@ export class MagicAndVersionAndHeadersWithBytes {
   async deriveOrThrow(composite: CompositeKey) {
     return await this.value.deriveOrThrow(composite)
   }
+
+  async computeOrThrow(keys: MasterKeys) {
+    const index = 0xFFFFFFFFFFFFFFFFn
+    const major = keys.authifier.bytes
+
+    const key = await new PreHmacKey(index, major).digestOrThrow()
+
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.bytes.bytes)) as Uint8Array & Lengthed<32>
+    const hmac = new Uint8Array(await key.signOrThrow(this.bytes.bytes)) as Uint8Array & Lengthed<32>
+
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(this, new Opaque(hash), new Opaque(hmac))
+  }
+
 
 }
 
@@ -223,6 +216,11 @@ export class MagicAndVersionAndHeaders {
 
   async deriveOrThrow(composite: CompositeKey) {
     return await this.headers.deriveOrThrow(composite)
+  }
+
+  computeOrThrow() {
+    const bytes = new Opaque(Writable.writeToBytesOrThrow(this))
+    return new MagicAndVersionAndHeadersWithBytes(this, bytes)
   }
 
 }

@@ -3,29 +3,50 @@ import { Cursor } from "@hazae41/cursor"
 import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
 
-export class HeadersAndContent {
+export class HeadersAndContentWithBytes {
 
   constructor(
     readonly headers: Headers,
-    readonly content: Content
+    readonly content: ContentWithBytes
   ) { }
+
+  sizeOrThrow() {
+    return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.headers.writeOrThrow(cursor)
+    this.content.writeOrThrow(cursor)
+  }
 
 }
 
-export class Content {
+export class ContentWithBytes {
 
   constructor(
     readonly bytes: Opaque,
     readonly value: Document
   ) { }
 
+  sizeOrThrow() {
+    return this.bytes.sizeOrThrow()
+  }
+
+  writeOrThrow(cursor: Cursor) {
+    this.bytes.writeOrThrow(cursor)
+  }
+
+  computeOrThrow() {
+    const raw = new XMLSerializer().serializeToString(this.value)
+
+    const bytes = new TextEncoder().encode(raw) as Uint8Array & { length: number }
+
+    return new ContentWithBytes(new Opaque(bytes), this.value)
+  }
+
 }
 
-export class ContentWithBytes (
-
-)
-
-export namespace Content {
+export namespace ContentWithBytes {
 
   export function readOrThrow(cursor: Cursor) {
     const bytes = new Opaque(cursor.readOrThrow(cursor.remaining))
@@ -33,18 +54,18 @@ export namespace Content {
     const raw = new TextDecoder().decode(bytes.bytes)
     const xml = new DOMParser().parseFromString(raw, "text/xml")
 
-    return new Content(bytes, xml)
+    return new ContentWithBytes(bytes, xml)
   }
 
 }
 
-export namespace HeadersAndContent {
+export namespace HeadersAndContentWithBytes {
 
   export function readOrThrow(cursor: Cursor) {
     const headers = Headers.readOrThrow(cursor)
-    const content = Content.readOrThrow(cursor)
+    const content = ContentWithBytes.readOrThrow(cursor)
 
-    return new HeadersAndContent(headers, content)
+    return new HeadersAndContentWithBytes(headers, content)
   }
 
 }

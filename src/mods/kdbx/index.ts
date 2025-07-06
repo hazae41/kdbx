@@ -142,7 +142,7 @@ export namespace Database {
 
     constructor(
       readonly outer: Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys,
-      readonly inner: Inner.HeadersAndContent
+      readonly inner: Inner.HeadersAndContentWithBytes
     ) { }
 
     async rotateOrThrow(composite: CompositeKey) {
@@ -155,7 +155,7 @@ export namespace Database {
       const degzipped = Writable.writeToBytesOrThrow(this.inner)
 
       const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
-      const encrypted = await cipher.encryptOrThrow(this.keys.encrypter.value.bytes, iv.bytes, engzipped)
+      const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
       const blocks = new Array<BlockWithIndex>()
 
@@ -168,14 +168,14 @@ export namespace Database {
         if (x.done)
           break
 
-        blocks.push(await BlockWithIndex.fromOrThrow(this.keys, index, x.value))
+        blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, x.value))
 
         continue
       }
 
-      blocks.push(await BlockWithIndex.fromOrThrow(this.keys, index, new Uint8Array(0)))
+      blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, new Uint8Array(0)))
 
-      return new Encrypted(this.outer, new Blocks(blocks))
+      return new Encrypted(this.outer.data, new Blocks(blocks))
     }
 
   }
@@ -221,7 +221,7 @@ export namespace Database {
       const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
       const degzipped = compression === Compression.Gzip ? gunzipSync(decrypted) : decrypted
 
-      const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
+      const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContentWithBytes, degzipped)
 
       {
         const cipher = await body.headers.getCipherOrThrow()
@@ -237,7 +237,9 @@ export namespace Database {
           $value.innerHTML = new TextDecoder().decode(decrypted)
         }
 
-        return new Decrypted(keys, this.outer, body)
+        const outer = new Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(this.outer, keys)
+
+        return new Decrypted(outer, body)
       }
     }
 
