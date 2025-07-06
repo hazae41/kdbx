@@ -1,6 +1,7 @@
 export * from "./dictionary/index.js"
 export * from "./headers/index.js"
 
+import { Base64 } from "@hazae41/base64"
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
@@ -228,7 +229,22 @@ export namespace Database {
 
       const body = Readable.readFromBytesOrThrow(Inner.HeadersAndContent, degzipped)
 
-      return new Decrypted(keys, this.head, body)
+      {
+        const cipher = await body.headers.getCipherOrThrow()
+
+        const $$values = body.content.value.querySelectorAll("Value[Protected='True']")
+
+        for (let i = 0; i < $$values.length; i++) {
+          const $value = $$values[i]
+
+          const encrypted = Base64.fromBuffer().decodePaddedOrThrow($value.innerHTML).bytes
+          const decrypted = cipher.applyOrThrow(encrypted)
+
+          $value.innerHTML = new TextDecoder().decode(decrypted)
+        }
+
+        return new Decrypted(keys, this.head, body)
+      }
     }
 
   }

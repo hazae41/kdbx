@@ -24,29 +24,29 @@ export class HeadersAndContent {
 export class Content {
 
   constructor(
-    readonly value: Opaque
+    readonly bytes: Opaque,
+    readonly value: Document
   ) { }
 
-  static fromOrThrow(xml: Document) {
-    const text = new XMLSerializer().serializeToString(xml)
-    const data = new TextEncoder().encode(text)
-
-    return new Content(new Opaque(data))
-  }
-
-  intoOrThrow() {
-    const raw = new TextDecoder().decode(this.value.bytes)
-    const xml = new DOMParser().parseFromString(raw, "text/xml")
-
-    return xml
-  }
-
   sizeOrThrow() {
-    return this.value.sizeOrThrow()
+    return this.bytes.sizeOrThrow()
   }
 
   writeOrThrow(cursor: Cursor) {
-    this.value.writeOrThrow(cursor)
+    this.bytes.writeOrThrow(cursor)
+  }
+
+}
+
+export namespace Content {
+
+  export function readOrThrow(cursor: Cursor) {
+    const bytes = new Opaque(cursor.readOrThrow(cursor.remaining))
+
+    const raw = new TextDecoder().decode(bytes.bytes)
+    const xml = new DOMParser().parseFromString(raw, "text/xml")
+
+    return new Content(bytes, xml)
   }
 
 }
@@ -55,9 +55,9 @@ export namespace HeadersAndContent {
 
   export function readOrThrow(cursor: Cursor) {
     const headers = Headers.readOrThrow(cursor)
-    const content = new Opaque(cursor.readOrThrow(cursor.remaining))
+    const content = Content.readOrThrow(cursor)
 
-    return new HeadersAndContent(headers, new Content(content))
+    return new HeadersAndContent(headers, content)
   }
 
 }
