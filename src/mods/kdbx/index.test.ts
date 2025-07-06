@@ -49,7 +49,7 @@ const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync
 const decrypted = await encrypted.decryptOrThrow(password)
 
 decrypted.inner.content.getMetaOrThrow().getGeneratorOrThrow().set("Test")
-console.log(decrypted.inner.content.getRootOrThrow().getGroupByIndexOrThrow(0))
+console.log(decrypted.inner.content.getRootOrThrow().getGroupByIndexOrThrow(0).getGroupByIndexOrThrow(0).getEntryByIndexOrThrow(0).getStringByKeyOrThrow("Password").getValueOrThrow().get())
 
 console.log(XML.format(decrypted.inner.content.value))
 

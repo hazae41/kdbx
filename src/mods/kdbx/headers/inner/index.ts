@@ -1,5 +1,6 @@
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
+import { Nullable } from "libs/nullable/index.js"
 import { now } from "libs/time/index.js"
 import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
@@ -362,13 +363,22 @@ export class Root {
     readonly element: Element
   ) { }
 
+  *getGroups() {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements)
+      yield new Group(element)
+
+    return
+  }
+
   getGroupByIndexOrThrow(index: number) {
     const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
 
     if (element == null)
       throw new Error();
 
-    return new Unknown(element);
+    return new Group(element);
   }
 
   getGroupByIndexOrNull(index: number) {
@@ -377,7 +387,37 @@ export class Root {
     if (element == null)
       return
 
-    return new Unknown(element)
+    return new Group(element)
+  }
+
+  getGroupByUuidOrThrow(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements) {
+      const group = new Group(element);
+
+      if (group.getUuidOrThrow().get() === uuid)
+        return group;
+
+      continue
+    }
+
+    throw new Error();
+  }
+
+  getGroupByUuidOrNull(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements) {
+      const group = new Group(element);
+
+      if (group.getUuidOrThrow().get() === uuid)
+        return group;
+
+      continue
+    }
+
+    return
   }
 
 }
@@ -413,6 +453,147 @@ export class Group {
       throw new Error()
 
     return new Times(element)
+  }
+
+  getIconIdOrThrow() {
+    const element = this.element.querySelector(":scope > IconID")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getEnableAutoTypeOrThrow() {
+    const element = this.element.querySelector(":scope > EnableAutoType")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getEnableSearchingOrThrow() {
+    const element = this.element.querySelector(":scope > EnableSearching")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  *getGroups() {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements)
+      yield new Group(element)
+
+    return
+  }
+
+  getGroupByIndexOrThrow(index: number) {
+    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      throw new Error();
+
+    return new Group(element);
+  }
+
+  getGroupByIndexOrNull(index: number) {
+    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      return
+
+    return new Group(element)
+  }
+
+  getGroupByUuidOrThrow(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements) {
+      const group = new Group(element);
+
+      if (group.getUuidOrThrow().get() === uuid)
+        return group;
+
+      continue
+    }
+
+    throw new Error();
+  }
+
+  getGroupByUuidOrNull(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Group`);
+
+    for (const element of elements) {
+      const group = new Group(element);
+
+      if (group.getUuidOrThrow().get() === uuid)
+        return group;
+
+      continue
+    }
+
+    return
+  }
+
+  *getEntries() {
+    const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+    for (const element of elements)
+      yield new Entry(element)
+
+    return
+  }
+
+  getEntryByIndexOrThrow(index: number) {
+    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      throw new Error();
+
+    return new Entry(element);
+  }
+
+  getEntryByIndexOrNull(index: number) {
+    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      return
+
+    return new Entry(element)
+  }
+
+  getEntryByUuidOrThrow(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+    for (const element of elements) {
+      const entry = new Entry(element);
+
+      if (entry.getUuidOrThrow().get() === uuid)
+        return entry;
+
+      continue
+    }
+
+    throw new Error();
+  }
+
+  getEntryByUuidOrNull(uuid: string) {
+    const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+    for (const element of elements) {
+      const entry = new Entry(element);
+
+      if (entry.getUuidOrThrow().get() === uuid)
+        return entry;
+
+      continue
+    }
+
+    return
   }
 
 }
@@ -475,6 +656,142 @@ export class Times {
       throw new Error()
 
     return new Unknown(element)
+  }
+
+}
+
+export class Entry {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  getUuidOrThrow() {
+    const element = this.element.querySelector(":scope > UUID")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getTimesOrThrow() {
+    const element = this.element.querySelector(":scope > Times")
+
+    if (element == null)
+      throw new Error()
+
+    return new Times(element)
+  }
+
+  *getStrings() {
+    const elements = this.element.querySelectorAll(`:scope > String`);
+
+    for (const element of elements)
+      yield new String(element)
+
+    return
+  }
+
+  getStringByIndexOrThrow(index: number) {
+    const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      throw new Error();
+
+    return new String(element);
+  }
+
+  getStringByIndexOrNull(index: number) {
+    const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
+
+    if (element == null)
+      return
+
+    return new String(element)
+  }
+
+  getStringByKeyOrThrow(key: string) {
+    const elements = this.element.querySelectorAll(`:scope > String`);
+
+    for (const element of elements) {
+      const string = new String(element);
+
+      if (string.getKeyOrThrow().get() === key)
+        return string;
+
+      continue
+    }
+
+    throw new Error();
+  }
+
+  getStringByKeyOrNull(key: string) {
+    const elements = this.element.querySelectorAll(`:scope > String`);
+
+    for (const element of elements) {
+      const string = new String(element);
+
+      if (string.getKeyOrThrow().get() === key)
+        return string;
+
+      continue
+    }
+
+    return
+  }
+
+}
+
+export class String {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  getKeyOrThrow() {
+    const element = this.element.querySelector(":scope > Key")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+  getValueOrThrow() {
+    const element = this.element.querySelector(":scope > Value")
+
+    if (element == null)
+      throw new Error()
+
+    return new Unknown(element)
+  }
+
+}
+
+export class Value {
+
+  constructor(
+    readonly element: Element
+  ) { }
+
+  get() {
+    return this.element.innerHTML
+  }
+
+  set(value: string) {
+    this.element.innerHTML = value
+  }
+
+  get protected() {
+    return this.element.getAttribute("Protected")
+  }
+
+  set protected(value: Nullable<string>) {
+    if (value == null)
+      this.element.removeAttribute("Protected")
+    else
+      this.element.setAttribute("Protected", value)
   }
 
 }
