@@ -702,6 +702,38 @@ export class Entry {
     return new History(element)
   }
 
+  getHistoryOrNew() {
+    const { ownerDocument } = this.element
+
+    const element = this.element.querySelector(":scope > History")
+
+    if (element != null)
+      return new History(element)
+
+    const created = ownerDocument.createElement("History");
+
+    this.element.appendChild(created);
+
+    return new History(created);
+  }
+
+  isInHistory() {
+    return this.element.parentElement?.nodeName === "History"
+  }
+
+  cloneToHistory() {
+    const clone = new Entry(this.element.cloneNode(true) as Element)
+
+    const history = clone.getHistoryOrNull()
+
+    if (history != null)
+      clone.element.removeChild(history.element)
+
+    this.getHistoryOrNew().element.prepend(clone.element)
+
+    return clone
+  }
+
   *getStrings() {
     const elements = this.element.querySelectorAll(`:scope > String`);
 

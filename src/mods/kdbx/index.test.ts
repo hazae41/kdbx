@@ -49,7 +49,18 @@ const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync
 const decrypted = await encrypted.decryptOrThrow(password)
 
 decrypted.inner.content.getMetaOrThrow().getGeneratorOrThrow().set("Test")
-console.log(decrypted.inner.content.getRootOrThrow().getGroupByIndexOrThrow(0).getGroupByIndexOrThrow(0).getEntryByIndexOrThrow(0).getHistoryOrNull()?.getEntryByIndexOrThrow(0).getStringByKeyOrThrow("Password").getValueOrThrow().get())
+const root = decrypted.inner.content.getRootOrThrow()
+const group0 = root.getGroupByIndexOrThrow(0)
+const subgroup0 = group0.getGroupByIndexOrThrow(0)
+const entry0 = subgroup0.getEntryByIndexOrThrow(0)
+
+console.log(entry0.getHistoryOrNull()?.getEntries().reduce(x => x + 1, 0))
+
+entry0.cloneToHistory()
+
+console.log(entry0.getHistoryOrNull()?.getEntries().reduce(x => x + 1, 0))
+
+entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned lol")
 
 console.log(XML.format(decrypted.inner.content.value))
 
