@@ -146,7 +146,7 @@ export namespace Database {
     ) { }
 
     async rotateOrThrow(composite: CompositeKey) {
-      return new Decrypted(await this.outer.rotateOrThrow(composite), this.inner) // TODO rotate inner
+      return new Decrypted(await this.outer.rotateOrThrow(composite), await this.inner.rotateOrThrow())
     }
 
     async encryptOrThrow() {

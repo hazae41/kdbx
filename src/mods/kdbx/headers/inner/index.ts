@@ -1,5 +1,6 @@
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
+import { Lengthed } from "@hazae41/lengthed"
 import { Nullable } from "libs/nullable/index.js"
 import { now } from "libs/time/index.js"
 import { Vector } from "mods/kdbx/vector/index.js"
@@ -12,8 +13,8 @@ export class HeadersAndContentWithBytes {
     readonly content: ContentWithBytes
   ) { }
 
-  rotateOrThrow() {
-    // TODO
+  async rotateOrThrow() {
+    return new HeadersAndContentWithBytes(await this.headers.rotateOrThrow(), this.content)
   }
 
   sizeOrThrow() {
@@ -101,6 +102,12 @@ export namespace HeadersAndContentWithBytes {
 
 }
 
+export interface HeadersInit {
+  readonly cipher: Cipher
+  readonly key: Opaque<32>
+  readonly binary: readonly Opaque[]
+}
+
 export class Headers {
 
   constructor(
@@ -131,6 +138,14 @@ export class Headers {
     return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
+  async rotateOrThrow() {
+    const { cipher, binary } = this
+
+    const key = new Opaque(new Uint8Array(crypto.getRandomValues(new Uint8Array(32))) as Uint8Array & Lengthed<32>)
+
+    return Headers.initOrThrow({ cipher, key, binary })
+  }
+
   async getCipherOrThrow() {
     return await this.cipher.initOrThrow(this.key.bytes)
   }
@@ -138,6 +153,18 @@ export class Headers {
 }
 
 export namespace Headers {
+
+  export function initOrThrow(init: HeadersInit) {
+    const { cipher, key, binary } = init
+
+    const indexed = {
+      1: [cipher],
+      2: [key],
+      3: binary
+    } as const
+
+    return new Headers(Vector.initOrThrow(indexed))
+  }
 
   export function readOrThrow(cursor: Cursor) {
     const vector = Vector.readOrThrow(cursor)

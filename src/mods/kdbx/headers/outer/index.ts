@@ -335,16 +335,16 @@ export namespace Headers {
     if (iv.bytes.length !== cipher.IV.length)
       throw new Error()
 
-    const a = [cipher] as const
-    const b = [compression] as const
-    const c = [new Opaque(seed.bytes)] as const
-    const d = [new Opaque(iv.bytes)] as const
-    const e = [kdf] as const
-    const f = custom != null ? [custom] as const : undefined
+    const indexed = {
+      2: [cipher],
+      3: [compression],
+      4: [new Opaque(seed.bytes)],
+      7: [new Opaque(iv.bytes)],
+      11: [kdf],
+      12: custom != null ? [custom] as const : undefined
+    } as const
 
-    const vector = Vector.initOrThrow({ 2: a, 3: b, 4: c, 7: d, 11: e, 12: f })
-
-    return new Headers(vector)
+    return new Headers(Vector.initOrThrow(indexed))
   }
 
   export function readOrThrow(cursor: Cursor) {
