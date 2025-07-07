@@ -352,31 +352,27 @@ export namespace Headers {
 
     if (vector.value[2].length !== 1)
       throw new Error()
-    const a = [vector.value[2][0].readIntoOrThrow(Cipher)] as const
-
     if (vector.value[3].length !== 1)
       throw new Error()
-    const b = [vector.value[3][0].readIntoOrThrow(Compression)] as const
-
     if (vector.value[4].length !== 1)
       throw new Error()
     if (vector.value[4][0].bytes.length !== 32)
       throw new Error()
-    const c = [vector.value[4][0] as Opaque<32>] as const
-
     if (vector.value[7].length !== 1)
       throw new Error()
-    const d = [vector.value[7][0]] as const
-
     if (vector.value[11].length !== 1)
       throw new Error()
-    const e = [vector.value[11][0].readIntoOrThrow(KdfParameters)] as const
-
     if (vector.value[12] != null && vector.value[12].length !== 1)
       throw new Error()
-    const f = vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
 
-    const indexed = { 2: a, 3: b, 4: c, 7: d, 11: e, 12: f } as const
+    const indexed = {
+      2: [vector.value[2][0].readIntoOrThrow(Cipher)],
+      3: [vector.value[3][0].readIntoOrThrow(Compression)],
+      4: [vector.value[4][0] as Opaque<32>],
+      7: [vector.value[7][0]],
+      11: [vector.value[11][0].readIntoOrThrow(KdfParameters)],
+      12: vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
+    } as const
 
     return new Headers(new Vector(vector.bytes, indexed))
   }

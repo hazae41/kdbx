@@ -171,17 +171,16 @@ export namespace Headers {
 
     if (vector.value[1].length !== 1)
       throw new Error()
-    const a = [vector.value[1][0].readIntoOrThrow(Cipher)] as const
-
     if (vector.value[2].length !== 1)
       throw new Error()
-    const b = [vector.value[2][0]] as const
-
     if (vector.value[3].length === 0)
       throw new Error()
-    const c = vector.value[3]
 
-    const indexed = { 1: a, 2: b, 3: c }
+    const indexed = {
+      1: [vector.value[1][0].readIntoOrThrow(Cipher)],
+      2: [vector.value[2][0]],
+      3: vector.value[3]
+    } as const
 
     return new Headers(new Vector(vector.bytes, indexed))
   }
