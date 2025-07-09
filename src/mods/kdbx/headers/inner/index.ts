@@ -173,7 +173,7 @@ export namespace Headers {
 
 }
 
-export namespace Html {
+export namespace Data {
 
 
   export class AsString {
@@ -315,7 +315,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getDatabaseNameChangedOrThrow() {
@@ -324,7 +324,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getGeneratorOrThrow() {
@@ -333,7 +333,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getHistoryMaxItemsOrThrow() {
@@ -342,7 +342,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsInteger(element)
+      return new Data.AsInteger(element)
     }
 
     getHistoryMaxSizeOrThrow() {
@@ -351,7 +351,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsInteger(element)
+      return new Data.AsInteger(element)
     }
 
     getRecycleBinEnabledOrThrow() {
@@ -360,7 +360,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsBoolean(element)
+      return new Data.AsBoolean(element)
     }
 
     getRecycleBinUuidOrThrow() {
@@ -369,7 +369,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getRecycleBinChangedOrThrow() {
@@ -378,7 +378,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getSettingsChangedOrThrow() {
@@ -387,7 +387,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getDatabaseDescriptionOrThrow() {
@@ -396,7 +396,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getDatabaseDescriptionChangedOrThrow() {
@@ -405,7 +405,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getDefaultUserNameOrThrow() {
@@ -414,7 +414,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getDefaultUserNameChangedOrThrow() {
@@ -423,7 +423,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getColorOrThrow() {
@@ -432,7 +432,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getDirectEntryTemplatesGroupOrThrow() {
@@ -441,7 +441,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getDirectEntryTemplatesGroupChangedOrThrow() {
@@ -450,7 +450,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
   }
@@ -584,7 +584,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getUuidOrThrow() {
@@ -593,7 +593,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getTimesOrThrow() {
@@ -611,7 +611,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsInteger(element)
+      return new Data.AsInteger(element)
     }
 
     getEnableAutoTypeOrThrow() {
@@ -620,7 +620,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsBoolean(element)
+      return new Data.AsBoolean(element)
     }
 
     getEnableSearchingOrThrow() {
@@ -629,7 +629,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsBoolean(element)
+      return new Data.AsBoolean(element)
     }
 
     *getDirectGroups() {
@@ -760,7 +760,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getCreationTimeOrThrow() {
@@ -769,7 +769,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getLastAccessTimeOrThrow() {
@@ -778,7 +778,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
     getExpiresOrThrow() {
@@ -787,7 +787,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsBoolean(element)
+      return new Data.AsBoolean(element)
     }
 
     getUsageCountOrThrow() {
@@ -796,7 +796,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsInteger(element)
+      return new Data.AsInteger(element)
     }
 
     getLocationChangedOrThrow() {
@@ -805,7 +805,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsDate(element)
+      return new Data.AsDate(element)
     }
 
   }
@@ -876,7 +876,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getTimesOrThrow() {
@@ -992,7 +992,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
     getValueOrThrow() {
@@ -1001,7 +1001,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsString(element)
+      return new Data.AsString(element)
     }
 
   }
