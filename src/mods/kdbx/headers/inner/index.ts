@@ -824,6 +824,25 @@ export namespace KeePassFile {
       return this.getHistoryOrNew().insertAndCleanOrThrow(this)
     }
 
+    createStringOrThrow(key: string, value: string) {
+      const { ownerDocument } = this.element
+
+      const $string = ownerDocument.createElement("String");
+      this.element.appendChild($string);
+
+      const $key = ownerDocument.createElement("Key");
+      $key.innerHTML = key;
+      $string.appendChild($key);
+
+      const $value = ownerDocument.createElement("Value");
+      $value.innerHTML = value;
+      $string.appendChild($value);
+
+      this.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+
+      return new String($string)
+    }
+
     getUuidOrThrow() {
       const element = this.element.querySelector(":scope > UUID")
 
