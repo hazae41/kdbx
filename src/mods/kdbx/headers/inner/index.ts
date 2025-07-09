@@ -1,8 +1,8 @@
+import { Base64 } from "@hazae41/base64"
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
 import { Nullable } from "libs/nullable/index.js"
-import { now } from "libs/time/index.js"
 import { Vector } from "mods/kdbx/vector/index.js"
 import { Cipher } from "./cipher/index.js"
 
@@ -58,22 +58,8 @@ export class ContentWithBytes {
     return new ContentWithBytes(new Opaque(bytes), this.value)
   }
 
-  getMetaOrThrow() {
-    const element = this.value.querySelector(":scope > Meta")
-
-    if (element == null)
-      throw new Error()
-
-    return new Meta(element)
-  }
-
-  getRootOrThrow() {
-    const element = this.value.querySelector(":scope > Root")
-
-    if (element == null)
-      throw new Error()
-
-    return new Root(element)
+  getKeePassFile() {
+    return new KeePassFile(this.value)
   }
 
 }
@@ -187,726 +173,896 @@ export namespace Headers {
 
 }
 
-export class Unknown {
+export namespace Html {
 
-  constructor(
-    readonly element: Element
-  ) { }
 
-  get() {
-    return this.element.innerHTML
+  export class AsString {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    get() {
+      return this.element.innerHTML
+    }
+
+    set(value: string) {
+      this.element.innerHTML = value
+    }
+
   }
 
-  set(value: string) {
-    this.element.innerHTML = value
+  export class AsBoolean {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    get() {
+      return this.element.innerHTML === "True"
+    }
+
+    set(value: boolean) {
+      this.element.innerHTML = value ? "True" : "False"
+    }
+
   }
 
-}
+  export class AsNumber {
 
-export class Meta {
+    constructor(
+      readonly element: Element
+    ) { }
 
-  constructor(
-    readonly element: Element
-  ) { }
+    get() {
+      const value = this.element.innerHTML
 
-  getDatabaseNameOrThrow() {
-    const element = this.element.querySelector(":scope > DatabaseName")
+      if (!value)
+        return NaN
 
-    if (element == null)
-      throw new Error()
+      return Number(value)
+    }
 
-    return new Unknown(element)
+    set(value: number) {
+      this.element.innerHTML = String(value)
+    }
+
   }
 
-  getDatabaseNameChangedOrThrow() {
-    const element = this.element.querySelector(":scope > DatabaseNameChanged")
+  export class AsDate {
 
-    if (element == null)
-      throw new Error()
+    constructor(
+      readonly element: Element
+    ) { }
 
-    return new Unknown(element)
-  }
+    get() {
+      const value = this.element.innerHTML
 
-  setDatabaseNameWithTimeOrThrow(name: string) {
-    const value = this.getDatabaseNameOrThrow()
-    const stamp = this.getDatabaseNameChangedOrThrow()
+      if (!value)
+        return new Date(0)
 
-    value.set(name)
-    stamp.set(now())
-  }
+      const memory = Base64.get().getOrThrow().decodePaddedOrThrow(value)
+      const cursor = new Cursor(memory.bytes)
 
-  getGeneratorOrThrow() {
-    const element = this.element.querySelector(":scope > Generator")
+      const seconds = Number(cursor.readUint64OrThrow())
 
-    if (element == null)
-      throw new Error()
+      return new Date(seconds * 1000)
+    }
 
-    return new Unknown(element)
-  }
+    set(value: Date) {
+      const seconds = Math.floor(value.getTime() / 1000)
 
-  getHistoryMaxItemsOrThrow() {
-    const element = this.element.querySelector(":scope > HistoryMaxItems")
+      const cursor = new Cursor(new Uint8Array(8))
+      cursor.writeUint64OrThrow(BigInt(seconds))
 
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getHistoryMaxSizeOrThrow() {
-    const element = this.element.querySelector(":scope > HistoryMaxSize")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getRecycleBinEnabledOrThrow() {
-    const element = this.element.querySelector(":scope > RecycleBinEnabled")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getRecycleBinUuidOrThrow() {
-    const element = this.element.querySelector(":scope > RecycleBinUUID")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getRecycleBinChangedOrThrow() {
-    const element = this.element.querySelector(":scope > RecycleBinChanged")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getSettingsChangedOrThrow() {
-    const element = this.element.querySelector(":scope > SettingsChanged")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getDatabaseDescriptionOrThrow() {
-    const element = this.element.querySelector(":scope > DatabaseDescription")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getDatabaseDescriptionChangedOrThrow() {
-    const element = this.element.querySelector(":scope > DatabaseDescriptionChanged")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  setDatabaseDescriptionWithTimeOrThrow(description: string) {
-    const value = this.getDatabaseDescriptionOrThrow()
-    const stamp = this.getDatabaseDescriptionChangedOrThrow()
-
-    value.set(description)
-    stamp.set(now())
-  }
-
-  getDefaultUserNameOrThrow() {
-    const element = this.element.querySelector(":scope > DefaultUserName")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getDefaultUserNameChangedOrThrow() {
-    const element = this.element.querySelector(":scope > DefaultUserNameChanged")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  setDefaultUserNameWithTimeOrThrow(name: string) {
-    const value = this.getDefaultUserNameOrThrow()
-    const stamp = this.getDefaultUserNameChangedOrThrow()
-
-    value.set(name)
-    stamp.set(now())
-  }
-
-  getColorOrThrow() {
-    const element = this.element.querySelector(":scope > Color")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getEntryTemplatesGroupOrThrow() {
-    const element = this.element.querySelector(":scope > EntryTemplatesGroup")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  getEntryTemplatesGroupChangedOrThrow() {
-    const element = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
-
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-  setEntryTemplatesGroupWithTimeOrThrow(uuid: string) {
-    const value = this.getEntryTemplatesGroupOrThrow()
-    const stamp = this.getEntryTemplatesGroupChangedOrThrow()
-
-    value.set(uuid)
-    stamp.set(now())
+      this.element.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(cursor.bytes)
+    }
   }
 
 }
 
-export class Root {
+export class KeePassFile {
 
   constructor(
-    readonly element: Element
+    readonly document: Document
   ) { }
 
-  *getGroups() {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
-
-    for (const element of elements)
-      yield new Group(element)
-
-    return
-  }
-
-  getGroupByIndexOrThrow(index: number) {
-    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+  getMetaOrThrow() {
+    const element = this.document.querySelector(":scope > Meta")
 
     if (element == null)
+      throw new Error()
+
+    return new KeePassFile.Meta(element)
+  }
+
+  getRootOrThrow() {
+    const element = this.document.querySelector(":scope > Root")
+
+    if (element == null)
+      throw new Error()
+
+    return new KeePassFile.Root(element)
+  }
+
+}
+
+export namespace KeePassFile {
+
+  export class Meta {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    getDatabaseNameOrThrow() {
+      const element = this.element.querySelector(":scope > DatabaseName")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getDatabaseNameChangedOrThrow() {
+      const element = this.element.querySelector(":scope > DatabaseNameChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getGeneratorOrThrow() {
+      const element = this.element.querySelector(":scope > Generator")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getHistoryMaxItemsOrThrow() {
+      const element = this.element.querySelector(":scope > HistoryMaxItems")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsNumber(element)
+    }
+
+    getHistoryMaxSizeOrThrow() {
+      const element = this.element.querySelector(":scope > HistoryMaxSize")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsNumber(element)
+    }
+
+    getRecycleBinEnabledOrThrow() {
+      const element = this.element.querySelector(":scope > RecycleBinEnabled")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsBoolean(element)
+    }
+
+    getRecycleBinUuidOrThrow() {
+      const element = this.element.querySelector(":scope > RecycleBinUUID")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getRecycleBinChangedOrThrow() {
+      const element = this.element.querySelector(":scope > RecycleBinChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getSettingsChangedOrThrow() {
+      const element = this.element.querySelector(":scope > SettingsChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getDatabaseDescriptionOrThrow() {
+      const element = this.element.querySelector(":scope > DatabaseDescription")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getDatabaseDescriptionChangedOrThrow() {
+      const element = this.element.querySelector(":scope > DatabaseDescriptionChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getDefaultUserNameOrThrow() {
+      const element = this.element.querySelector(":scope > DefaultUserName")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getDefaultUserNameChangedOrThrow() {
+      const element = this.element.querySelector(":scope > DefaultUserNameChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getColorOrThrow() {
+      const element = this.element.querySelector(":scope > Color")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getDirectEntryTemplatesGroupOrThrow() {
+      const element = this.element.querySelector(":scope > EntryTemplatesGroup")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getDirectEntryTemplatesGroupChangedOrThrow() {
+      const element = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+  }
+
+  export class Root {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    *getGroups() {
+      const elements = this.element.querySelectorAll(`Group`);
+
+      for (const element of elements)
+        yield new Group(element)
+
+      return
+    }
+
+    getGroupByUuidOrThrow(uuid: string) {
+      const elements = this.element.querySelectorAll(`Group`);
+
+      for (const element of elements) {
+        const group = new Group(element);
+
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
+      throw new Error()
+    }
+
+    getGroupByUuidOrNull(uuid: string) {
+      const elements = this.element.querySelectorAll(`Group`);
+
+      for (const element of elements) {
+        const group = new Group(element);
+
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
+      return
+    }
+
+    *getDirectGroups() {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
+
+      for (const element of elements)
+        yield new Group(element)
+
+      return
+    }
+
+    getDirectGroupByIndexOrThrow(index: number) {
+      const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        throw new Error();
+
+      return new Group(element);
+    }
+
+    getDirectGroupByIndexOrNull(index: number) {
+      const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        return
+
+      return new Group(element)
+    }
+
+    getDirectGroupByUuidOrThrow(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
+
+      for (const element of elements) {
+        const group = new Group(element);
+
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
       throw new Error();
+    }
 
-    return new Group(element);
-  }
+    getDirectGroupByUuidOrNull(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
 
-  getGroupByIndexOrNull(index: number) {
-    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+      for (const element of elements) {
+        const group = new Group(element);
 
-    if (element == null)
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
       return
-
-    return new Group(element)
-  }
-
-  getGroupByUuidOrThrow(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
-
-    for (const element of elements) {
-      const group = new Group(element);
-
-      if (group.getUuidOrThrow().get() === uuid)
-        return group;
-
-      continue
     }
 
-    throw new Error();
   }
 
-  getGroupByUuidOrNull(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
+  export class Group {
 
-    for (const element of elements) {
-      const group = new Group(element);
+    constructor(
+      readonly element: Element
+    ) { }
 
-      if (group.getUuidOrThrow().get() === uuid)
-        return group;
+    getNameOrThrow() {
+      const element = this.element.querySelector(":scope > Name")
 
-      continue
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
     }
 
-    return
-  }
+    getUuidOrThrow() {
+      const element = this.element.querySelector(":scope > UUID")
 
-}
+      if (element == null)
+        throw new Error()
 
-export class Group {
+      return new Html.AsString(element)
+    }
 
-  constructor(
-    readonly element: Element
-  ) { }
+    getTimesOrThrow() {
+      const element = this.element.querySelector(":scope > Times")
 
-  getNameOrThrow() {
-    const element = this.element.querySelector(":scope > Name")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Times(element)
+    }
 
-    return new Unknown(element)
-  }
+    getIconIdOrThrow() {
+      const element = this.element.querySelector(":scope > IconID")
 
-  getUuidOrThrow() {
-    const element = this.element.querySelector(":scope > UUID")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Html.AsNumber(element)
+    }
 
-    return new Unknown(element)
-  }
+    getEnableAutoTypeOrThrow() {
+      const element = this.element.querySelector(":scope > EnableAutoType")
 
-  getTimesOrThrow() {
-    const element = this.element.querySelector(":scope > Times")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Html.AsBoolean(element)
+    }
 
-    return new Times(element)
-  }
+    getEnableSearchingOrThrow() {
+      const element = this.element.querySelector(":scope > EnableSearching")
 
-  getIconIdOrThrow() {
-    const element = this.element.querySelector(":scope > IconID")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Html.AsBoolean(element)
+    }
 
-    return new Unknown(element)
-  }
+    *getDirectGroups() {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
 
-  getEnableAutoTypeOrThrow() {
-    const element = this.element.querySelector(":scope > EnableAutoType")
+      for (const element of elements)
+        yield new Group(element)
 
-    if (element == null)
-      throw new Error()
+      return
+    }
 
-    return new Unknown(element)
-  }
+    getDirectGroupByIndexOrThrow(index: number) {
+      const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
 
-  getEnableSearchingOrThrow() {
-    const element = this.element.querySelector(":scope > EnableSearching")
+      if (element == null)
+        throw new Error();
 
-    if (element == null)
-      throw new Error()
+      return new Group(element);
+    }
 
-    return new Unknown(element)
-  }
+    getDirectGroupByIndexOrNull(index: number) {
+      const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
 
-  *getGroups() {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
+      if (element == null)
+        return
 
-    for (const element of elements)
-      yield new Group(element)
+      return new Group(element)
+    }
 
-    return
-  }
+    getDirectGroupByUuidOrThrow(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
 
-  getGroupByIndexOrThrow(index: number) {
-    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+      for (const element of elements) {
+        const group = new Group(element);
 
-    if (element == null)
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
       throw new Error();
+    }
 
-    return new Group(element);
-  }
+    getDirectGroupByUuidOrNull(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Group`);
 
-  getGroupByIndexOrNull(index: number) {
-    const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`);
+      for (const element of elements) {
+        const group = new Group(element);
 
-    if (element == null)
+        if (group.getUuidOrThrow().get() === uuid)
+          return group;
+
+        continue
+      }
+
       return
-
-    return new Group(element)
-  }
-
-  getGroupByUuidOrThrow(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
-
-    for (const element of elements) {
-      const group = new Group(element);
-
-      if (group.getUuidOrThrow().get() === uuid)
-        return group;
-
-      continue
     }
 
-    throw new Error();
-  }
+    *getDirectEntries() {
+      const elements = this.element.querySelectorAll(`:scope > Entry`);
 
-  getGroupByUuidOrNull(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Group`);
+      for (const element of elements)
+        yield new Entry(element)
 
-    for (const element of elements) {
-      const group = new Group(element);
-
-      if (group.getUuidOrThrow().get() === uuid)
-        return group;
-
-      continue
+      return
     }
 
-    return
-  }
+    getDirectEntryByIndexOrThrow(index: number) {
+      const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
 
-  *getEntries() {
-    const elements = this.element.querySelectorAll(`:scope > Entry`);
+      if (element == null)
+        throw new Error();
 
-    for (const element of elements)
-      yield new Entry(element)
+      return new Entry(element);
+    }
 
-    return
-  }
+    getDirectEntryByIndexOrNull(index: number) {
+      const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
 
-  getEntryByIndexOrThrow(index: number) {
-    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+      if (element == null)
+        return
 
-    if (element == null)
+      return new Entry(element)
+    }
+
+    getDirectEntryByUuidOrThrow(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+      for (const element of elements) {
+        const entry = new Entry(element);
+
+        if (entry.getUuidOrThrow().get() === uuid)
+          return entry;
+
+        continue
+      }
+
       throw new Error();
-
-    return new Entry(element);
-  }
-
-  getEntryByIndexOrNull(index: number) {
-    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
-
-    if (element == null)
-      return
-
-    return new Entry(element)
-  }
-
-  getEntryByUuidOrThrow(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Entry`);
-
-    for (const element of elements) {
-      const entry = new Entry(element);
-
-      if (entry.getUuidOrThrow().get() === uuid)
-        return entry;
-
-      continue
     }
 
-    throw new Error();
-  }
+    getDirectEntryByUuidOrNull(uuid: string) {
+      const elements = this.element.querySelectorAll(`:scope > Entry`);
 
-  getEntryByUuidOrNull(uuid: string) {
-    const elements = this.element.querySelectorAll(`:scope > Entry`);
+      for (const element of elements) {
+        const entry = new Entry(element);
 
-    for (const element of elements) {
-      const entry = new Entry(element);
+        if (entry.getUuidOrThrow().get() === uuid)
+          return entry;
 
-      if (entry.getUuidOrThrow().get() === uuid)
-        return entry;
+        continue
+      }
 
-      continue
+      return
     }
 
-    return
   }
 
-}
+  export class Times {
 
-export class Times {
+    constructor(
+      readonly element: Element
+    ) { }
 
-  constructor(
-    readonly element: Element
-  ) { }
+    getLastModificationTimeOrThrow() {
+      const element = this.element.querySelector(":scope > LastModificationTime")
 
-  getLastModificationTimeOrThrow() {
-    const element = this.element.querySelector(":scope > LastModificationTime")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Html.AsDate(element)
+    }
 
-    return new Unknown(element)
+    getCreationTimeOrThrow() {
+      const element = this.element.querySelector(":scope > CreationTime")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getLastAccessTimeOrThrow() {
+      const element = this.element.querySelector(":scope > LastAccessTime")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
+    getExpiresOrThrow() {
+      const element = this.element.querySelector(":scope > Expires")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsBoolean(element)
+    }
+
+    getUsageCountOrThrow() {
+      const element = this.element.querySelector(":scope > UsageCount")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsNumber(element)
+    }
+
+    getLocationChangedOrThrow() {
+      const element = this.element.querySelector(":scope > LocationChanged")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsDate(element)
+    }
+
   }
 
-  getCreationTimeOrThrow() {
-    const element = this.element.querySelector(":scope > CreationTime")
+  export class Entry {
 
-    if (element == null)
-      throw new Error()
+    constructor(
+      readonly element: Element
+    ) { }
 
-    return new Unknown(element)
-  }
+    moveToGroupOrThrow(group: Group) {
+      if (this.element.parentNode === group.element)
+        return
 
-  getLastAccessTimeOrThrow() {
-    const element = this.element.querySelector(":scope > LastAccessTime")
+      this.element.parentNode?.removeChild(this.element)
 
-    if (element == null)
-      throw new Error()
+      group.element.appendChild(this.element)
 
-    return new Unknown(element)
-  }
+      this.getTimesOrThrow().getLocationChangedOrThrow().set(new Date())
 
-  getExpiresOrThrow() {
-    const element = this.element.querySelector(":scope > Expires")
+      group.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+    }
 
-    if (element == null)
-      throw new Error()
+    moveToTrashOrThrow() {
+      const file = new KeePassFile(this.element.ownerDocument)
+      const meta = file.getMetaOrThrow()
+      const root = file.getRootOrThrow()
 
-    return new Unknown(element)
-  }
+      const recybleBinEnabled = meta.getRecycleBinEnabledOrThrow().get()
 
-  getUsageCountOrThrow() {
-    const element = this.element.querySelector(":scope > UsageCount")
+      if (!recybleBinEnabled)
+        throw new Error("Recycle bin is not enabled")
 
-    if (element == null)
-      throw new Error()
+      const recycleBinUuid = meta.getRecycleBinUuidOrThrow().get()
+      const recycleBinGroup = root.getGroupByUuidOrThrow(recycleBinUuid)
 
-    return new Unknown(element)
-  }
+      this.moveToGroupOrThrow(recycleBinGroup)
 
-  getLocationChangedOrThrow() {
-    const element = this.element.querySelector(":scope > LocationChanged")
+      meta.getRecycleBinChangedOrThrow().set(new Date())
+    }
 
-    if (element == null)
-      throw new Error()
+    cloneToHistoryOrThrow() {
+      return this.getHistoryOrNew().insertAndCleanOrThrow(this)
+    }
 
-    return new Unknown(element)
-  }
+    getUuidOrThrow() {
+      const element = this.element.querySelector(":scope > UUID")
 
-}
+      if (element == null)
+        throw new Error()
 
-export class Entry {
+      return new Html.AsString(element)
+    }
 
-  constructor(
-    readonly element: Element
-  ) { }
+    getTimesOrThrow() {
+      const element = this.element.querySelector(":scope > Times")
 
-  getUuidOrThrow() {
-    const element = this.element.querySelector(":scope > UUID")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
+      return new Times(element)
+    }
 
-    return new Unknown(element)
-  }
+    getHistoryOrThrow() {
+      const element = this.element.querySelector(":scope > History")
 
-  getTimesOrThrow() {
-    const element = this.element.querySelector(":scope > Times")
+      if (element == null)
+        throw new Error()
 
-    if (element == null)
-      throw new Error()
-
-    return new Times(element)
-  }
-
-  getHistoryOrThrow() {
-    const element = this.element.querySelector(":scope > History")
-
-    if (element == null)
-      throw new Error()
-
-    return new History(element)
-  }
-
-  getHistoryOrNull() {
-    const element = this.element.querySelector(":scope > History")
-
-    if (element == null)
-      return
-
-    return new History(element)
-  }
-
-  getHistoryOrNew() {
-    const { ownerDocument } = this.element
-
-    const element = this.element.querySelector(":scope > History")
-
-    if (element != null)
       return new History(element)
-
-    const created = ownerDocument.createElement("History");
-
-    this.element.appendChild(created);
-
-    return new History(created);
-  }
-
-  isInHistory() {
-    return this.element.parentElement?.nodeName === "History"
-  }
-
-  cloneToHistory() {
-    const clone = new Entry(this.element.cloneNode(true) as Element)
-
-    const history = clone.getHistoryOrNull()
-
-    if (history != null)
-      clone.element.removeChild(history.element)
-
-    this.getHistoryOrNew().element.prepend(clone.element)
-
-    return clone
-  }
-
-  *getStrings() {
-    const elements = this.element.querySelectorAll(`:scope > String`);
-
-    for (const element of elements)
-      yield new String(element)
-
-    return
-  }
-
-  getStringByIndexOrThrow(index: number) {
-    const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
-
-    if (element == null)
-      throw new Error();
-
-    return new String(element);
-  }
-
-  getStringByIndexOrNull(index: number) {
-    const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
-
-    if (element == null)
-      return
-
-    return new String(element)
-  }
-
-  getStringByKeyOrThrow(key: string) {
-    const elements = this.element.querySelectorAll(`:scope > String`);
-
-    for (const element of elements) {
-      const string = new String(element);
-
-      if (string.getKeyOrThrow().get() === key)
-        return string;
-
-      continue
     }
 
-    throw new Error();
-  }
+    getHistoryOrNull() {
+      const element = this.element.querySelector(":scope > History")
 
-  getStringByKeyOrNull(key: string) {
-    const elements = this.element.querySelectorAll(`:scope > String`);
+      if (element == null)
+        return
 
-    for (const element of elements) {
-      const string = new String(element);
-
-      if (string.getKeyOrThrow().get() === key)
-        return string;
-
-      continue
+      return new History(element)
     }
 
-    return
-  }
+    getHistoryOrNew() {
+      const { ownerDocument } = this.element
 
-}
+      const element = this.element.querySelector(":scope > History")
 
-export class String {
+      if (element != null)
+        return new History(element)
 
-  constructor(
-    readonly element: Element
-  ) { }
+      const created = ownerDocument.createElement("History");
 
-  getKeyOrThrow() {
-    const element = this.element.querySelector(":scope > Key")
+      this.element.appendChild(created);
 
-    if (element == null)
-      throw new Error()
+      return new History(created);
+    }
 
-    return new Unknown(element)
-  }
+    *getDirectStrings() {
+      const elements = this.element.querySelectorAll(`:scope > String`);
 
-  getValueOrThrow() {
-    const element = this.element.querySelector(":scope > Value")
+      for (const element of elements)
+        yield new String(element)
 
-    if (element == null)
-      throw new Error()
-
-    return new Unknown(element)
-  }
-
-}
-
-export class Value {
-
-  constructor(
-    readonly element: Element
-  ) { }
-
-  get() {
-    return this.element.innerHTML
-  }
-
-  set(value: string) {
-    this.element.innerHTML = value
-  }
-
-  get protected() {
-    return this.element.getAttribute("Protected")
-  }
-
-  set protected(value: Nullable<string>) {
-    if (value == null)
-      this.element.removeAttribute("Protected")
-    else
-      this.element.setAttribute("Protected", value)
-  }
-
-}
-
-export class History {
-
-  constructor(
-    readonly element: Element
-  ) { }
-
-  *getEntries() {
-    const elements = this.element.querySelectorAll(`:scope > Entry`);
-
-    for (const element of elements)
-      yield new Entry(element)
-
-    return
-  }
-
-  getEntryByIndexOrThrow(index: number) {
-    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
-
-    if (element == null)
-      throw new Error();
-
-    return new Entry(element);
-  }
-
-  getEntryByIndexOrNull(index: number) {
-    const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
-
-    if (element == null)
       return
+    }
 
-    return new Entry(element)
+    getDirectStringByIndexOrThrow(index: number) {
+      const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        throw new Error();
+
+      return new String(element);
+    }
+
+    getDirectStringByIndexOrNull(index: number) {
+      const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        return
+
+      return new String(element)
+    }
+
+    getDirectStringByKeyOrThrow(key: string) {
+      const elements = this.element.querySelectorAll(`:scope > String`);
+
+      for (const element of elements) {
+        const string = new String(element);
+
+        if (string.getKeyOrThrow().get() === key)
+          return string;
+
+        continue
+      }
+
+      throw new Error();
+    }
+
+    getDirectStringByKeyOrNull(key: string) {
+      const elements = this.element.querySelectorAll(`:scope > String`);
+
+      for (const element of elements) {
+        const string = new String(element);
+
+        if (string.getKeyOrThrow().get() === key)
+          return string;
+
+        continue
+      }
+
+      return
+    }
+
   }
 
+  export class String {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    getKeyOrThrow() {
+      const element = this.element.querySelector(":scope > Key")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+    getValueOrThrow() {
+      const element = this.element.querySelector(":scope > Value")
+
+      if (element == null)
+        throw new Error()
+
+      return new Html.AsString(element)
+    }
+
+  }
+
+  export class Value {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    get() {
+      return this.element.innerHTML
+    }
+
+    set(value: string) {
+      this.element.innerHTML = value
+    }
+
+    get protected() {
+      return this.element.getAttribute("Protected")
+    }
+
+    set protected(value: Nullable<string>) {
+      if (value == null)
+        this.element.removeAttribute("Protected")
+      else
+        this.element.setAttribute("Protected", value)
+    }
+
+  }
+
+  export class History {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    insertAndCleanOrThrow(entry: Entry) {
+      const clone = new Entry(entry.element.cloneNode(true) as Element)
+
+      const history = clone.getHistoryOrNull()
+
+      if (history != null)
+        clone.element.removeChild(history.element)
+
+      this.element.prepend(clone.element)
+
+      this.cleanOrThrow()
+
+      return clone
+    }
+
+    cleanOrThrow() {
+      const file = new KeePassFile(this.element.ownerDocument)
+      const meta = file.getMetaOrThrow()
+
+      const historyMaxItems = meta.getHistoryMaxItemsOrThrow().get()
+
+      if (this.element.children.length > historyMaxItems) {
+        while (this.element.children.length > historyMaxItems) {
+          const last = this.element.lastElementChild;
+
+          if (last == null)
+            throw new Error();
+
+          this.element.removeChild(last);
+        }
+      }
+
+      const historyMaxSize = meta.getHistoryMaxSizeOrThrow().get()
+
+      for (let bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element)); bytes.length > historyMaxSize; bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element))) {
+        const last = this.element.lastElementChild;
+
+        if (last == null)
+          throw new Error();
+
+        this.element.removeChild(last);
+      }
+    }
+
+    *getDirectEntries() {
+      const elements = this.element.querySelectorAll(`:scope > Entry`);
+
+      for (const element of elements)
+        yield new Entry(element)
+
+      return
+    }
+
+    getDirectEntryByIndexOrThrow(index: number) {
+      const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        throw new Error();
+
+      return new Entry(element);
+    }
+
+    getDirectEntryByIndexOrNull(index: number) {
+      const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`);
+
+      if (element == null)
+        return
+
+      return new Entry(element)
+    }
+
+  }
 }

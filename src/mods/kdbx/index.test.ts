@@ -48,20 +48,17 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-decrypted.inner.content.getMetaOrThrow().getGeneratorOrThrow().set("Test")
-const root = decrypted.inner.content.getRootOrThrow()
-const group0 = root.getGroupByIndexOrThrow(0)
-const subgroup0 = group0.getGroupByIndexOrThrow(0)
-const entry0 = subgroup0.getEntryByIndexOrThrow(0)
+const file = decrypted.inner.content.getKeePassFile()
+const root = file.getRootOrThrow()
+const group0 = root.getDirectGroupByIndexOrThrow(0)
+const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
+const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
-console.log(entry0.getHistoryOrNull()?.getEntries().reduce(x => x + 1, 0))
+entry0.cloneToHistoryOrThrow()
+entry0.getDirectStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned")
+entry0.moveToTrashOrThrow()
 
-entry0.cloneToHistory()
-
-console.log(entry0.getHistoryOrNull()?.getEntries().reduce(x => x + 1, 0))
-
-entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned lol")
-entry0.getStringByKeyOrThrow("Password").getKeyOrThrow().set("PrivateKey")
+console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 
 console.log(XML.format(decrypted.inner.content.value))
 
