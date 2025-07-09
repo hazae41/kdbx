@@ -56,7 +56,9 @@ const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
 entry0.cloneToHistoryOrThrow()
 entry0.getDirectStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned")
-entry0.moveToTrashOrThrow()
+console.log(entry0.getTimesOrThrow().getCreationTimeOrThrow().get())
+entry0.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+entry0.getTimesOrThrow().getLastAccessTimeOrThrow().set(new Date())
 
 console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 

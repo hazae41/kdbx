@@ -244,16 +244,18 @@ export namespace Html {
       const memory = Base64.get().getOrThrow().decodePaddedOrThrow(value)
       const cursor = new Cursor(memory.bytes)
 
-      const seconds = Number(cursor.readUint64OrThrow())
+      const raw = cursor.readUint64OrThrow(true)
+      const fix = raw - 62135596800n
 
-      return new Date(seconds * 1000)
+      return new Date(Number(fix * 1000n))
     }
 
     set(value: Date) {
-      const seconds = Math.floor(value.getTime() / 1000)
+      const fix = BigInt(value.getTime()) / 1000n
+      const raw = fix + 62135596800n
 
       const cursor = new Cursor(new Uint8Array(8))
-      cursor.writeUint64OrThrow(BigInt(seconds))
+      cursor.writeUint64OrThrow(raw, true)
 
       this.element.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(cursor.bytes)
     }
