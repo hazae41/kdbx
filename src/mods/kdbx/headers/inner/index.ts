@@ -208,23 +208,34 @@ export namespace Html {
 
   }
 
-  export class AsNumber {
+  export class AsInteger {
 
     constructor(
       readonly element: Element
     ) { }
 
-    get() {
+    getOrThrow() {
       const value = this.element.innerHTML
 
       if (!value)
-        return NaN
+        throw new Error()
 
-      return Number(value)
+      const number = Number(value)
+
+      if (!Number.isSafeInteger(number))
+        throw new Error()
+
+      return number
     }
 
-    set(value: number) {
+    setOrThrow(value: number) {
+      if (!Number.isSafeInteger(value))
+        throw new Error()
       this.element.innerHTML = String(value)
+    }
+
+    incrementOrThrow() {
+      this.setOrThrow(this.getOrThrow() + 1)
     }
 
   }
@@ -235,11 +246,11 @@ export namespace Html {
       readonly element: Element
     ) { }
 
-    get() {
+    getOrThrow() {
       const value = this.element.innerHTML
 
       if (!value)
-        return new Date(0)
+        throw new Error()
 
       const memory = Base64.get().getOrThrow().decodePaddedOrThrow(value)
       const cursor = new Cursor(memory.bytes)
@@ -250,7 +261,7 @@ export namespace Html {
       return new Date(Number(fix * 1000n))
     }
 
-    set(value: Date) {
+    setOrThrow(value: Date) {
       const fix = BigInt(value.getTime()) / 1000n
       const raw = fix + 62135596800n
 
@@ -259,6 +270,7 @@ export namespace Html {
 
       this.element.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(cursor.bytes)
     }
+
   }
 
 }
@@ -330,7 +342,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsNumber(element)
+      return new Html.AsInteger(element)
     }
 
     getHistoryMaxSizeOrThrow() {
@@ -339,7 +351,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsNumber(element)
+      return new Html.AsInteger(element)
     }
 
     getRecycleBinEnabledOrThrow() {
@@ -561,9 +573,9 @@ export namespace KeePassFile {
 
       group.element.appendChild(this.element)
 
-      this.getTimesOrThrow().getLocationChangedOrThrow().set(new Date())
+      this.getTimesOrThrow().getLocationChangedOrThrow().setOrThrow(new Date())
 
-      group.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+      group.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
     }
 
     getNameOrThrow() {
@@ -599,7 +611,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsNumber(element)
+      return new Html.AsInteger(element)
     }
 
     getEnableAutoTypeOrThrow() {
@@ -784,7 +796,7 @@ export namespace KeePassFile {
       if (element == null)
         throw new Error()
 
-      return new Html.AsNumber(element)
+      return new Html.AsInteger(element)
     }
 
     getLocationChangedOrThrow() {
@@ -812,9 +824,9 @@ export namespace KeePassFile {
 
       group.element.appendChild(this.element)
 
-      this.getTimesOrThrow().getLocationChangedOrThrow().set(new Date())
+      this.getTimesOrThrow().getLocationChangedOrThrow().setOrThrow(new Date())
 
-      group.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+      group.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
     }
 
     moveToTrashOrThrow() {
@@ -832,7 +844,7 @@ export namespace KeePassFile {
 
       this.moveOrThrow(recycleBinGroup)
 
-      meta.getRecycleBinChangedOrThrow().set(new Date())
+      meta.getRecycleBinChangedOrThrow().setOrThrow(new Date())
     }
 
     cloneToHistoryOrThrow() {
@@ -853,7 +865,7 @@ export namespace KeePassFile {
       $value.innerHTML = value;
       $string.appendChild($value);
 
-      this.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+      this.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
 
       return new String($string)
     }
@@ -1046,7 +1058,7 @@ export namespace KeePassFile {
       const file = new KeePassFile(this.element.ownerDocument)
       const meta = file.getMetaOrThrow()
 
-      const historyMaxItems = meta.getHistoryMaxItemsOrThrow().get()
+      const historyMaxItems = meta.getHistoryMaxItemsOrThrow().getOrThrow()
 
       if (this.element.children.length > historyMaxItems) {
         while (this.element.children.length > historyMaxItems) {
@@ -1059,7 +1071,7 @@ export namespace KeePassFile {
         }
       }
 
-      const historyMaxSize = meta.getHistoryMaxSizeOrThrow().get()
+      const historyMaxSize = meta.getHistoryMaxSizeOrThrow().getOrThrow()
 
       for (let bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element)); bytes.length > historyMaxSize; bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element))) {
         const last = this.element.lastElementChild;
