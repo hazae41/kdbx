@@ -551,6 +551,19 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
+    moveOrThrow(group: Group) {
+      if (this.element.parentNode === group.element)
+        return
+
+      this.element.parentNode?.removeChild(this.element)
+
+      group.element.appendChild(this.element)
+
+      this.getTimesOrThrow().getLocationChangedOrThrow().set(new Date())
+
+      group.getTimesOrThrow().getLastModificationTimeOrThrow().set(new Date())
+    }
+
     getNameOrThrow() {
       const element = this.element.querySelector(":scope > Name")
 
@@ -789,7 +802,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    moveToGroupOrThrow(group: Group) {
+    moveOrThrow(group: Group) {
       if (this.element.parentNode === group.element)
         return
 
@@ -815,7 +828,7 @@ export namespace KeePassFile {
       const recycleBinUuid = meta.getRecycleBinUuidOrThrow().get()
       const recycleBinGroup = root.getGroupByUuidOrThrow(recycleBinUuid)
 
-      this.moveToGroupOrThrow(recycleBinGroup)
+      this.moveOrThrow(recycleBinGroup)
 
       meta.getRecycleBinChangedOrThrow().set(new Date())
     }
@@ -882,10 +895,10 @@ export namespace KeePassFile {
     getHistoryOrNew() {
       const { ownerDocument } = this.element
 
-      const element = this.element.querySelector(":scope > History")
+      const previous = this.element.querySelector(":scope > History")
 
-      if (element != null)
-        return new History(element)
+      if (previous != null)
+        return new History(previous)
 
       const created = ownerDocument.createElement("History");
 
