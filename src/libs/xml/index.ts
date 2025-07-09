@@ -1,7 +1,7 @@
 export namespace XML {
 
-  export function format(document: Document, tab: string = " "): string {
-    const text = new XMLSerializer().serializeToString(document as any)
+  export function format(node: Node, tab: string = " "): string {
+    const text = new XMLSerializer().serializeToString(node)
 
     let result = ""
     let indent = 0
