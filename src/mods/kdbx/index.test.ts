@@ -59,6 +59,7 @@ entry0.getDirectStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned")
 console.log(entry0.getTimesOrThrow().getCreationTimeOrThrow().getOrThrow())
 entry0.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
 entry0.getTimesOrThrow().getLastAccessTimeOrThrow().setOrThrow(new Date())
+entry0.getTimesOrThrow().getUsageCountOrThrow().incrementOrThrow()
 
 console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 
