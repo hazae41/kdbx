@@ -2,7 +2,7 @@
   "type": "module",
   "name": "@hazae41/kdbx",
   "version": "1.0.1",
-  "description": "Rust-like KDBX format for TypeScript",
+  "description": "Rust-like KeePass (KDBX 4) file format for TypeScript",
   "homepage": "https://github.com/hazae41/kdbx",
   "repository": "github:hazae41/kdbx",
   "author": "hazae41",
