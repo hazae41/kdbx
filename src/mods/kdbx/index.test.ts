@@ -44,7 +44,10 @@ const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
 const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
 entry0.cloneToHistoryOrThrow()
+
 entry0.getDirectStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned")
+entry0.getDirectStringByKeyOrThrow("Password").getKeyOrThrow().set("PrivateKey")
+
 entry0.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
 entry0.getTimesOrThrow().getLastAccessTimeOrThrow().setOrThrow(new Date())
 entry0.getTimesOrThrow().getUsageCountOrThrow().incrementOrThrow()
