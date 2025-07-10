@@ -48,7 +48,7 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const file = decrypted.inner.content.getKeePassFile()
+const file = decrypted.inner.content.value
 const root = file.getRootOrThrow()
 const group0 = root.getDirectGroupByIndexOrThrow(0)
 const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
@@ -63,7 +63,7 @@ entry0.getTimesOrThrow().getUsageCountOrThrow().incrementOrThrow()
 
 console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 
-console.log(XML.format(decrypted.inner.content.value))
+console.log(XML.format(decrypted.inner.content.value.document))
 
 const decrypted2 = await decrypted.rotateOrThrow(password)
 const encrypted2 = await decrypted2.encryptOrThrow()
