@@ -24,19 +24,6 @@ async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   return result.value
 }
 
-function rename(node: Node, oldName: string, newName: string) {
-  if (node.nodeName === "Value") {
-    if (node.textContent === oldName)
-      node.textContent = newName
-    return
-  }
-
-  for (let i = 0; i < node.childNodes.length; i++)
-    rename(node.childNodes[i], oldName, newName)
-  return
-}
-
-
 await Argon2.initBundled()
 await ChaCha20Poly1305Wasm.initBundled()
 
@@ -50,13 +37,14 @@ const decrypted = await encrypted.decryptOrThrow(password)
 
 const file = decrypted.inner.content.value
 const root = file.getRootOrThrow()
+const meta = file.getMetaOrThrow()
+
 const group0 = root.getDirectGroupByIndexOrThrow(0)
 const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
 const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
 entry0.cloneToHistoryOrThrow()
 entry0.getDirectStringByKeyOrThrow("Title").getValueOrThrow().set("Cloned")
-console.log(entry0.getTimesOrThrow().getCreationTimeOrThrow().getOrThrow())
 entry0.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
 entry0.getTimesOrThrow().getLastAccessTimeOrThrow().setOrThrow(new Date())
 entry0.getTimesOrThrow().getUsageCountOrThrow().incrementOrThrow()
