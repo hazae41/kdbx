@@ -152,7 +152,7 @@ export namespace Database {
     async encryptOrThrow() {
       const cipher = await this.inner.headers.getCipherOrThrow()
 
-      const $$values = this.inner.content.value.querySelectorAll("Value[Protected='True']")
+      const $$values = this.inner.content.value.document.querySelectorAll("Value[Protected='True']")
 
       for (let i = 0; i < $$values.length; i++) {
         const $value = $$values[i]
@@ -166,7 +166,7 @@ export namespace Database {
       {
         const { cipher, iv, compression } = this.outer.data.data.value.headers
 
-        const degzipped = Writable.writeToBytesOrThrow(this.inner.computeOrThrow())
+        const degzipped = Writable.writeToBytesOrThrow(this.inner.recomputeOrThrow())
 
         const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
         const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
@@ -241,7 +241,7 @@ export namespace Database {
       {
         const cipher = await inner.headers.getCipherOrThrow()
 
-        const $$values = inner.content.value.querySelectorAll("Value[Protected='True']")
+        const $$values = inner.content.value.document.querySelectorAll("Value[Protected='True']")
 
         for (let i = 0; i < $$values.length; i++) {
           const $value = $$values[i]
