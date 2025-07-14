@@ -79,7 +79,7 @@ export namespace Data {
       if (!value)
         throw new Error()
 
-      const memory = Base64.get().getOrThrow().decodePaddedOrThrow(value)
+      const memory = Base64.get().getOrThrow().base64.decodePaddedOrThrow(value)
       const cursor = new Cursor(memory.bytes)
 
       const raw = cursor.readUint64OrThrow(true)
@@ -95,7 +95,7 @@ export namespace Data {
       const cursor = new Cursor(new Uint8Array(8))
       cursor.writeUint64OrThrow(raw, true)
 
-      this.element.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(cursor.bytes)
+      this.element.innerHTML = Base64.get().getOrThrow().base64.encodePaddedOrThrow(cursor.bytes)
     }
 
   }

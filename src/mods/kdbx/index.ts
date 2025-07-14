@@ -160,7 +160,7 @@ export namespace Database {
         const decrypted = new TextEncoder().encode($value.innerHTML)
         const encrypted = cipher.applyOrThrow(decrypted)
 
-        $value.innerHTML = Base64.get().getOrThrow().encodePaddedOrThrow(encrypted)
+        $value.innerHTML = Base64.get().getOrThrow().base64.encodePaddedOrThrow(encrypted)
       }
 
       {
@@ -246,7 +246,7 @@ export namespace Database {
         for (let i = 0; i < $$values.length; i++) {
           const $value = $$values[i]
 
-          const encrypted = Base64.get().getOrThrow().decodePaddedOrThrow($value.innerHTML).bytes
+          const encrypted = Base64.get().getOrThrow().base64.decodePaddedOrThrow($value.innerHTML).bytes
           const decrypted = cipher.applyOrThrow(encrypted)
 
           $value.innerHTML = new TextDecoder().decode(decrypted)
