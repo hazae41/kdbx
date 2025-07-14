@@ -3,7 +3,7 @@ import { Base16 } from "@hazae41/base16"
 export namespace StringAsUuid {
 
   export function from(bytes: Uint8Array) {
-    const base16 = Base16.get().getOrThrow().encodeOrThrow(bytes)
+    const base16 = Base16.encodeOrThrow(bytes)
 
     const a = base16.slice(0, 8)
     const b = base16.slice(8, 12)
@@ -27,9 +27,7 @@ export namespace BytesAsUuid {
 
     const base16 = [a, b, c, d, e].join("")
 
-    using memory = Base16.get().getOrThrow().decodeOrThrow(base16)
-
-    return new Uint8Array(memory.bytes)
+    return Base16.decodeOrThrow(base16)
   }
 
 }

@@ -1,4 +1,4 @@
-import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
+import { ChaCha20Poly1305 } from "@hazae41/chacha20poly1305"
 import { Cursor } from "@hazae41/cursor"
 
 export type Cipher =
@@ -66,19 +66,15 @@ export namespace Cipher {
   export class ChaCha20 {
 
     constructor(
-      readonly cipher: ChaCha20Poly1305Wasm.ChaCha20Cipher,
+      readonly cipher: ChaCha20Poly1305.Streamer,
     ) { }
 
     [Symbol.dispose]() {
       this.cipher[Symbol.dispose]()
     }
 
-    applyOrThrow(data: Uint8Array): Uint8Array {
-      using mdata = new ChaCha20Poly1305Wasm.Memory(data)
-
-      this.cipher.apply_keystream(mdata)
-
-      return new Uint8Array(mdata.bytes)
+    applyOrThrow(data: Uint8Array): void {
+      this.cipher.applyOrThrow(data)
     }
 
   }
@@ -100,16 +96,15 @@ export namespace Cipher {
     }
 
     export async function initOrThrow(seed: Uint8Array): Promise<ChaCha20> {
+      const { ChaCha20Cipher } = ChaCha20Poly1305.get().getOrThrow()
+
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
       const cursor = new Cursor(hashed)
 
       const key = cursor.readOrThrow(32)
       const nonce = cursor.readOrThrow(12)
 
-      using mkey = new ChaCha20Poly1305Wasm.Memory(key)
-      using mnonce = new ChaCha20Poly1305Wasm.Memory(nonce)
-
-      const cipher = new ChaCha20Poly1305Wasm.ChaCha20Cipher(mkey, mnonce)
+      const cipher = ChaCha20Cipher.importOrThrow(key, nonce)
 
       return new ChaCha20(cipher)
     }

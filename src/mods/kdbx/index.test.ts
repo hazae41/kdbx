@@ -1,5 +1,6 @@
 import { Argon2 } from "@hazae41/argon2.wasm"
 import { Readable, Writable } from "@hazae41/binary"
+import { ChaCha20Poly1305 } from "@hazae41/chacha20poly1305"
 import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
 import { JSDOM } from "jsdom"
 import { XML } from "libs/xml/index.js"
@@ -26,6 +27,8 @@ async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
 
 await Argon2.initBundled()
 await ChaCha20Poly1305Wasm.initBundled()
+
+ChaCha20Poly1305.set(ChaCha20Poly1305.fromWasm(ChaCha20Poly1305Wasm))
 
 globalThis.DOMParser = window.DOMParser
 globalThis.XMLSerializer = window.XMLSerializer
