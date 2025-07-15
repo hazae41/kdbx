@@ -158,9 +158,9 @@ export namespace Database {
         const $value = $$values[i]
 
         const decrypted = new TextEncoder().encode($value.innerHTML)
-        const encrypted = cipher.applyOrThrow(decrypted)
+        using encrypted = cipher.applyOrThrow(decrypted)
 
-        $value.innerHTML = Base64.encodePaddedOrThrow(encrypted)
+        $value.innerHTML = Base64.encodePaddedOrThrow(encrypted.bytes)
       }
 
       {
@@ -247,9 +247,9 @@ export namespace Database {
           const $value = $$values[i]
 
           const encrypted = Base64.decodePaddedOrThrow($value.innerHTML)
-          const decrypted = cipher.applyOrThrow(encrypted)
+          using decrypted = cipher.applyOrThrow(encrypted)
 
-          $value.innerHTML = new TextDecoder().decode(decrypted)
+          $value.innerHTML = new TextDecoder().decode(decrypted.bytes)
         }
 
         const outer = new Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(this.outer, keys)

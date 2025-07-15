@@ -66,15 +66,21 @@ export namespace Cipher {
   export class ChaCha20 {
 
     constructor(
-      readonly cipher: ChaCha20Poly1305.Streamer,
+      readonly cipher: ChaCha20Poly1305.Abstract.ChaCha20Cipher,
     ) { }
 
     [Symbol.dispose]() {
       this.cipher[Symbol.dispose]()
     }
 
-    applyOrThrow(data: Uint8Array): void {
-      this.cipher.applyOrThrow(data)
+    applyOrThrow(data: Uint8Array) {
+      const { Memory } = ChaCha20Poly1305.get().getOrThrow()
+
+      using memory = Memory.importOrThrow(data)
+
+      this.cipher.applyOrThrow(memory)
+
+      return memory
     }
 
   }
@@ -96,13 +102,13 @@ export namespace Cipher {
     }
 
     export async function initOrThrow(seed: Uint8Array): Promise<ChaCha20> {
-      const { ChaCha20Cipher } = ChaCha20Poly1305.get().getOrThrow()
+      const { Memory, ChaCha20Cipher } = ChaCha20Poly1305.get().getOrThrow()
 
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
       const cursor = new Cursor(hashed)
 
-      const key = cursor.readOrThrow(32)
-      const nonce = cursor.readOrThrow(12)
+      using key = Memory.importOrThrow(cursor.readOrThrow(32))
+      using nonce = Memory.importOrThrow(cursor.readOrThrow(12))
 
       const cipher = ChaCha20Cipher.importOrThrow(key, nonce)
 
