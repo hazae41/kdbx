@@ -76,7 +76,7 @@ export namespace Cipher {
     applyOrThrow(data: Uint8Array) {
       const { Memory } = ChaCha20Poly1305.get().getOrThrow()
 
-      using memory = Memory.importOrThrow(data)
+      const memory = Memory.importOrThrow(data)
 
       this.cipher.applyOrThrow(memory)
 
