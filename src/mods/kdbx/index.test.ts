@@ -1,4 +1,5 @@
-import { Argon2 } from "@hazae41/argon2.wasm"
+import { Argon2 } from "@hazae41/argon2"
+import { Argon2Wasm } from "@hazae41/argon2.wasm"
 import { Readable, Writable } from "@hazae41/binary"
 import { ChaCha20Poly1305 } from "@hazae41/chacha20poly1305"
 import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
@@ -25,9 +26,10 @@ async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
   return result.value
 }
 
-await Argon2.initBundled()
+await Argon2Wasm.initBundled()
 await ChaCha20Poly1305Wasm.initBundled()
 
+Argon2.set(Argon2.fromWasm(Argon2Wasm))
 ChaCha20Poly1305.set(ChaCha20Poly1305.fromWasm(ChaCha20Poly1305Wasm))
 
 globalThis.DOMParser = window.DOMParser

@@ -1,7 +1,7 @@
 export * from "./cipher/index.js"
 export * from "./compression/index.js"
 
-import { Argon2 } from "@hazae41/argon2.wasm"
+import { Argon2 } from "@hazae41/argon2"
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
@@ -520,8 +520,13 @@ export namespace KdfParameters {
     deriveOrThrow(key: CompositeKey) {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const deriver = new Argon2.Argon2Deriver("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-      const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
+      const { Memory, Argon2Deriver } = Argon2.get().getOrThrow()
+
+      using mkey = Memory.importOrThrow(key.value.bytes)
+      using msalt = Memory.importOrThrow(salt.bytes)
+
+      using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
+      using derived = deriver.deriveOrThrow(mkey, msalt)
 
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
     }
@@ -621,8 +626,13 @@ export namespace KdfParameters {
     deriveOrThrow(key: CompositeKey) {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const deriver = new Argon2.Argon2Deriver("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
-      const derived = deriver.derive(new Argon2.Memory(key.value.bytes), new Argon2.Memory(salt.bytes))
+      const { Memory, Argon2Deriver } = Argon2.get().getOrThrow()
+
+      using mkey = Memory.importOrThrow(key.value.bytes)
+      using msalt = Memory.importOrThrow(salt.bytes)
+
+      using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
+      using derived = deriver.deriveOrThrow(mkey, msalt)
 
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
     }
