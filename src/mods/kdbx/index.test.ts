@@ -10,22 +10,6 @@ import { CompositeKey, Database, PasswordKey } from "./index.js"
 
 const { window } = new JSDOM(`<!DOCTYPE html><body></body>`);
 
-async function unzip(zipped: Uint8Array): Promise<Uint8Array> {
-  const dezipper = new DecompressionStream("gzip")
-
-  const writer = dezipper.writable.getWriter()
-  await writer.write(zipped)
-  await writer.close()
-
-  const reader = dezipper.readable.getReader()
-  const result = await reader.read()
-
-  if (result.done)
-    throw new Error()
-
-  return result.value
-}
-
 await Argon2Wasm.initBundled()
 await ChaCha20Poly1305Wasm.initBundled()
 

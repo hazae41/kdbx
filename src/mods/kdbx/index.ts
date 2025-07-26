@@ -5,7 +5,7 @@ import { Base64 } from "@hazae41/base64"
 import { Opaque, Readable, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Lengthed } from "@hazae41/lengthed"
-import { gunzipSync, gzipSync } from "node:zlib"
+import { gunzip, gzip } from "libs/gzip/index.js"
 import { Inner, Outer } from "./headers/index.js"
 import { Compression, MagicAndVersionAndHeadersWithBytesWithHashAndHmac } from "./headers/outer/index.js"
 import { PreHmacKey } from "./hmac/index.js"
@@ -168,7 +168,7 @@ export namespace Database {
 
         const degzipped = Writable.writeToBytesOrThrow(this.inner.recomputeOrThrow())
 
-        const engzipped = compression === Compression.Gzip ? new Uint8Array(gzipSync(degzipped)) : degzipped
+        const engzipped = compression === Compression.Gzip ? new Uint8Array(await gzip(degzipped)) : degzipped
         const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
         const blocks = new Array<BlockWithIndex>()
@@ -234,7 +234,7 @@ export namespace Database {
       }
 
       const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
-      const degzipped = compression === Compression.Gzip ? gunzipSync(decrypted) : decrypted
+      const degzipped = compression === Compression.Gzip ? await gunzip(decrypted) : decrypted
 
       const inner = Readable.readFromBytesOrThrow(Inner.HeadersAndContentWithBytes, degzipped)
 
