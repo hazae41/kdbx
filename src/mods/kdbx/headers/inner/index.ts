@@ -25,7 +25,7 @@ export class HeadersAndContentWithBytes {
     return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.headers.writeOrThrow(cursor)
     this.content.writeOrThrow(cursor)
   }
@@ -54,7 +54,7 @@ export class ContentWithBytes {
     return this.bytes.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.bytes.writeOrThrow(cursor)
   }
 
@@ -66,7 +66,7 @@ export class ContentWithBytes {
 
 export namespace ContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const bytes = new Opaque(cursor.readOrThrow(cursor.remaining))
 
     const raw = new TextDecoder().decode(bytes.bytes)
@@ -79,7 +79,7 @@ export namespace ContentWithBytes {
 
 export namespace HeadersAndContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const headers = Headers.readOrThrow(cursor)
     const content = ContentWithBytes.readOrThrow(cursor)
 
@@ -116,7 +116,7 @@ export class Headers {
     return this.value.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.value.writeOrThrow(cursor)
   }
 
@@ -127,7 +127,7 @@ export class Headers {
   async rotateOrThrow() {
     const { cipher, binary } = this
 
-    const key = new Opaque(new Uint8Array(crypto.getRandomValues(new Uint8Array(32))) as Uint8Array & Lengthed<32>)
+    const key = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
 
     return Headers.initOrThrow({ cipher, key, binary })
   }
@@ -152,7 +152,7 @@ export namespace Headers {
     return new Headers(Vector.initOrThrow(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const vector = Vector.readOrThrow(cursor)
 
     if (vector.value[1].length !== 1)

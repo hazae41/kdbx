@@ -21,7 +21,7 @@ export namespace Cipher {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
@@ -31,14 +31,14 @@ export namespace Cipher {
 
     }
 
-    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+    export async function encryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) {
       const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
       const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
 
       return encrypted
     }
 
-    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+    export async function decryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) {
       const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
       const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
 
@@ -59,7 +59,7 @@ export namespace Cipher {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
@@ -69,14 +69,14 @@ export namespace Cipher {
 
     }
 
-    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+    export async function encryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) {
       const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
       const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
 
       return encrypted
     }
 
-    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array) {
+    export async function decryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>) {
       const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
       const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
 
@@ -97,7 +97,7 @@ export namespace Cipher {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
@@ -129,7 +129,7 @@ export namespace Cipher {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(BytesAsUuid.from(uuid))
     }
 
@@ -153,7 +153,7 @@ export namespace Cipher {
 
 export namespace Cipher {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const bytes = cursor.readOrThrow(16)
     const uuid = StringAsUuid.from(bytes)
 

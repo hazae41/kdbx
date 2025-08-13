@@ -12,7 +12,7 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
     return this.version.sizeOrThrow() + this.entries.sizeOrThrow() + 1
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.version.writeOrThrow(cursor)
     this.entries.writeOrThrow(cursor)
 
@@ -38,7 +38,7 @@ export namespace Dictionary {
       return 1 + 1
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint8OrThrow(this.minor)
       cursor.writeUint8OrThrow(this.major)
     }
@@ -51,7 +51,7 @@ export namespace Dictionary {
 
   export namespace Version {
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const minor = cursor.readUint8OrThrow()
       const major = cursor.readUint8OrThrow()
 
@@ -64,7 +64,7 @@ export namespace Dictionary {
     return new Dictionary(version, Entries.initOrThrow(entries))
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const version = Version.readOrThrow(cursor)
 
     if (version.major !== 1)
@@ -88,7 +88,7 @@ export class Entries<T extends { [key: string]: Value } = { [key: string]: Value
     return this.bytes.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
@@ -117,7 +117,7 @@ export namespace Entries {
     return new Entries(bytes, value)
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const start = cursor.offset
 
     const entries = new Array<Entry<Value>>()
@@ -153,7 +153,7 @@ export class Entry<T extends Value> {
     return 1 + 4 + this.key.sizeOrThrow() + 4 + this.val.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint8OrThrow(this.val.type)
 
     const klength = this.key.sizeOrThrow()
@@ -169,7 +169,7 @@ export class Entry<T extends Value> {
 
 export namespace Entry {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const type = cursor.readUint8OrThrow()
 
     if (type === 0)
@@ -201,7 +201,7 @@ export class Key {
     return this.bytes.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
@@ -267,7 +267,7 @@ export namespace Value {
       return 4
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(this.value, true)
     }
 
@@ -277,7 +277,7 @@ export namespace Value {
 
     export const type = 0x04
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       return new UInt32(cursor.readUint32OrThrow(true))
     }
 
@@ -298,7 +298,7 @@ export namespace Value {
       return 8
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint64OrThrow(this.value, true)
     }
 
@@ -308,7 +308,7 @@ export namespace Value {
 
     export const type = 0x05
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       return new UInt64(cursor.readUint64OrThrow(true))
     }
 
@@ -329,7 +329,7 @@ export namespace Value {
       return 1
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint8OrThrow(this.value ? 1 : 0)
     }
 
@@ -339,7 +339,7 @@ export namespace Value {
 
     export const type = 0x08
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const value = cursor.readUint8OrThrow()
 
       if (value !== 0 && value !== 1)
@@ -365,7 +365,7 @@ export namespace Value {
       return 4
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(this.value < 0 ? this.value + (2 ** 32) : this.value, true)
     }
 
@@ -375,7 +375,7 @@ export namespace Value {
 
     export const type = 0x0C
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const uint = cursor.readUint32OrThrow(true)
       const sint = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
 
@@ -399,7 +399,7 @@ export namespace Value {
       return 8
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint64OrThrow(this.value < 0n ? this.value + (2n ** 64n) : this.value, true)
     }
 
@@ -409,7 +409,7 @@ export namespace Value {
 
     export const type = 0x0D
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const uint = cursor.readUint64OrThrow(true)
       const sint = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
 
@@ -434,7 +434,7 @@ export namespace Value {
       return this.bytes.bytes.length
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(this.bytes.bytes)
     }
 
@@ -444,7 +444,7 @@ export namespace Value {
 
     export const type = 0x18
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const bytes = cursor.readOrThrow(cursor.remaining)
       const value = new TextDecoder().decode(bytes)
 
@@ -468,7 +468,7 @@ export namespace Value {
       return this.value.bytes.length
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeOrThrow(this.value.bytes)
     }
 
@@ -478,7 +478,7 @@ export namespace Value {
 
     export const type = 0x42
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       return new Bytes(new Opaque(cursor.readOrThrow(cursor.remaining)))
     }
 

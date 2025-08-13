@@ -25,7 +25,7 @@ export class Version {
     return 2 + 2
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint16OrThrow(this.minor, true)
     cursor.writeUint16OrThrow(this.major, true)
   }
@@ -47,7 +47,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys {
     return this.data.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.data.writeOrThrow(cursor)
   }
 
@@ -77,8 +77,8 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array & Lengthed<32>
-    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array & Lengthed<32>
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
+    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
   }
@@ -101,7 +101,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     return this.data.sizeOrThrow() + 32 + 32
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.data.writeOrThrow(cursor)
 
     cursor.writeOrThrow(this.hash.bytes)
@@ -124,7 +124,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
 export namespace MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
     const hash = new Opaque(cursor.readOrThrow(32))
     const hmac = new Opaque(cursor.readOrThrow(32))
@@ -154,7 +154,7 @@ export class MagicAndVersionAndHeadersWithBytes {
     return this.bytes.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
@@ -173,7 +173,7 @@ export class MagicAndVersionAndHeadersWithBytes {
 
 export namespace MagicAndVersionAndHeadersWithBytes {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const start = cursor.offset
 
     const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
@@ -203,7 +203,7 @@ export class MagicAndVersionAndHeaders {
     return 4 + 4 + this.version.sizeOrThrow() + this.headers.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint32OrThrow(0x9AA2D903, true)
     cursor.writeUint32OrThrow(0xB54BFB67, true)
 
@@ -226,7 +226,7 @@ export class MagicAndVersionAndHeaders {
 
 export namespace MagicAndVersionAndHeaders {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const alpha = cursor.readUint32OrThrow(true)
 
     if (alpha !== 0x9AA2D903)
@@ -294,7 +294,7 @@ export class Headers {
   rotateOrThrow() {
     const { cipher, compression, custom } = this
 
-    const seed = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>)
+    const seed = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
     const iv = new Opaque(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
     const kdf = this.kdf.rotateOrThrow()
 
@@ -305,7 +305,7 @@ export class Headers {
     return this.value.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor): void {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     this.value.writeOrThrow(cursor)
   }
 
@@ -346,7 +346,7 @@ export namespace Headers {
     return new Headers(Vector.initOrThrow(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const vector = Vector.readOrThrow(cursor)
 
     if (vector.value[2].length !== 1)
@@ -383,7 +383,7 @@ export class Seed {
     readonly bytes: Opaque<32>
   ) { }
 
-  static readOrThrow(cursor: Cursor) {
+  static readOrThrow(cursor: Cursor<ArrayBuffer>) {
     return new Seed(new Opaque(cursor.readOrThrow(32)))
   }
 
@@ -416,7 +416,7 @@ export namespace KdfParameters {
       const $UUID = this.value.entries.value["$UUID"]
 
       const R = this.value.entries.value["R"]
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
 
       const value = Dictionary.initOrThrow(version, { $UUID, R, S })
 
@@ -431,7 +431,7 @@ export namespace KdfParameters {
       return this.value.sizeOrThrow()
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       this.value.writeOrThrow(cursor)
     }
 
@@ -506,7 +506,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -528,14 +528,14 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
+      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
     sizeOrThrow() {
       return this.value.sizeOrThrow()
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       this.value.writeOrThrow(cursor)
     }
 
@@ -612,7 +612,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array & Lengthed<32>))
+      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -634,14 +634,14 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array & Lengthed<32>))
+      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
     sizeOrThrow() {
       return this.value.sizeOrThrow()
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       this.value.writeOrThrow(cursor)
     }
 
@@ -687,7 +687,7 @@ export namespace KdfParameters {
 
   }
 
-  export function readOrThrow(cursor: Cursor): KdfParameters {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): KdfParameters {
     const dictionary = Dictionary.readOrThrow(cursor)
 
     if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)

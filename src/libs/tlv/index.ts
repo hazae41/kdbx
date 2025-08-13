@@ -13,7 +13,7 @@ export class TLV<T extends number = number, V extends Struct = Struct> {
     return 1 + 4 + this.value.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint8OrThrow(this.type)
     cursor.writeUint32OrThrow(this.value.sizeOrThrow(), true)
     this.value.writeOrThrow(cursor)
@@ -39,14 +39,14 @@ export namespace TLV {
       return 1 + 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint8OrThrow(type)
       cursor.writeUint32OrThrow(0, true)
     }
 
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const type = cursor.readUint8OrThrow()
     const length = cursor.readUint32OrThrow(true)
     const bytes = new Opaque(cursor.readOrThrow(length))

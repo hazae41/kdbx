@@ -12,7 +12,7 @@ export class PreHmacKey {
     return 8 + this.major.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint64OrThrow(this.index, true)
     cursor.writeOrThrow(this.major.bytes)
   }
@@ -35,11 +35,11 @@ export class HmacKey {
     readonly key: CryptoKey
   ) { }
 
-  async signOrThrow(data: Uint8Array) {
+  async signOrThrow(data: Uint8Array<ArrayBuffer>) {
     return new Uint8Array(await crypto.subtle.sign("HMAC", this.key, data))
   }
 
-  async verifyOrThrow(data: Uint8Array, signature: Uint8Array) {
+  async verifyOrThrow(data: Uint8Array<ArrayBuffer>, signature: Uint8Array<ArrayBuffer>) {
     const result = await crypto.subtle.verify("HMAC", this.key, signature, data)
 
     if (result !== true)

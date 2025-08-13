@@ -24,7 +24,7 @@ export namespace Cipher {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(type, true)
     }
 
@@ -53,7 +53,7 @@ export namespace Cipher {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(type, true)
     }
 
@@ -97,11 +97,11 @@ export namespace Cipher {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(type, true)
     }
 
-    export async function initOrThrow(seed: Uint8Array): Promise<ChaCha20> {
+    export async function initOrThrow(seed: Uint8Array<ArrayBuffer>): Promise<ChaCha20> {
       const { Memory, ChaCha20Cipher } = ChaCha20Poly1305.get().getOrThrow()
 
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
@@ -121,7 +121,7 @@ export namespace Cipher {
 
 export namespace Cipher {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const value = cursor.readUint32OrThrow(true)
 
     if (value === Cipher.ArcFourVariant.type)

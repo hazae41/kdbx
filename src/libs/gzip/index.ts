@@ -1,4 +1,4 @@
-export async function gzip(data: Uint8Array) {
+export async function gzip(data: Uint8Array<ArrayBuffer>) {
   const pair = new CompressionStream("gzip")
 
   const writer = pair.writable.getWriter()
@@ -10,7 +10,7 @@ export async function gzip(data: Uint8Array) {
   return await response.bytes()
 }
 
-export async function gunzip(data: Uint8Array) {
+export async function gunzip(data: Uint8Array<ArrayBuffer>) {
   const pair = new DecompressionStream("gzip")
 
   const writer = pair.writable.getWriter()

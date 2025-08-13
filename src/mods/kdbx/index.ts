@@ -17,9 +17,9 @@ export class PasswordKey {
     readonly value: Opaque<32>
   ) { }
 
-  static async digestOrThrow(password: Uint8Array) {
+  static async digestOrThrow(password: Uint8Array<ArrayBuffer>) {
     const array = await crypto.subtle.digest("SHA-256", password)
-    const bytes = new Uint8Array(array) as Uint8Array & Lengthed<32>
+    const bytes = new Uint8Array(array) as Uint8Array<ArrayBuffer> & Lengthed<32>
 
     return new PasswordKey(new Opaque(bytes))
   }
@@ -35,7 +35,7 @@ export class CompositeKey {
 
   static async digestOrThrow(password: PasswordKey) {
     const array = await crypto.subtle.digest("SHA-256", password.value.bytes)
-    const bytes = new Uint8Array(array) as Uint8Array & Lengthed<32>
+    const bytes = new Uint8Array(array) as Uint8Array<ArrayBuffer> & Lengthed<32>
 
     return new CompositeKey(new Opaque(bytes))
   }
@@ -63,7 +63,7 @@ export class PreMasterKey {
     return 32 + 32
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.seed.bytes)
     cursor.writeOrThrow(this.hash.value.bytes)
   }
@@ -72,7 +72,7 @@ export class PreMasterKey {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-256", input)
-    const output = new Uint8Array(digest) as Uint8Array & Lengthed<32>
+    const output = new Uint8Array(digest) as Uint8Array<ArrayBuffer> & Lengthed<32>
 
     return new MasterKey(new Opaque(output))
   }
@@ -100,7 +100,7 @@ export class PreHmacMasterKey {
     return 32 + 32 + 1
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.seed.bytes)
     cursor.writeOrThrow(this.hash.value.bytes)
     cursor.writeUint8OrThrow(1)
@@ -110,7 +110,7 @@ export class PreHmacMasterKey {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-512", input)
-    const output = new Uint8Array(digest) as Uint8Array & Lengthed<64>
+    const output = new Uint8Array(digest) as Uint8Array<ArrayBuffer> & Lengthed<64>
 
     return new HmacMasterKey(new Opaque(output))
   }
@@ -206,7 +206,7 @@ export namespace Database {
       return this.outer.sizeOrThrow() + this.inner.sizeOrThrow()
     }
 
-    writeOrThrow(cursor: Cursor) {
+    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       this.outer.writeOrThrow(cursor)
       this.inner.writeOrThrow(cursor)
     }
@@ -262,7 +262,7 @@ export namespace Database {
 
   export namespace Encrypted {
 
-    export function readOrThrow(cursor: Cursor) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
       const head = MagicAndVersionAndHeadersWithBytesWithHashAndHmac.readOrThrow(cursor)
       const body = Blocks.readOrThrow(cursor)
 
@@ -283,7 +283,7 @@ export class Blocks {
     return this.blocks.reduce((a, b) => a + b.sizeOrThrow(), 0)
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     for (const block of this.blocks)
       block.writeOrThrow(cursor)
     return
@@ -297,7 +297,7 @@ export class Blocks {
 
 export namespace Blocks {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const blocks = new Array<BlockWithIndex>()
 
     for (let index = 0n; true; index++) {
@@ -327,7 +327,7 @@ export class BlockWithIndexPreHmacData {
     return 8 + 4 + this.block.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeUint64OrThrow(this.index, true)
     cursor.writeUint32OrThrow(this.block.bytes.length, true)
     cursor.writeOrThrow(this.block.bytes)
@@ -346,7 +346,7 @@ export class BlockWithIndex {
     return this.block.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.block.writeOrThrow(cursor)
   }
 
@@ -371,7 +371,7 @@ export class BlockWithIndex {
 
 export namespace BlockWithIndex {
 
-  export async function fromOrThrow(keys: MasterKeys, index: bigint, data: Uint8Array) {
+  export async function fromOrThrow(keys: MasterKeys, index: bigint, data: Uint8Array<ArrayBuffer>) {
     const major = keys.authifier.bytes
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
@@ -379,7 +379,7 @@ export namespace BlockWithIndex {
     const preimage = new BlockWithIndexPreHmacData(index, new Opaque(data))
     const prebytes = Writable.writeToBytesOrThrow(preimage)
 
-    const hmac = new Opaque(await key.signOrThrow(prebytes) as Uint8Array & Lengthed<32>)
+    const hmac = new Opaque(await key.signOrThrow(prebytes) as Uint8Array<ArrayBuffer> & Lengthed<32>)
 
     const block = new Block(hmac, new Opaque(data))
 
@@ -399,7 +399,7 @@ export class Block {
     return 32 + 4 + this.data.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     cursor.writeOrThrow(this.hmac.bytes)
     cursor.writeUint32OrThrow(this.data.bytes.length, true)
     cursor.writeOrThrow(this.data.bytes)
@@ -413,7 +413,7 @@ export class Block {
 
 export namespace Block {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const hmac = new Opaque(cursor.readOrThrow(32))
     const size = cursor.readUint32OrThrow(true)
     const data = new Opaque(cursor.readOrThrow(size))

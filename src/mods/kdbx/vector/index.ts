@@ -15,7 +15,7 @@ export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> 
     return this.bytes.sizeOrThrow();
   }
 
-  writeOrThrow(cursor: Cursor) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.bytes.writeOrThrow(cursor)
   }
 
@@ -56,7 +56,7 @@ export namespace Vector {
     return new Vector(bytes, indexed);
   }
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const start = cursor.offset
 
     const entries = new Array<TLV>();

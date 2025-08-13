@@ -18,7 +18,7 @@ export namespace Compression {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(type, true)
     }
 
@@ -36,7 +36,7 @@ export namespace Compression {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor) {
+    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
       cursor.writeUint32OrThrow(type, true)
     }
 
@@ -46,7 +46,7 @@ export namespace Compression {
 
 export namespace Compression {
 
-  export function readOrThrow(cursor: Cursor) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const value = cursor.readUint32OrThrow(true)
 
     if (value === Compression.None.type)
