@@ -1,7 +1,6 @@
 import type { Lengthed } from "@/libs/lengthed/mod.ts"
-import { Opaque } from "@/libs/struct/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
-import { Readable, Writable } from "@hazae41/binary"
+import { Readable, Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
 import { Cipher } from "./cipher/mod.ts"
 import { KeePassFile } from "./markup/mod.ts"
@@ -40,13 +39,13 @@ export class HeadersAndContentWithBytes {
 export class ContentWithBytes {
 
   constructor(
-    readonly bytes: Opaque<ArrayBuffer>,
+    readonly bytes: Unknown<ArrayBuffer>,
     readonly value: KeePassFile
   ) { }
 
   static computeOrThrow(content: KeePassFile): ContentWithBytes {
     const string = new XMLSerializer().serializeToString(content.document)
-    const opaque = new Opaque(new TextEncoder().encode(string))
+    const opaque = new Unknown(new TextEncoder().encode(string))
 
     return new ContentWithBytes(opaque, content)
   }
@@ -68,7 +67,7 @@ export class ContentWithBytes {
 export namespace ContentWithBytes {
 
   export function readOrThrow(cursor: Cursor<ArrayBuffer>): ContentWithBytes {
-    const bytes = new Opaque(cursor.readOrThrow(cursor.remaining))
+    const bytes = new Unknown(cursor.readOrThrow(cursor.remaining))
 
     const raw = new TextDecoder().decode(bytes.bytes)
     const xml = new DOMParser().parseFromString(raw, "text/xml")
@@ -91,8 +90,8 @@ export namespace HeadersAndContentWithBytes {
 
 export interface HeadersInit {
   readonly cipher: Cipher
-  readonly key: Opaque<ArrayBuffer, 32>
-  readonly binary: readonly Opaque<ArrayBuffer>[]
+  readonly key: Unknown<ArrayBuffer, 32>
+  readonly binary: readonly Unknown<ArrayBuffer>[]
 }
 
 export class Headers {
@@ -100,8 +99,8 @@ export class Headers {
   constructor(
     readonly value: Vector<{
       1: readonly [Cipher],
-      2: readonly [Opaque<ArrayBuffer>],
-      3: readonly Opaque<ArrayBuffer>[]
+      2: readonly [Unknown<ArrayBuffer>],
+      3: readonly Unknown<ArrayBuffer>[]
     }>,
   ) { }
 
@@ -109,11 +108,11 @@ export class Headers {
     return this.value.value[1][0]
   }
 
-  get key(): Opaque<ArrayBuffer> {
+  get key(): Unknown<ArrayBuffer> {
     return this.value.value[2][0]
   }
 
-  get binary(): readonly Opaque<ArrayBuffer>[] {
+  get binary(): readonly Unknown<ArrayBuffer>[] {
     return this.value.value[3]
   }
 
@@ -132,7 +131,7 @@ export class Headers {
   rotateOrThrow(): Headers {
     const { cipher, binary } = this
 
-    const key = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
 
     return Headers.initOrThrow({ cipher, key, binary })
   }

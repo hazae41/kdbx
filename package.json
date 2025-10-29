@@ -48,8 +48,8 @@
   ],
   "dependencies": {
     "@hazae41/argon2": "^2.0.5",
-    "@hazae41/binary": "^2.0.1",
+    "@hazae41/binary": "^2.0.2",
     "@hazae41/chacha20poly1305": "^2.0.1",
-    "@hazae41/cursor": "^2.1.1"
+    "@hazae41/cursor": "^2.1.2"
   }
 }

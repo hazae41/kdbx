@@ -1,6 +1,5 @@
 import type { Nullable } from "@/libs/nullable/mod.ts";
-import { Opaque } from "@/libs/struct/mod.ts";
-import { Readable, Writable } from "@hazae41/binary";
+import { Readable, Unknown, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
 
 export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Value }> {
@@ -82,7 +81,7 @@ export namespace Dictionary {
 export class Entries<T extends { [key: string]: Value } = { [key: string]: Value }> {
 
   constructor(
-    readonly bytes: Opaque<ArrayBuffer>,
+    readonly bytes: Unknown<ArrayBuffer>,
     readonly value: T,
   ) { }
 
@@ -109,7 +108,7 @@ export namespace Entries {
       entries.push(new Entry(Key.initOrThrow(key), value[key]))
 
     const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0)
-    const bytes = new Opaque(new Uint8Array(sized))
+    const bytes = new Unknown(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
@@ -138,7 +137,7 @@ export namespace Entries {
       continue
     }
 
-    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
+    const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset))
 
     return new Entries(bytes, indexed)
   }
@@ -184,8 +183,8 @@ export namespace Entry {
     const vlength = cursor.readUint32OrThrow(true)
     const vbytes = cursor.readOrThrow(vlength)
 
-    const key = new Key(new Opaque(kbytes), kstring)
-    const value = Value.parseOrThrow(type, new Opaque(vbytes))
+    const key = new Key(new Unknown(kbytes), kstring)
+    const value = Value.parseOrThrow(type, new Unknown(vbytes))
 
     return new Entry(key, value)
   }
@@ -195,7 +194,7 @@ export namespace Entry {
 export class Key {
 
   constructor(
-    readonly bytes: Opaque<ArrayBuffer>,
+    readonly bytes: Unknown<ArrayBuffer>,
     readonly value: string
   ) { }
 
@@ -213,7 +212,7 @@ export namespace Key {
 
   export function initOrThrow(value: string): Key {
     const bytes = new TextEncoder().encode(value)
-    return new Key(new Opaque(bytes), value)
+    return new Key(new Unknown(bytes), value)
   }
 
 }
@@ -229,7 +228,7 @@ export type Value =
 
 export namespace Value {
 
-  export function parseOrThrow(type: number, value: Opaque<ArrayBuffer>): Value {
+  export function parseOrThrow(type: number, value: Unknown<ArrayBuffer>): Value {
     if (type === UInt32.type)
       return Readable.readFromBytesOrThrow(UInt32, value.bytes)
 
@@ -424,7 +423,7 @@ export namespace Value {
     readonly #class = String
 
     constructor(
-      readonly bytes: Opaque<ArrayBuffer>,
+      readonly bytes: Unknown<ArrayBuffer>,
       readonly value: string
     ) { }
 
@@ -450,7 +449,7 @@ export namespace Value {
       const bytes = cursor.readOrThrow(cursor.remaining)
       const value = new TextDecoder().decode(bytes)
 
-      return new String(new Opaque(bytes), value)
+      return new String(new Unknown(bytes), value)
     }
 
   }
@@ -459,7 +458,7 @@ export namespace Value {
     readonly #class = Bytes
 
     constructor(
-      readonly value: Opaque<ArrayBuffer>
+      readonly value: Unknown<ArrayBuffer>
     ) { }
 
     get type(): number {
@@ -481,7 +480,7 @@ export namespace Value {
     export const type = 0x42
 
     export function readOrThrow(cursor: Cursor<ArrayBuffer>): Bytes {
-      return new Bytes(new Opaque(cursor.readOrThrow(cursor.remaining)))
+      return new Bytes(new Unknown(cursor.readOrThrow(cursor.remaining)))
     }
 
   }

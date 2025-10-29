@@ -3,19 +3,19 @@
   "specifiers": {
     "jsr:@hazae41/argon2-wasm@2": "2.0.0",
     "jsr:@hazae41/argon2@^2.0.5": "2.0.5",
-    "jsr:@hazae41/binary@^2.0.1": "2.0.1",
+    "jsr:@hazae41/binary@^2.0.2": "2.0.2",
     "jsr:@hazae41/chacha20poly1305-wasm@2": "2.0.0",
     "jsr:@hazae41/chacha20poly1305@^2.0.1": "2.0.1",
-    "jsr:@hazae41/cursor@^2.1.1": "2.1.1",
+    "jsr:@hazae41/cursor@^2.1.2": "2.1.2",
     "jsr:@hazae41/phobos@^2.0.16": "2.0.16",
     "jsr:@hazae41/result-and-option@^2.0.10": "2.0.10",
     "jsr:@hazae41/tscousin@^1.0.28": "1.0.28",
     "npm:@hazae41/argon2-wasm@2": "2.0.0_@hazae41+memory-wasm@1.0.46",
     "npm:@hazae41/argon2@^2.0.5": "2.0.5",
-    "npm:@hazae41/binary@^2.0.1": "2.0.1",
+    "npm:@hazae41/binary@^2.0.2": "2.0.2",
     "npm:@hazae41/chacha20poly1305-wasm@2": "2.0.0_@hazae41+memory-wasm@1.0.46",
     "npm:@hazae41/chacha20poly1305@^2.0.1": "2.0.1",
-    "npm:@hazae41/cursor@^2.1.1": "2.1.1",
+    "npm:@hazae41/cursor@^2.1.2": "2.1.2",
     "npm:@hazae41/phobos@^2.0.16": "2.0.16",
     "npm:@hazae41/tscousin@^1.0.28": "1.0.28",
     "npm:@noble/ciphers@^2.0.1": "2.0.1",
@@ -35,10 +35,10 @@
     "@hazae41/argon2-wasm@2.0.0": {
       "integrity": "6c10de0df1dcd5c6abb02fa3e0f135e33ab14db8807ffd7ec6b33b2398b349b5"
     },
-    "@hazae41/binary@2.0.1": {
-      "integrity": "cf2447ff38655f35274358056f84630a4eeb7166f748cd397cfa213a52864709",
+    "@hazae41/binary@2.0.2": {
+      "integrity": "abc4cb55cb369ef65cd1a485c8c682bcb13aaa4215add5cdea7dbea5b61dfb3b",
       "dependencies": [
-        "jsr:@hazae41/cursor@^2.1.1"
+        "jsr:@hazae41/cursor@^2.1.2"
       ]
     },
     "@hazae41/chacha20poly1305@2.0.1": {
@@ -52,8 +52,8 @@
     "@hazae41/chacha20poly1305-wasm@2.0.0": {
       "integrity": "e1e4180bc9a8688a8cecba0171f95f7856c160b827aa3fdbf6f7b41ab08f1373"
     },
-    "@hazae41/cursor@2.1.1": {
-      "integrity": "0fd5a27e68b3fad6253d775e9dc455f448983ca1fe136900b98541fa6101c91e"
+    "@hazae41/cursor@2.1.2": {
+      "integrity": "531806dc5b02b9ceec5816c94e911059d33e0ef948d0fc13580b745b95cc39de"
     },
     "@hazae41/phobos@2.0.16": {
       "integrity": "1b4ed1a675cfbf502d3fd5a57108eedad3bff2b43238f9fd1884ea15c762a4fc"
@@ -78,8 +78,8 @@
         "@hazae41/result-and-option"
       ]
     },
-    "@hazae41/binary@2.0.1": {
-      "integrity": "sha512-F+bq3zvpEnOY50vPMGRRwnWBDXy4EquPXrwS0Gw3CdPojr8/eRKYcQXeV50zNz8BLdyrMKHCaFl3/iCyeJmmBQ==",
+    "@hazae41/binary@2.0.2": {
+      "integrity": "sha512-i3YvoVECHiDoZ7n3XEMruIZYoikNEbTCjR/x7mWeg9rWpQMVNHIK+olYDvSBbxdJDSySSV/mRYOZBNfPataqYA==",
       "dependencies": [
         "@hazae41/cursor"
       ]
@@ -96,8 +96,8 @@
         "@hazae41/result-and-option"
       ]
     },
-    "@hazae41/cursor@2.1.1": {
-      "integrity": "sha512-1vdvZiqCUPFDWZAjM8TrqHRjQz8mi2EInrXkO8Kl2Tmo1vQ686nqGmSQjbHerW2JWmyZEr+9/RzvEFVAliaUyw==",
+    "@hazae41/cursor@2.1.2": {
+      "integrity": "sha512-DSmFQ7fJkEfwJ7esBuBUSyKHVKgdStSnmMoAN0/z51ngk33BXKgom5bITMG9pZbHeT1Q3Pd4RY7OQqaMUuF3wA==",
       "dependencies": [
         "@hazae41/lengthed"
       ]
@@ -171,10 +171,10 @@
     "dependencies": [
       "jsr:@hazae41/argon2-wasm@2",
       "jsr:@hazae41/argon2@^2.0.5",
-      "jsr:@hazae41/binary@^2.0.1",
+      "jsr:@hazae41/binary@^2.0.2",
       "jsr:@hazae41/chacha20poly1305-wasm@2",
       "jsr:@hazae41/chacha20poly1305@^2.0.1",
-      "jsr:@hazae41/cursor@^2.1.1",
+      "jsr:@hazae41/cursor@^2.1.2",
       "jsr:@hazae41/phobos@^2.0.16",
       "jsr:@hazae41/tscousin@^1.0.28"
     ],
@@ -182,10 +182,10 @@
       "dependencies": [
         "npm:@hazae41/argon2-wasm@2",
         "npm:@hazae41/argon2@^2.0.5",
-        "npm:@hazae41/binary@^2.0.1",
+        "npm:@hazae41/binary@^2.0.2",
         "npm:@hazae41/chacha20poly1305-wasm@2",
         "npm:@hazae41/chacha20poly1305@^2.0.1",
-        "npm:@hazae41/cursor@^2.1.1",
+        "npm:@hazae41/cursor@^2.1.2",
         "npm:@hazae41/phobos@^2.0.16",
         "npm:@hazae41/tscousin@^1.0.28",
         "npm:@types/node@^24.9.2",

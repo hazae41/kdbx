@@ -1,12 +1,11 @@
-import type { Opaque } from "@/libs/struct/mod.ts";
-import { Writable } from "@hazae41/binary";
+import { type Unknown, Writable } from "@hazae41/binary";
 import type { Cursor } from "@hazae41/cursor";
 
 export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly major: Opaque<ArrayBuffer, 64>,
+    readonly major: Unknown<ArrayBuffer, 64>,
   ) { }
 
   sizeOrThrow(): number {

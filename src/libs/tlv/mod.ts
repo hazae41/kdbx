@@ -1,5 +1,5 @@
-import { Opaque, type Struct } from "@/libs/struct/mod.ts"
-import type { Readable } from "@hazae41/binary"
+import type { Struct } from "@/libs/struct/mod.ts"
+import { type Readable, Unknown } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
 
 export class TLV<T extends number = number, V extends Struct = Struct> {
@@ -23,7 +23,7 @@ export class TLV<T extends number = number, V extends Struct = Struct> {
     return new TLV(this.type, this.value.cloneOrThrow())
   }
 
-  readIntoOrThrow<W extends Struct>(this: TLV<T, Opaque<ArrayBuffer>>, readable: Readable<W>): TLV<T, W> {
+  readIntoOrThrow<W extends Struct>(this: TLV<T, Unknown<ArrayBuffer>>, readable: Readable<W>): TLV<T, W> {
     return new TLV(this.type, this.value.readIntoOrThrow(readable))
   }
 
@@ -49,7 +49,7 @@ export namespace TLV {
   export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
     const type = cursor.readUint8OrThrow()
     const length = cursor.readUint32OrThrow(true)
-    const bytes = new Opaque(cursor.readOrThrow(length))
+    const bytes = new Unknown(cursor.readOrThrow(length))
 
     return new TLV(type, bytes)
   }

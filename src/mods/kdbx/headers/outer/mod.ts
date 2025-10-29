@@ -9,9 +9,8 @@ import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
 import { type CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "@/mods/kdbx/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { argon2 } from "@hazae41/argon2"
-import { Readable, Writable } from "@hazae41/binary"
+import { Readable, Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
-import { Opaque } from "../../../../libs/struct/mod.ts"
 import { Cipher } from "./cipher/mod.ts"
 import { Compression } from "./compression/mod.ts"
 
@@ -68,8 +67,8 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   constructor(
     readonly data: MagicAndVersionAndHeadersWithBytes,
-    readonly hash: Opaque<ArrayBuffer, 32>,
-    readonly hmac: Opaque<ArrayBuffer, 32>
+    readonly hash: Unknown<ArrayBuffer, 32>,
+    readonly hmac: Unknown<ArrayBuffer, 32>
   ) { }
 
   static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmac> {
@@ -81,7 +80,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
     const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
 
-    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
+    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Unknown(hash), new Unknown(hmac))
   }
 
   async verifyOrThrow(keys: MasterKeys): Promise<void> {
@@ -127,8 +126,8 @@ export namespace MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
-    const hash = new Opaque(cursor.readOrThrow(32))
-    const hmac = new Opaque(cursor.readOrThrow(32))
+    const hash = new Unknown(cursor.readOrThrow(32))
+    const hmac = new Unknown(cursor.readOrThrow(32))
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
   }
@@ -139,11 +138,11 @@ export class MagicAndVersionAndHeadersWithBytes {
 
   constructor(
     readonly value: MagicAndVersionAndHeaders,
-    readonly bytes: Opaque<ArrayBuffer>,
+    readonly bytes: Unknown<ArrayBuffer>,
   ) { }
 
   static computeOrThrow(value: MagicAndVersionAndHeaders): MagicAndVersionAndHeadersWithBytes {
-    const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
+    const bytes = new Unknown(Writable.writeToBytesOrThrow(value))
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
@@ -178,7 +177,7 @@ export namespace MagicAndVersionAndHeadersWithBytes {
     const start = cursor.offset
 
     const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
-    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
+    const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset))
 
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
@@ -256,8 +255,8 @@ export namespace MagicAndVersionAndHeaders {
 export interface HeadersInit {
   readonly cipher: Cipher
   readonly compression: Compression
-  readonly seed: Opaque<ArrayBuffer, 32>
-  readonly iv: Opaque<ArrayBuffer>
+  readonly seed: Unknown<ArrayBuffer, 32>
+  readonly iv: Unknown<ArrayBuffer>
   readonly kdf: KdfParameters
   readonly custom?: Dictionary
 }
@@ -265,7 +264,7 @@ export interface HeadersInit {
 export class Headers {
 
   constructor(
-    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Opaque<ArrayBuffer, 32>], 7: readonly [Opaque<ArrayBuffer>], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
+    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Unknown<ArrayBuffer, 32>], 7: readonly [Unknown<ArrayBuffer>], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
   ) { }
 
   get cipher(): Cipher {
@@ -276,11 +275,11 @@ export class Headers {
     return this.value.value[3][0]
   }
 
-  get seed(): Opaque<ArrayBuffer, 32> {
+  get seed(): Unknown<ArrayBuffer, 32> {
     return this.value.value[4][0]
   }
 
-  get iv(): Opaque<ArrayBuffer> {
+  get iv(): Unknown<ArrayBuffer> {
     return this.value.value[7][0]
   }
 
@@ -295,8 +294,8 @@ export class Headers {
   rotateOrThrow(): Headers {
     const { cipher, compression, custom } = this
 
-    const seed = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
-    const iv = new Opaque(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
+    const seed = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const iv = new Unknown(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
     const kdf = this.kdf.rotateOrThrow()
 
     return Headers.initOrThrow({ cipher, compression, seed, iv, kdf, custom })
@@ -338,8 +337,8 @@ export namespace Headers {
     const indexed = {
       2: [cipher],
       3: [compression],
-      4: [new Opaque(seed.bytes)],
-      7: [new Opaque(iv.bytes)],
+      4: [new Unknown(seed.bytes)],
+      7: [new Unknown(iv.bytes)],
       11: [kdf],
       12: custom != null ? [custom] as const : undefined
     } as const
@@ -368,7 +367,7 @@ export namespace Headers {
     const indexed = {
       2: [vector.value[2][0].readIntoOrThrow(Cipher)],
       3: [vector.value[3][0].readIntoOrThrow(Compression)],
-      4: [vector.value[4][0] as Opaque<ArrayBuffer, 32>],
+      4: [vector.value[4][0] as Unknown<ArrayBuffer, 32>],
       7: [vector.value[7][0]],
       11: [vector.value[11][0].readIntoOrThrow(KdfParameters)],
       12: vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
@@ -381,11 +380,11 @@ export namespace Headers {
 export class Seed {
 
   constructor(
-    readonly bytes: Opaque<ArrayBuffer, 32>
+    readonly bytes: Unknown<ArrayBuffer, 32>
   ) { }
 
   static readOrThrow(cursor: Cursor<ArrayBuffer>): Seed {
-    return new Seed(new Opaque(cursor.readOrThrow(32)))
+    return new Seed(new Unknown(cursor.readOrThrow(32)))
   }
 
 }
@@ -403,7 +402,7 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, R: Value.UInt32, S: Value.Bytes }>
     ) { }
 
-    get seed(): Opaque<ArrayBuffer> {
+    get seed(): Unknown<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
@@ -417,7 +416,7 @@ export namespace KdfParameters {
       const $UUID = this.value.entries.value["$UUID"]
 
       const R = this.value.entries.value["R"]
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
 
       const value = Dictionary.initOrThrow(version, { $UUID, R, S })
 
@@ -482,7 +481,7 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
-    get salt(): Opaque<ArrayBuffer> {
+    get salt(): Unknown<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
@@ -507,7 +506,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -529,7 +528,7 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
     sizeOrThrow(): number {
@@ -588,7 +587,7 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
-    get salt(): Opaque<ArrayBuffer> {
+    get salt(): Unknown<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
@@ -613,7 +612,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -635,7 +634,7 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
     sizeOrThrow(): number {

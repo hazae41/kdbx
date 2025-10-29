@@ -1,13 +1,13 @@
 import type { Optional } from "@/libs/optional/mod.ts";
-import { Opaque, type Struct } from "@/libs/struct/mod.ts";
+import type { Struct } from "@/libs/struct/mod.ts";
 import { TLV } from "@/libs/tlv/mod.ts";
-import { Readable, Writable } from "@hazae41/binary";
+import { Readable, Unknown, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
 
 export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> {
 
   constructor(
-    readonly bytes: Opaque<ArrayBuffer>,
+    readonly bytes: Unknown<ArrayBuffer>,
     readonly value: T
   ) { }
 
@@ -44,7 +44,7 @@ export namespace Vector {
     }
 
     const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + TLV.Empty.sizeOrThrow()
-    const bytes = new Opaque(new Uint8Array(sized))
+    const bytes = new Unknown(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
@@ -56,11 +56,11 @@ export namespace Vector {
     return new Vector(bytes, indexed);
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Vector<{ [index: number]: Opaque<ArrayBuffer>[] }> {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Vector<{ [index: number]: Unknown<ArrayBuffer>[] }> {
     const start = cursor.offset
 
     const entries = new Array<TLV>();
-    const indexed: { [index: number]: Opaque<ArrayBuffer>[] } = {};
+    const indexed: { [index: number]: Unknown<ArrayBuffer>[] } = {};
 
     while (true) {
       const tlv = TLV.readOrThrow(cursor)
@@ -76,7 +76,7 @@ export namespace Vector {
       continue
     }
 
-    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset));
+    const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset));
 
     return new Vector(bytes, indexed);
   }
