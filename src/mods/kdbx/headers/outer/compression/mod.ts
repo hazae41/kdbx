@@ -1,4 +1,4 @@
-import { Cursor } from "@hazae41/cursor"
+import type { Cursor } from "@hazae41/cursor"
 
 export type Compression =
   | typeof Compression.None
@@ -10,11 +10,11 @@ export namespace Compression {
 
     export const type = 0x00
 
-    export function cloneOrThrow() {
+    export function cloneOrThrow(): typeof None {
       return None
     }
 
-    export function sizeOrThrow() {
+    export function sizeOrThrow(): number {
       return 4
     }
 
@@ -28,11 +28,11 @@ export namespace Compression {
 
     export const type = 0x01
 
-    export function cloneOrThrow() {
+    export function cloneOrThrow(): typeof Gzip {
       return Gzip
     }
 
-    export function sizeOrThrow() {
+    export function sizeOrThrow(): number {
       return 4
     }
 
@@ -46,7 +46,7 @@ export namespace Compression {
 
 export namespace Compression {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Compression {
     const value = cursor.readUint32OrThrow(true)
 
     if (value === Compression.None.type)

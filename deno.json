@@ -3,7 +3,8 @@
   "version": "2.0.1",
   "imports": {
     "@/": "./src/",
-    "@hazae41/argon2": "jsr:@hazae41/argon2@^2.0.3",
+    "@hazae41/argon2": "jsr:@hazae41/argon2@^2.0.5",
+    "@hazae41/argon2-wasm": "jsr:@hazae41/argon2-wasm@^2.0.0",
     "@hazae41/binary": "jsr:@hazae41/binary@^2.0.1",
     "@hazae41/chacha20poly1305": "jsr:@hazae41/chacha20poly1305@^2.0.1",
     "@hazae41/chacha20poly1305-wasm": "jsr:@hazae41/chacha20poly1305-wasm@^2.0.0",

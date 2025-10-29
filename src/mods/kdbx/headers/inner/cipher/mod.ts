@@ -16,11 +16,11 @@ export namespace Cipher {
 
     export const type = 0x01
 
-    export function cloneOrThrow() {
+    export function cloneOrThrow(): typeof ArcFourVariant {
       return ArcFourVariant
     }
 
-    export function sizeOrThrow() {
+    export function sizeOrThrow(): number {
       return 4
     }
 
@@ -46,11 +46,11 @@ export namespace Cipher {
 
     export const type = 0x02
 
-    export function cloneOrThrow() {
+    export function cloneOrThrow(): typeof Salsa20 {
       return Salsa20
     }
 
-    export function sizeOrThrow() {
+    export function sizeOrThrow(): number {
       return 4
     }
 
@@ -75,7 +75,7 @@ export namespace Cipher {
       this.cipher[Symbol.dispose]()
     }
 
-    applyOrThrow(data: Uint8Array) {
+    applyOrThrow(data: Uint8Array): chaCha20Poly1305.Abstract.Memory {
       const { Memory } = chaCha20Poly1305.get().getOrThrow()
 
       const memory = Memory.fromOrThrow(data)
@@ -91,11 +91,11 @@ export namespace Cipher {
 
     export const type = 0x03
 
-    export function cloneOrThrow() {
+    export function cloneOrThrow(): typeof ChaCha20 {
       return ChaCha20
     }
 
-    export function sizeOrThrow() {
+    export function sizeOrThrow(): number {
       return 4
     }
 
@@ -123,7 +123,7 @@ export namespace Cipher {
 
 export namespace Cipher {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Cipher {
     const value = cursor.readUint32OrThrow(true)
 
     if (value === Cipher.ArcFourVariant.type)

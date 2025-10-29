@@ -1,9 +1,10 @@
-import { Opaque, Readable, Writable } from "@hazae41/binary"
-import { Cursor } from "@hazae41/cursor"
-import { Lengthed } from "@hazae41/lengthed"
-import { Vector } from "mods/kdbx/vector/index.js"
-import { Cipher } from "./cipher/index.js"
-import { KeePassFile } from "./markup/index.js"
+import type { Lengthed } from "@/libs/lengthed/mod.ts"
+import { Opaque } from "@/libs/struct/mod.ts"
+import { Vector } from "@/mods/kdbx/vector/mod.ts"
+import { Readable, Writable } from "@hazae41/binary"
+import type { Cursor } from "@hazae41/cursor"
+import { Cipher } from "./cipher/mod.ts"
+import { KeePassFile } from "./markup/mod.ts"
 
 export class HeadersAndContentWithBytes {
 
@@ -12,16 +13,16 @@ export class HeadersAndContentWithBytes {
     readonly content: ContentWithBytes
   ) { }
 
-  static computeOrThrow(headers: Headers, content: KeePassFile) {
+  static computeOrThrow(headers: Headers, content: KeePassFile): HeadersAndContentWithBytes {
     const contentWithBytes = ContentWithBytes.computeOrThrow(content)
     return new HeadersAndContentWithBytes(headers, contentWithBytes)
   }
 
-  async rotateOrThrow() {
-    return new HeadersAndContentWithBytes(await this.headers.rotateOrThrow(), this.content)
+  rotateOrThrow(): HeadersAndContentWithBytes {
+    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), this.content)
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
   }
 
@@ -30,7 +31,7 @@ export class HeadersAndContentWithBytes {
     this.content.writeOrThrow(cursor)
   }
 
-  recomputeOrThrow() {
+  recomputeOrThrow(): HeadersAndContentWithBytes {
     return HeadersAndContentWithBytes.computeOrThrow(this.headers, this.content.value)
   }
 
@@ -39,18 +40,18 @@ export class HeadersAndContentWithBytes {
 export class ContentWithBytes {
 
   constructor(
-    readonly bytes: Opaque,
+    readonly bytes: Opaque<ArrayBuffer>,
     readonly value: KeePassFile
   ) { }
 
-  static computeOrThrow(content: KeePassFile) {
+  static computeOrThrow(content: KeePassFile): ContentWithBytes {
     const string = new XMLSerializer().serializeToString(content.document)
     const opaque = new Opaque(new TextEncoder().encode(string))
 
     return new ContentWithBytes(opaque, content)
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.bytes.sizeOrThrow()
   }
 
@@ -58,7 +59,7 @@ export class ContentWithBytes {
     this.bytes.writeOrThrow(cursor)
   }
 
-  recomputeOrThrow() {
+  recomputeOrThrow(): ContentWithBytes {
     return ContentWithBytes.computeOrThrow(this.value)
   }
 
@@ -66,7 +67,7 @@ export class ContentWithBytes {
 
 export namespace ContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): ContentWithBytes {
     const bytes = new Opaque(cursor.readOrThrow(cursor.remaining))
 
     const raw = new TextDecoder().decode(bytes.bytes)
@@ -79,7 +80,7 @@ export namespace ContentWithBytes {
 
 export namespace HeadersAndContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): HeadersAndContentWithBytes {
     const headers = Headers.readOrThrow(cursor)
     const content = ContentWithBytes.readOrThrow(cursor)
 
@@ -90,29 +91,33 @@ export namespace HeadersAndContentWithBytes {
 
 export interface HeadersInit {
   readonly cipher: Cipher
-  readonly key: Opaque<32>
-  readonly binary: readonly Opaque[]
+  readonly key: Opaque<ArrayBuffer, 32>
+  readonly binary: readonly Opaque<ArrayBuffer>[]
 }
 
 export class Headers {
 
   constructor(
-    readonly value: Vector<{ 1: readonly [Cipher], 2: readonly [Opaque], 3: readonly Opaque[] }>,
+    readonly value: Vector<{
+      1: readonly [Cipher],
+      2: readonly [Opaque<ArrayBuffer>],
+      3: readonly Opaque<ArrayBuffer>[]
+    }>,
   ) { }
 
-  get cipher() {
+  get cipher(): Cipher {
     return this.value.value[1][0]
   }
 
-  get key() {
+  get key(): Opaque<ArrayBuffer> {
     return this.value.value[2][0]
   }
 
-  get binary() {
+  get binary(): readonly Opaque<ArrayBuffer>[] {
     return this.value.value[3]
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.value.sizeOrThrow()
   }
 
@@ -120,11 +125,11 @@ export class Headers {
     this.value.writeOrThrow(cursor)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): Headers {
     return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
-  async rotateOrThrow() {
+  rotateOrThrow(): Headers {
     const { cipher, binary } = this
 
     const key = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
@@ -132,7 +137,7 @@ export class Headers {
     return Headers.initOrThrow({ cipher, key, binary })
   }
 
-  async getCipherOrThrow() {
+  async getCipherOrThrow(): Promise<Cipher.ChaCha20> {
     return await this.cipher.initOrThrow(this.key.bytes)
   }
 
@@ -140,7 +145,7 @@ export class Headers {
 
 export namespace Headers {
 
-  export function initOrThrow(init: HeadersInit) {
+  export function initOrThrow(init: HeadersInit): Headers {
     const { cipher, key, binary } = init
 
     const indexed = {
@@ -152,7 +157,7 @@ export namespace Headers {
     return new Headers(Vector.initOrThrow(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Headers {
     const vector = Vector.readOrThrow(cursor)
 
     if (vector.value[1].length !== 1)

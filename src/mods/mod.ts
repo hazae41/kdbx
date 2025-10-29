@@ -1,2 +1,2 @@
-export * from "./kdbx/index.js";
+export * from "./kdbx/mod.ts";
 

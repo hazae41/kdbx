@@ -8,7 +8,7 @@ export namespace Data {
       readonly element: Element
     ) { }
 
-    get() {
+    get(): string {
       return this.element.innerHTML
     }
 
@@ -24,7 +24,7 @@ export namespace Data {
       readonly element: Element
     ) { }
 
-    get() {
+    get(): boolean {
       return this.element.innerHTML === "True"
     }
 
@@ -40,7 +40,7 @@ export namespace Data {
       readonly element: Element
     ) { }
 
-    getOrThrow() {
+    getOrThrow(): number {
       const value = this.element.innerHTML
 
       if (!value)
@@ -72,7 +72,7 @@ export namespace Data {
       readonly element: Element
     ) { }
 
-    getOrThrow() {
+    getOrThrow(): Date {
       const value = this.element.innerHTML
 
       if (!value)

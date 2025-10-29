@@ -1,5 +1,6 @@
-import type { Lengthed } from "@/libs/lengthed/mod.ts";
-import { Readable, Unknown, Writable } from "@hazae41/binary";
+import type { Nullable } from "@/libs/nullable/mod.ts";
+import { Opaque } from "@/libs/struct/mod.ts";
+import { Readable, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
 
 export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Value }> {
@@ -9,7 +10,7 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
     readonly entries: Entries<T>
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.version.sizeOrThrow() + this.entries.sizeOrThrow() + 1
   }
 
@@ -20,7 +21,7 @@ export class Dictionary<T extends { [key: string]: Value } = { [key: string]: Va
     cursor.writeUint8OrThrow(0x00)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): Dictionary<T> {
     return new Dictionary(this.version.cloneOrThrow(), this.entries.cloneOrThrow())
   }
 
@@ -35,7 +36,7 @@ export namespace Dictionary {
       readonly major: number
     ) { }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 1 + 1
     }
 
@@ -44,7 +45,7 @@ export namespace Dictionary {
       cursor.writeUint8OrThrow(this.major)
     }
 
-    cloneOrThrow() {
+    cloneOrThrow(): Version {
       return this
     }
 
@@ -52,7 +53,7 @@ export namespace Dictionary {
 
   export namespace Version {
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Version {
       const minor = cursor.readUint8OrThrow()
       const major = cursor.readUint8OrThrow()
 
@@ -61,11 +62,11 @@ export namespace Dictionary {
 
   }
 
-  export function initOrThrow<T extends { [key: string]: Value }>(version: Version, entries: T) {
+  export function initOrThrow<T extends { [key: string]: Value }>(version: Version, entries: T): Dictionary<T> {
     return new Dictionary(version, Entries.initOrThrow(entries))
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Dictionary<{ [key: string]: Value }> {
     const version = Version.readOrThrow(cursor)
 
     if (version.major !== 1)
@@ -81,11 +82,11 @@ export namespace Dictionary {
 export class Entries<T extends { [key: string]: Value } = { [key: string]: Value }> {
 
   constructor(
-    readonly bytes: Unknown,
+    readonly bytes: Opaque<ArrayBuffer>,
     readonly value: T,
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.bytes.bytes.length
   }
 
@@ -93,22 +94,22 @@ export class Entries<T extends { [key: string]: Value } = { [key: string]: Value
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
-  cloneOrThrow() {
-    return Readable.readFromBytesOrThrow(Entries, Writable.writeToBytesOrThrow(this)) as this
+  cloneOrThrow(): Entries<T> {
+    return Readable.readFromBytesOrThrow(Entries, Writable.writeToBytesOrThrow(this)) as unknown as Entries<T>
   }
 
 }
 
 export namespace Entries {
 
-  export function initOrThrow<T extends { [key: string]: Value }>(value: T) {
+  export function initOrThrow<T extends { [key: string]: Value }>(value: T): Entries<T> {
     const entries = new Array<Entry<Value>>()
 
     for (const key in value)
       entries.push(new Entry(Key.initOrThrow(key), value[key]))
 
     const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0)
-    const bytes = new Unknown(new Uint8Array(sized))
+    const bytes = new Opaque(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
@@ -118,7 +119,7 @@ export namespace Entries {
     return new Entries(bytes, value)
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Nullable<Entries<{ [key: string]: Value }>> {
     const start = cursor.offset
 
     const entries = new Array<Entry<Value>>()
@@ -137,7 +138,7 @@ export namespace Entries {
       continue
     }
 
-    const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset))
+    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset))
 
     return new Entries(bytes, indexed)
   }
@@ -150,7 +151,7 @@ export class Entry<T extends Value> {
     readonly val: T
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return 1 + 4 + this.key.sizeOrThrow() + 4 + this.val.sizeOrThrow()
   }
 
@@ -170,7 +171,7 @@ export class Entry<T extends Value> {
 
 export namespace Entry {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Nullable<Entry<Value>> {
     const type = cursor.readUint8OrThrow()
 
     if (type === 0)
@@ -183,8 +184,8 @@ export namespace Entry {
     const vlength = cursor.readUint32OrThrow(true)
     const vbytes = cursor.readOrThrow(vlength)
 
-    const key = new Key(new Unknown(kbytes), kstring)
-    const value = Value.parseOrThrow(type, new Unknown(vbytes))
+    const key = new Key(new Opaque(kbytes), kstring)
+    const value = Value.parseOrThrow(type, new Opaque(vbytes))
 
     return new Entry(key, value)
   }
@@ -194,11 +195,11 @@ export namespace Entry {
 export class Key {
 
   constructor(
-    readonly bytes: Unknown,
+    readonly bytes: Opaque<ArrayBuffer>,
     readonly value: string
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.bytes.bytes.length
   }
 
@@ -210,9 +211,9 @@ export class Key {
 
 export namespace Key {
 
-  export function initOrThrow(value: string) {
+  export function initOrThrow(value: string): Key {
     const bytes = new TextEncoder().encode(value)
-    return new Key(new Unknown(bytes), value)
+    return new Key(new Opaque(bytes), value)
   }
 
 }
@@ -228,7 +229,7 @@ export type Value =
 
 export namespace Value {
 
-  export function parseOrThrow(type: number, value: Unknown) {
+  export function parseOrThrow(type: number, value: Opaque<ArrayBuffer>): Value {
     if (type === UInt32.type)
       return Readable.readFromBytesOrThrow(UInt32, value.bytes)
 
@@ -260,11 +261,11 @@ export namespace Value {
       readonly value: T
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 4
     }
 
@@ -278,7 +279,7 @@ export namespace Value {
 
     export const type = 0x04
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): UInt32 {
       return new UInt32(cursor.readUint32OrThrow(true))
     }
 
@@ -291,11 +292,11 @@ export namespace Value {
       readonly value: T
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 8
     }
 
@@ -309,7 +310,7 @@ export namespace Value {
 
     export const type = 0x05
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): UInt64 {
       return new UInt64(cursor.readUint64OrThrow(true))
     }
 
@@ -322,11 +323,11 @@ export namespace Value {
       readonly value: boolean
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 1
     }
 
@@ -340,7 +341,7 @@ export namespace Value {
 
     export const type = 0x08
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Boolean {
       const value = cursor.readUint8OrThrow()
 
       if (value !== 0 && value !== 1)
@@ -358,11 +359,11 @@ export namespace Value {
       readonly value: T
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 4
     }
 
@@ -376,7 +377,7 @@ export namespace Value {
 
     export const type = 0x0C
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Int32 {
       const uint = cursor.readUint32OrThrow(true)
       const sint = uint > ((2 ** 31) - 1) ? uint - (2 ** 32) : uint
 
@@ -392,11 +393,11 @@ export namespace Value {
       readonly value: T
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return 8
     }
 
@@ -410,7 +411,7 @@ export namespace Value {
 
     export const type = 0x0D
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Int64 {
       const uint = cursor.readUint64OrThrow(true)
       const sint = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
 
@@ -423,15 +424,15 @@ export namespace Value {
     readonly #class = String
 
     constructor(
-      readonly bytes: Unknown,
+      readonly bytes: Opaque<ArrayBuffer>,
       readonly value: string
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return this.bytes.bytes.length
     }
 
@@ -445,11 +446,11 @@ export namespace Value {
 
     export const type = 0x18
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): String {
       const bytes = cursor.readOrThrow(cursor.remaining)
       const value = new TextDecoder().decode(bytes)
 
-      return new String(new Unknown(bytes), value)
+      return new String(new Opaque(bytes), value)
     }
 
   }
@@ -458,14 +459,14 @@ export namespace Value {
     readonly #class = Bytes
 
     constructor(
-      readonly value: Unknown<Uint8Array & Lengthed<N>>
+      readonly value: Opaque<ArrayBuffer>
     ) { }
 
-    get type() {
+    get type(): number {
       return this.#class.type
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return this.value.bytes.length
     }
 
@@ -479,8 +480,8 @@ export namespace Value {
 
     export const type = 0x42
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
-      return new Bytes(new Unknown(cursor.readOrThrow(cursor.remaining)))
+    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Bytes {
+      return new Bytes(new Opaque(cursor.readOrThrow(cursor.remaining)))
     }
 
   }

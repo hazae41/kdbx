@@ -1,8 +1,8 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@hazae41/argon2-wasm@^1.0.6": "1.0.8",
-    "jsr:@hazae41/argon2@^2.0.3": "2.0.3",
+    "jsr:@hazae41/argon2-wasm@2": "2.0.0",
+    "jsr:@hazae41/argon2@^2.0.5": "2.0.5",
     "jsr:@hazae41/binary@^2.0.1": "2.0.1",
     "jsr:@hazae41/chacha20poly1305-wasm@2": "2.0.0",
     "jsr:@hazae41/chacha20poly1305@^2.0.1": "2.0.1",
@@ -10,7 +10,8 @@
     "jsr:@hazae41/phobos@^2.0.16": "2.0.16",
     "jsr:@hazae41/result-and-option@^2.0.10": "2.0.10",
     "jsr:@hazae41/tscousin@^1.0.28": "1.0.28",
-    "npm:@hazae41/argon2@^2.0.3": "2.0.3",
+    "npm:@hazae41/argon2-wasm@2": "2.0.0_@hazae41+memory-wasm@1.0.46",
+    "npm:@hazae41/argon2@^2.0.5": "2.0.5",
     "npm:@hazae41/binary@^2.0.1": "2.0.1",
     "npm:@hazae41/chacha20poly1305-wasm@2": "2.0.0_@hazae41+memory-wasm@1.0.46",
     "npm:@hazae41/chacha20poly1305@^2.0.1": "2.0.1",
@@ -19,19 +20,20 @@
     "npm:@hazae41/tscousin@^1.0.28": "1.0.28",
     "npm:@noble/ciphers@^2.0.1": "2.0.1",
     "npm:@types/node@*": "24.2.0",
+    "npm:@types/node@^24.9.2": "24.9.2",
     "npm:happy-dom@^20.0.10": "20.0.10",
     "npm:typescript@^5.9.3": "5.9.3"
   },
   "jsr": {
-    "@hazae41/argon2@2.0.3": {
-      "integrity": "aeccdc3ea3ead493075bb34c65d87c46b0035126e6768e22e6a8372add6ccc9d",
+    "@hazae41/argon2@2.0.5": {
+      "integrity": "12b3e10886f87dac15b0f32bd23e3c1db85144b98f4ed9c8824331aa974d8f51",
       "dependencies": [
-        "jsr:@hazae41/argon2-wasm",
+        "jsr:@hazae41/argon2-wasm@2",
         "jsr:@hazae41/result-and-option"
       ]
     },
-    "@hazae41/argon2-wasm@1.0.8": {
-      "integrity": "276ec406f6f171c176f6445508980f2a650ff4aac65661c047b1ac5811967c83"
+    "@hazae41/argon2-wasm@2.0.0": {
+      "integrity": "6c10de0df1dcd5c6abb02fa3e0f135e33ab14db8807ffd7ec6b33b2398b349b5"
     },
     "@hazae41/binary@2.0.1": {
       "integrity": "cf2447ff38655f35274358056f84630a4eeb7166f748cd397cfa213a52864709",
@@ -64,8 +66,14 @@
     }
   },
   "npm": {
-    "@hazae41/argon2@2.0.3": {
-      "integrity": "sha512-xSH6t/Bs5MWc38wJfuWhRZ459NJnvetMneynQTXh54rXsCfNrJUMRiYUDzbCZmptdHwbmwd9Vj5kv95x3UXi8g==",
+    "@hazae41/argon2-wasm@2.0.0_@hazae41+memory-wasm@1.0.46": {
+      "integrity": "sha512-QZt/tpml+voZgpYR/rT70F2sEOXRLJEGMdGs841jObH1TGLfqrQfmtNQO0JeUAE7qLy4bERbetcFpYx9YOo26w==",
+      "dependencies": [
+        "@hazae41/memory-wasm"
+      ]
+    },
+    "@hazae41/argon2@2.0.5": {
+      "integrity": "sha512-lCIuOBrf0vKHXgpYMJYThTirzD3WVKgzMJlJPnSTQaxWJJNW0UJ0Zv1VTdZI6Jfw4sQIqcuxjGNdqGLsHfmxAg==",
       "dependencies": [
         "@hazae41/result-and-option"
       ]
@@ -125,6 +133,12 @@
         "undici-types@7.10.0"
       ]
     },
+    "@types/node@24.9.2": {
+      "integrity": "sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA==",
+      "dependencies": [
+        "undici-types@7.16.0"
+      ]
+    },
     "@types/whatwg-mimetype@3.0.2": {
       "integrity": "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="
     },
@@ -146,13 +160,17 @@
     "undici-types@7.10.0": {
       "integrity": "sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag=="
     },
+    "undici-types@7.16.0": {
+      "integrity": "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="
+    },
     "whatwg-mimetype@3.0.0": {
       "integrity": "sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@hazae41/argon2@^2.0.3",
+      "jsr:@hazae41/argon2-wasm@2",
+      "jsr:@hazae41/argon2@^2.0.5",
       "jsr:@hazae41/binary@^2.0.1",
       "jsr:@hazae41/chacha20poly1305-wasm@2",
       "jsr:@hazae41/chacha20poly1305@^2.0.1",
@@ -162,13 +180,15 @@
     ],
     "packageJson": {
       "dependencies": [
-        "npm:@hazae41/argon2@^2.0.3",
+        "npm:@hazae41/argon2-wasm@2",
+        "npm:@hazae41/argon2@^2.0.5",
         "npm:@hazae41/binary@^2.0.1",
         "npm:@hazae41/chacha20poly1305-wasm@2",
         "npm:@hazae41/chacha20poly1305@^2.0.1",
         "npm:@hazae41/cursor@^2.1.1",
         "npm:@hazae41/phobos@^2.0.16",
         "npm:@hazae41/tscousin@^1.0.28",
+        "npm:@types/node@^24.9.2",
         "npm:happy-dom@^20.0.10",
         "npm:typescript@^5.9.3"
       ]

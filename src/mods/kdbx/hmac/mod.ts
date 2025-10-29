@@ -1,15 +1,15 @@
-import type { Lengthed } from "@/libs/lengthed/mod.ts";
-import { type Unknown, Writable } from "@hazae41/binary";
+import type { Opaque } from "@/libs/struct/mod.ts";
+import { Writable } from "@hazae41/binary";
 import type { Cursor } from "@hazae41/cursor";
 
 export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly major: Unknown<Uint8Array & Lengthed<64>>,
+    readonly major: Opaque<ArrayBuffer, 64>,
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return 8 + this.major.bytes.length
   }
 

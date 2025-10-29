@@ -1,18 +1,19 @@
-export * from "./cipher/index.js"
-export * from "./compression/index.js"
+export * from "./cipher/mod.ts"
+export * from "./compression/mod.ts"
 
-import { Argon2 } from "@hazae41/argon2"
-import { Opaque, Readable, Writable } from "@hazae41/binary"
-import { Cursor } from "@hazae41/cursor"
-import { Lengthed } from "@hazae41/lengthed"
-import { Bytes } from "libs/bytes/index.js"
-import { StringAsUuid } from "libs/uuid/index.js"
-import { Dictionary, Entries, Value } from "mods/kdbx/dictionary/index.js"
-import { PreHmacKey } from "mods/kdbx/hmac/index.js"
-import { CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "mods/kdbx/index.js"
-import { Vector } from "mods/kdbx/vector/index.js"
-import { Cipher } from "./cipher/index.js"
-import { Compression } from "./compression/index.js"
+import { Bytes } from "@/libs/bytes/mod.ts"
+import type { Lengthed } from "@/libs/lengthed/mod.ts"
+import { StringAsUuid } from "@/libs/uuid/mod.ts"
+import { Dictionary, Entries, Value } from "@/mods/kdbx/dictionary/mod.ts"
+import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
+import { type CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "@/mods/kdbx/mod.ts"
+import { Vector } from "@/mods/kdbx/vector/mod.ts"
+import { argon2 } from "@hazae41/argon2"
+import { Readable, Writable } from "@hazae41/binary"
+import type { Cursor } from "@hazae41/cursor"
+import { Opaque } from "../../../../libs/struct/mod.ts"
+import { Cipher } from "./cipher/mod.ts"
+import { Compression } from "./compression/mod.ts"
 
 export class Version {
 
@@ -21,16 +22,16 @@ export class Version {
     readonly minor: number,
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return 2 + 2
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     cursor.writeUint16OrThrow(this.minor, true)
     cursor.writeUint16OrThrow(this.major, true)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): this {
     return this
   }
 
@@ -43,15 +44,15 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys {
     readonly keys: MasterKeys
   ) { }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.data.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     this.data.writeOrThrow(cursor)
   }
 
-  async rotateOrThrow(composite: CompositeKey) {
+  async rotateOrThrow(composite: CompositeKey): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys> {
     const data = this.data.data.rotateOrThrow()
     const keys = await data.deriveOrThrow(composite)
 
@@ -67,11 +68,11 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   constructor(
     readonly data: MagicAndVersionAndHeadersWithBytes,
-    readonly hash: Opaque<32>,
-    readonly hmac: Opaque<32>
+    readonly hash: Opaque<ArrayBuffer, 32>,
+    readonly hmac: Opaque<ArrayBuffer, 32>
   ) { }
 
-  static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys) {
+  static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmac> {
     const index = 0xFFFFFFFFFFFFFFFFn
     const major = keys.authifier.bytes
 
@@ -83,7 +84,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Opaque(hash), new Opaque(hmac))
   }
 
-  async verifyOrThrow(keys: MasterKeys) {
+  async verifyOrThrow(keys: MasterKeys): Promise<void> {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.bytes))
 
     if (!Bytes.equals(hash, this.hash.bytes))
@@ -97,18 +98,18 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     await key.verifyOrThrow(this.data.bytes.bytes, this.hmac.bytes)
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.data.sizeOrThrow() + 32 + 32
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     this.data.writeOrThrow(cursor)
 
     cursor.writeOrThrow(this.hash.bytes)
     cursor.writeOrThrow(this.hmac.bytes)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     const data = this.data.cloneOrThrow()
     const hash = this.hash.cloneOrThrow()
     const hmac = this.hmac.cloneOrThrow()
@@ -116,7 +117,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
   }
 
-  async deriveOrThrow(composite: CompositeKey) {
+  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
     return await this.data.deriveOrThrow(composite)
   }
 
@@ -124,7 +125,7 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
 export namespace MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
     const hash = new Opaque(cursor.readOrThrow(32))
     const hmac = new Opaque(cursor.readOrThrow(32))
@@ -138,34 +139,34 @@ export class MagicAndVersionAndHeadersWithBytes {
 
   constructor(
     readonly value: MagicAndVersionAndHeaders,
-    readonly bytes: Opaque,
+    readonly bytes: Opaque<ArrayBuffer>,
   ) { }
 
-  static computeOrThrow(value: MagicAndVersionAndHeaders) {
+  static computeOrThrow(value: MagicAndVersionAndHeaders): MagicAndVersionAndHeadersWithBytes {
     const bytes = new Opaque(Writable.writeToBytesOrThrow(value))
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
-  rotateOrThrow() {
+  rotateOrThrow(): MagicAndVersionAndHeadersWithBytes {
     return MagicAndVersionAndHeadersWithBytes.computeOrThrow(this.value.rotateOrThrow())
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return this.bytes.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     cursor.writeOrThrow(this.bytes.bytes)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): MagicAndVersionAndHeadersWithBytes {
     const value = this.value.cloneOrThrow()
     const bytes = this.bytes.cloneOrThrow()
 
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
-  async deriveOrThrow(composite: CompositeKey) {
+  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
     return await this.value.deriveOrThrow(composite)
   }
 
@@ -173,7 +174,7 @@ export class MagicAndVersionAndHeadersWithBytes {
 
 export namespace MagicAndVersionAndHeadersWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytes {
     const start = cursor.offset
 
     const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
@@ -191,7 +192,7 @@ export class MagicAndVersionAndHeaders {
     readonly headers: Headers
   ) { }
 
-  rotateOrThrow() {
+  rotateOrThrow(): MagicAndVersionAndHeaders {
     const { version } = this
 
     const headers = this.headers.rotateOrThrow()
@@ -199,11 +200,11 @@ export class MagicAndVersionAndHeaders {
     return new MagicAndVersionAndHeaders(version, headers)
   }
 
-  sizeOrThrow() {
+  sizeOrThrow(): number {
     return 4 + 4 + this.version.sizeOrThrow() + this.headers.sizeOrThrow()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     cursor.writeUint32OrThrow(0x9AA2D903, true)
     cursor.writeUint32OrThrow(0xB54BFB67, true)
 
@@ -211,14 +212,14 @@ export class MagicAndVersionAndHeaders {
     this.headers.writeOrThrow(cursor)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): MagicAndVersionAndHeaders {
     const version = this.version.cloneOrThrow()
     const headers = this.headers.cloneOrThrow()
 
     return new MagicAndVersionAndHeaders(version, headers)
   }
 
-  async deriveOrThrow(composite: CompositeKey) {
+  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
     return await this.headers.deriveOrThrow(composite)
   }
 
@@ -226,7 +227,7 @@ export class MagicAndVersionAndHeaders {
 
 export namespace MagicAndVersionAndHeaders {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeaders {
     const alpha = cursor.readUint32OrThrow(true)
 
     if (alpha !== 0x9AA2D903)
@@ -255,8 +256,8 @@ export namespace MagicAndVersionAndHeaders {
 export interface HeadersInit {
   readonly cipher: Cipher
   readonly compression: Compression
-  readonly seed: Opaque<32>
-  readonly iv: Opaque
+  readonly seed: Opaque<ArrayBuffer, 32>
+  readonly iv: Opaque<ArrayBuffer>
   readonly kdf: KdfParameters
   readonly custom?: Dictionary
 }
@@ -264,34 +265,34 @@ export interface HeadersInit {
 export class Headers {
 
   constructor(
-    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Opaque<32>], 7: readonly [Opaque], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
+    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Opaque<ArrayBuffer, 32>], 7: readonly [Opaque<ArrayBuffer>], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
   ) { }
 
-  get cipher() {
+  get cipher(): Cipher {
     return this.value.value[2][0]
   }
 
-  get compression() {
+  get compression(): Compression {
     return this.value.value[3][0]
   }
 
-  get seed() {
+  get seed(): Opaque<ArrayBuffer, 32> {
     return this.value.value[4][0]
   }
 
-  get iv() {
+  get iv(): Opaque<ArrayBuffer> {
     return this.value.value[7][0]
   }
 
-  get kdf() {
+  get kdf(): KdfParameters {
     return this.value.value[11][0]
   }
 
-  get custom() {
+  get custom(): Dictionary {
     return this.value.value[12]?.[0]
   }
 
-  rotateOrThrow() {
+  rotateOrThrow(): Headers {
     const { cipher, compression, custom } = this
 
     const seed = new Opaque(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
@@ -309,11 +310,11 @@ export class Headers {
     this.value.writeOrThrow(cursor)
   }
 
-  cloneOrThrow() {
+  cloneOrThrow(): Headers {
     return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
-  async deriveOrThrow(composite: CompositeKey) {
+  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
     const { seed } = this
 
     const derived = this.kdf.deriveOrThrow(composite)
@@ -328,7 +329,7 @@ export class Headers {
 
 export namespace Headers {
 
-  export function initOrThrow(init: HeadersInit) {
+  export function initOrThrow(init: HeadersInit): Headers {
     const { cipher, compression, seed, iv, kdf, custom } = init
 
     if (iv.bytes.length !== cipher.IV.length)
@@ -346,7 +347,7 @@ export namespace Headers {
     return new Headers(Vector.initOrThrow(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Headers {
     const vector = Vector.readOrThrow(cursor)
 
     if (vector.value[2].length !== 1)
@@ -367,7 +368,7 @@ export namespace Headers {
     const indexed = {
       2: [vector.value[2][0].readIntoOrThrow(Cipher)],
       3: [vector.value[3][0].readIntoOrThrow(Compression)],
-      4: [vector.value[4][0] as Opaque<32>],
+      4: [vector.value[4][0] as Opaque<ArrayBuffer, 32>],
       7: [vector.value[7][0]],
       11: [vector.value[11][0].readIntoOrThrow(KdfParameters)],
       12: vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
@@ -380,10 +381,10 @@ export namespace Headers {
 export class Seed {
 
   constructor(
-    readonly bytes: Opaque<32>
+    readonly bytes: Opaque<ArrayBuffer, 32>
   ) { }
 
-  static readOrThrow(cursor: Cursor<ArrayBuffer>) {
+  static readOrThrow(cursor: Cursor<ArrayBuffer>): Seed {
     return new Seed(new Opaque(cursor.readOrThrow(32)))
   }
 
@@ -402,15 +403,15 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, R: Value.UInt32, S: Value.Bytes }>
     ) { }
 
-    get seed() {
+    get seed(): Opaque<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
-    get rounds() {
+    get rounds(): number {
       return this.value.entries.value["R"].value
     }
 
-    rotateOrThrow() {
+    rotateOrThrow(): AesKdf {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -427,7 +428,7 @@ export namespace KdfParameters {
       throw new Error()
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return this.value.sizeOrThrow()
     }
 
@@ -435,7 +436,7 @@ export namespace KdfParameters {
       this.value.writeOrThrow(cursor)
     }
 
-    cloneOrThrow() {
+    cloneOrThrow(): AesKdf {
       return new AesKdf(this.value.cloneOrThrow())
     }
 
@@ -481,27 +482,27 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
-    get salt() {
+    get salt(): Opaque<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
-    get parallelism() {
+    get parallelism(): number {
       return this.value.entries.value["P"].value
     }
 
-    get memory() {
+    get memory(): bigint {
       return this.value.entries.value["M"].value
     }
 
-    get iterations() {
+    get iterations(): bigint {
       return this.value.entries.value["I"].value
     }
 
-    get version() {
+    get version(): Argon2.Version {
       return this.value.entries.value["V"].value
     }
 
-    rotateOrThrow() {
+    rotateOrThrow(): Argon2d {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -517,13 +518,13 @@ export namespace KdfParameters {
       return new Argon2d(value)
     }
 
-    deriveOrThrow(key: CompositeKey) {
+    deriveOrThrow(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const { Memory, Argon2Deriver } = Argon2.get().getOrThrow()
+      const { Memory, Argon2Deriver } = argon2.get().getOrThrow()
 
-      using mkey = Memory.importOrThrow(key.value.bytes)
-      using msalt = Memory.importOrThrow(salt.bytes)
+      using mkey = Memory.fromOrThrow(key.value.bytes)
+      using msalt = Memory.fromOrThrow(salt.bytes)
 
       using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
@@ -531,7 +532,7 @@ export namespace KdfParameters {
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return this.value.sizeOrThrow()
     }
 
@@ -539,7 +540,7 @@ export namespace KdfParameters {
       this.value.writeOrThrow(cursor)
     }
 
-    cloneOrThrow() {
+    cloneOrThrow(): Argon2d {
       return new Argon2d(this.value.cloneOrThrow())
     }
 
@@ -587,27 +588,27 @@ export namespace KdfParameters {
       readonly value: Dictionary<{ $UUID: Value.Bytes, S: Value.Bytes<32>, P: Value.UInt32, M: Value.UInt64, I: Value.UInt64, V: Value.UInt32<Argon2.Version> }>,
     ) { }
 
-    get salt() {
+    get salt(): Opaque<ArrayBuffer> {
       return this.value.entries.value["S"].value
     }
 
-    get parallelism() {
+    get parallelism(): number {
       return this.value.entries.value["P"].value
     }
 
-    get memory() {
+    get memory(): bigint {
       return this.value.entries.value["M"].value
     }
 
-    get iterations() {
+    get iterations(): bigint {
       return this.value.entries.value["I"].value
     }
 
-    get version() {
+    get version(): Argon2.Version {
       return this.value.entries.value["V"].value
     }
 
-    rotateOrThrow() {
+    rotateOrThrow(): Argon2d {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -623,13 +624,13 @@ export namespace KdfParameters {
       return new Argon2d(value)
     }
 
-    deriveOrThrow(key: CompositeKey) {
+    deriveOrThrow(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const { Memory, Argon2Deriver } = Argon2.get().getOrThrow()
+      const { Memory, Argon2Deriver } = argon2.get().getOrThrow()
 
-      using mkey = Memory.importOrThrow(key.value.bytes)
-      using msalt = Memory.importOrThrow(salt.bytes)
+      using mkey = Memory.fromOrThrow(key.value.bytes)
+      using msalt = Memory.fromOrThrow(salt.bytes)
 
       using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
@@ -637,7 +638,7 @@ export namespace KdfParameters {
       return new DerivedKey(new Opaque(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
     }
 
-    sizeOrThrow() {
+    sizeOrThrow(): number {
       return this.value.sizeOrThrow()
     }
 
@@ -645,7 +646,7 @@ export namespace KdfParameters {
       this.value.writeOrThrow(cursor)
     }
 
-    cloneOrThrow() {
+    cloneOrThrow(): Argon2id {
       return new Argon2id(this.value.cloneOrThrow())
     }
 

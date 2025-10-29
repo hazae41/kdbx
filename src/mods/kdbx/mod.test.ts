@@ -1,17 +1,24 @@
-import { XML } from "@/libs/xml/index.js"
+// deno-lint-ignore-file no-explicit-any no-unused-vars
+import { XML } from "@/libs/xml/mod.ts"
+import { argon2 } from "@hazae41/argon2"
+import { argon2Wasm } from "@hazae41/argon2-wasm"
 import { Readable, Writable } from "@hazae41/binary"
-import { DOMParser, XMLSerializer } from "happy-dom"
+import { chaCha20Poly1305 } from "@hazae41/chacha20poly1305"
+import { chaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305-wasm"
+import { Window } from "happy-dom"
 import { readFileSync, writeFileSync } from "node:fs"
-import { CompositeKey, Database, PasswordKey } from "./index.js"
+import { CompositeKey, Database, PasswordKey } from "./mod.ts"
 
-await Argon2Wasm.initBundled()
-await ChaCha20Poly1305Wasm.initBundled()
+await argon2Wasm.load()
+await chaCha20Poly1305Wasm.load()
 
-Argon2.set(Argon2.fromWasm(Argon2Wasm))
-ChaCha20Poly1305.set(ChaCha20Poly1305.fromWasm(ChaCha20Poly1305Wasm))
+argon2.set(argon2.fromWasm(argon2Wasm))
+chaCha20Poly1305.set(chaCha20Poly1305.fromWasm(chaCha20Poly1305Wasm))
 
-globalThis.DOMParser = DOMParser
-globalThis.XMLSerializer = XMLSerializer
+const window = new Window({})
+
+globalThis.DOMParser = window.DOMParser as any
+globalThis.XMLSerializer = window.XMLSerializer as any
 
 const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
