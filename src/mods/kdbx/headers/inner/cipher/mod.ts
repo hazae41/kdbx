@@ -1,4 +1,4 @@
-import { ChaCha20Poly1305 } from "@hazae41/chacha20poly1305"
+import { chaCha20Poly1305 } from "@hazae41/chacha20poly1305"
 import { Cursor } from "@hazae41/cursor"
 
 export type Cipher =
@@ -28,6 +28,7 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
+    // deno-lint-ignore require-await
     export async function initOrThrow(seed: Uint8Array): Promise<never> {
       throw new Error("ArcFourVariant is not implemented yet")
     }
@@ -57,6 +58,7 @@ export namespace Cipher {
       cursor.writeUint32OrThrow(type, true)
     }
 
+    // deno-lint-ignore require-await
     export async function initOrThrow(seed: Uint8Array): Promise<never> {
       throw new Error("Salsa20 is not implemented yet")
     }
@@ -66,7 +68,7 @@ export namespace Cipher {
   export class ChaCha20 {
 
     constructor(
-      readonly cipher: ChaCha20Poly1305.Abstract.ChaCha20Cipher,
+      readonly cipher: chaCha20Poly1305.Abstract.ChaCha20Cipher,
     ) { }
 
     [Symbol.dispose]() {
@@ -74,9 +76,9 @@ export namespace Cipher {
     }
 
     applyOrThrow(data: Uint8Array) {
-      const { Memory } = ChaCha20Poly1305.get().getOrThrow()
+      const { Memory } = chaCha20Poly1305.get().getOrThrow()
 
-      const memory = Memory.importOrThrow(data)
+      const memory = Memory.fromOrThrow(data)
 
       this.cipher.applyOrThrow(memory)
 
@@ -102,13 +104,13 @@ export namespace Cipher {
     }
 
     export async function initOrThrow(seed: Uint8Array<ArrayBuffer>): Promise<ChaCha20> {
-      const { Memory, ChaCha20Cipher } = ChaCha20Poly1305.get().getOrThrow()
+      const { Memory, ChaCha20Cipher } = chaCha20Poly1305.get().getOrThrow()
 
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
       const cursor = new Cursor(hashed)
 
-      using key = Memory.importOrThrow(cursor.readOrThrow(32))
-      using nonce = Memory.importOrThrow(cursor.readOrThrow(12))
+      using key = Memory.fromOrThrow(cursor.readOrThrow(32))
+      using nonce = Memory.fromOrThrow(cursor.readOrThrow(12))
 
       const cipher = ChaCha20Cipher.importOrThrow(key, nonce)
 

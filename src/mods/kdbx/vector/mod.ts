@@ -1,13 +1,13 @@
-import { Opaque, Readable, Writable } from "@hazae41/binary";
+import type { Optional } from "@/libs/optional/mod.ts";
+import type { Struct } from "@/libs/struct/mod.ts";
+import { TLV } from "@/libs/tlv/mod.ts";
+import { Readable, Unknown, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
-import { Optional } from "libs/optional/index.js";
-import { Struct } from "libs/struct/index.js";
-import { TLV } from "libs/tlv/index.js";
 
 export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> {
 
   constructor(
-    readonly bytes: Opaque,
+    readonly bytes: Unknown,
     readonly value: T
   ) { }
 
@@ -20,7 +20,7 @@ export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> 
   }
 
   cloneOrThrow() {
-    return Readable.readFromBytesOrThrow(Vector, Writable.writeToBytesOrThrow(this)) as any as this
+    return Readable.readFromBytesOrThrow(Vector, Writable.writeToBytesOrThrow(this)) as unknown as this
   }
 
 }
@@ -44,7 +44,7 @@ export namespace Vector {
     }
 
     const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + TLV.Empty.sizeOrThrow()
-    const bytes = new Opaque(new Uint8Array(sized))
+    const bytes = new Unknown(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
@@ -60,7 +60,7 @@ export namespace Vector {
     const start = cursor.offset
 
     const entries = new Array<TLV>();
-    const indexed: { [index: number]: Opaque[] } = {};
+    const indexed: { [index: number]: Unknown[] } = {};
 
     while (true) {
       const tlv = TLV.readOrThrow(cursor)
@@ -76,7 +76,7 @@ export namespace Vector {
       continue
     }
 
-    const bytes = new Opaque(cursor.bytes.subarray(start, cursor.offset));
+    const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset));
 
     return new Vector(bytes, indexed);
   }

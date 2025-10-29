@@ -1,5 +1,5 @@
-import { Nullable } from "libs/nullable/index.js"
-import { Data } from "../data/index.js"
+import type { Nullable } from "@/libs/nullable/mod.ts"
+import { Data } from "../data/mod.ts"
 
 export class KeePassFile {
 

@@ -3,10 +3,14 @@
 Rust-like KeePass (KDBX 4) file format for TypeScript
 
 ```bash
-npm i @hazae41/kdbx
+npm install @hazae41/kdbx
 ```
 
-[**Node Package 📦**](https://www.npmjs.com/package/@hazae41/kdbx)
+```bash
+deno install jsr:@hazae41/kdbx
+```
+
+[**📦 NPM**](https://www.npmjs.com/package/@hazae41/kdbx) • [**📦 JSR**](https://jsr.io/@hazae41/kdbx)
 
 ## Features
 

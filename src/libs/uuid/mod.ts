@@ -1,9 +1,7 @@
-import { Base16 } from "@hazae41/base16"
-
 export namespace StringAsUuid {
 
   export function from(bytes: Uint8Array) {
-    const base16 = Base16.encodeOrThrow(bytes)
+    const base16 = bytes.toHex()
 
     const a = base16.slice(0, 8)
     const b = base16.slice(8, 12)
@@ -27,7 +25,7 @@ export namespace BytesAsUuid {
 
     const base16 = [a, b, c, d, e].join("")
 
-    return Base16.decodeOrThrow(base16)
+    return Uint8Array.fromHex(base16)
   }
 
 }

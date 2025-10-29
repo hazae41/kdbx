@@ -1,4 +1,3 @@
-import { Base64 } from "@hazae41/base64"
 import { Cursor } from "@hazae41/cursor"
 
 export namespace Data {
@@ -79,7 +78,7 @@ export namespace Data {
       if (!value)
         throw new Error()
 
-      const binary = Base64.decodePaddedOrThrow(value)
+      const binary = Uint8Array.fromBase64(value)
       const cursor = new Cursor(binary)
 
       const raw = cursor.readUint64OrThrow(true)
@@ -95,7 +94,7 @@ export namespace Data {
       const cursor = new Cursor(new Uint8Array(8))
       cursor.writeUint64OrThrow(raw, true)
 
-      this.element.innerHTML = Base64.encodePaddedOrThrow(cursor.bytes)
+      this.element.innerHTML = cursor.bytes.toBase64()
     }
 
   }

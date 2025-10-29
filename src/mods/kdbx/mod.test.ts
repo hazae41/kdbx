@@ -1,14 +1,8 @@
-import { Argon2 } from "@hazae41/argon2"
-import { Argon2Wasm } from "@hazae41/argon2.wasm"
+import { XML } from "@/libs/xml/index.js"
 import { Readable, Writable } from "@hazae41/binary"
-import { ChaCha20Poly1305 } from "@hazae41/chacha20poly1305"
-import { ChaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305.wasm"
-import { JSDOM } from "jsdom"
-import { XML } from "libs/xml/index.js"
+import { DOMParser, XMLSerializer } from "happy-dom"
 import { readFileSync, writeFileSync } from "node:fs"
 import { CompositeKey, Database, PasswordKey } from "./index.js"
-
-const { window } = new JSDOM(`<!DOCTYPE html><body></body>`);
 
 await Argon2Wasm.initBundled()
 await ChaCha20Poly1305Wasm.initBundled()
@@ -16,8 +10,8 @@ await ChaCha20Poly1305Wasm.initBundled()
 Argon2.set(Argon2.fromWasm(Argon2Wasm))
 ChaCha20Poly1305.set(ChaCha20Poly1305.fromWasm(ChaCha20Poly1305Wasm))
 
-globalThis.DOMParser = window.DOMParser
-globalThis.XMLSerializer = window.XMLSerializer
+globalThis.DOMParser = DOMParser
+globalThis.XMLSerializer = XMLSerializer
 
 const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
