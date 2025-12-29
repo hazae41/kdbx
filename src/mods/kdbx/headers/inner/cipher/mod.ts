@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import { chaCha20Poly1305 } from "@hazae41/chacha20poly1305"
 import { Cursor } from "@hazae41/cursor"
 

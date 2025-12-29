@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import type { Optional } from "@/libs/optional/mod.ts";
 import type { Struct } from "@/libs/struct/mod.ts";
 import { TLV } from "@/libs/tlv/mod.ts";

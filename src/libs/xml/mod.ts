@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 export namespace XML {
 
   export function format(node: Node, tab: string = " "): string {

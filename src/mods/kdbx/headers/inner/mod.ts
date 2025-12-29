@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"

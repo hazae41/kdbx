@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts"
 import type { Cursor } from "@hazae41/cursor"
 

@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 export * from "./dictionary/mod.ts"
 export * from "./headers/mod.ts"
 
@@ -327,7 +329,7 @@ export class BlockWithIndexPreHmacData {
   }
 
   writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeUint64OrThrow(this.index, true)
+    cursor.writeBigUint64OrThrow(this.index, true)
     cursor.writeUint32OrThrow(this.block.bytes.length, true)
     cursor.writeOrThrow(this.block.bytes)
   }

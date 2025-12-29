@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import type { Struct } from "@/libs/struct/mod.ts"
 import { type Readable, Unknown } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"

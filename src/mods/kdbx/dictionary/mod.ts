@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import type { Nullable } from "@/libs/nullable/mod.ts";
 import { Readable, Unknown, Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
@@ -300,7 +302,7 @@ export namespace Value {
     }
 
     writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint64OrThrow(this.value, true)
+      cursor.writeBigUint64OrThrow(this.value, true)
     }
 
   }
@@ -310,7 +312,7 @@ export namespace Value {
     export const type = 0x05
 
     export function readOrThrow(cursor: Cursor<ArrayBuffer>): UInt64 {
-      return new UInt64(cursor.readUint64OrThrow(true))
+      return new UInt64(cursor.readBigUint64OrThrow(true))
     }
 
   }
@@ -401,7 +403,7 @@ export namespace Value {
     }
 
     writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint64OrThrow(this.value < 0n ? this.value + (2n ** 64n) : this.value, true)
+      cursor.writeBigUint64OrThrow(this.value < 0n ? this.value + (2n ** 64n) : this.value, true)
     }
 
   }
@@ -411,7 +413,7 @@ export namespace Value {
     export const type = 0x0D
 
     export function readOrThrow(cursor: Cursor<ArrayBuffer>): Int64 {
-      const uint = cursor.readUint64OrThrow(true)
+      const uint = cursor.readBigUint64OrThrow(true)
       const sint = uint > ((2n ** 63n) - 1n) ? uint - (2n ** 64n) : uint
 
       return new Int64(sint)

@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 export * from "./cipher/mod.ts"
 export * from "./compression/mod.ts"
 

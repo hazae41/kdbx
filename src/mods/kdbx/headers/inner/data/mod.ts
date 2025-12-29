@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import { Cursor } from "@hazae41/cursor"
 
 export namespace Data {
@@ -81,7 +83,7 @@ export namespace Data {
       const binary = Uint8Array.fromBase64(value)
       const cursor = new Cursor(binary)
 
-      const raw = cursor.readUint64OrThrow(true)
+      const raw = cursor.readBigUint64OrThrow(true)
       const fix = raw - 62135596800n
 
       return new Date(Number(fix * 1000n))
@@ -92,7 +94,7 @@ export namespace Data {
       const raw = fix + 62135596800n
 
       const cursor = new Cursor(new Uint8Array(8))
-      cursor.writeUint64OrThrow(raw, true)
+      cursor.writeBigUint64OrThrow(raw, true)
 
       this.element.innerHTML = cursor.bytes.toBase64()
     }

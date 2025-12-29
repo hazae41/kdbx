@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 declare const Buffer: typeof import("node:buffer").Buffer
 
 export namespace Buffers {

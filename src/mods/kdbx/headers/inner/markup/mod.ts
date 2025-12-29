@@ -1,4 +1,7 @@
+// deno-lint-ignore-file no-namespace
+
 /// <reference types="./lib.d.ts" />
+
 import type { Nullable } from "@/libs/nullable/mod.ts";
 import { Data } from "../data/mod.ts";
 

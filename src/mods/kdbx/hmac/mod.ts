@@ -13,7 +13,7 @@ export class PreHmacKey {
   }
 
   writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeUint64OrThrow(this.index, true)
+    cursor.writeBigUint64OrThrow(this.index, true)
     cursor.writeOrThrow(this.major.bytes)
   }
 

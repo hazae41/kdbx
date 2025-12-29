@@ -1,3 +1,5 @@
+// deno-lint-ignore-file no-namespace
+
 import type { Cursor } from "@hazae41/cursor"
 
 export type Compression =
