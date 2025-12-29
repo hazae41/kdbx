@@ -7,6 +7,7 @@ import { gunzip, gzip } from "@/libs/gzip/mod.ts"
 import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
+import { Cursors } from "../../libs/cursors/mod.ts"
 import { Inner, Outer } from "./headers/mod.ts"
 import { Compression, MagicAndVersionAndHeadersWithBytesWithHashAndHmac } from "./headers/outer/mod.ts"
 import { PreHmacKey } from "./hmac/mod.ts"
@@ -175,7 +176,7 @@ export namespace Database {
         const blocks = new Array<BlockWithIndex>()
 
         const cursor = new Cursor(encrypted)
-        const splits = cursor.splitOrThrow(1048576)
+        const splits = Cursors.splitOrThrow(cursor, 1048576)
 
         let index = 0n
 
