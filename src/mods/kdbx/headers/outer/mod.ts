@@ -5,7 +5,7 @@ export * from "./compression/mod.ts"
 
 import { Bytes } from "@/libs/bytes/mod.ts"
 import type { Lengthed } from "@/libs/lengthed/mod.ts"
-import { StringAsUuid } from "@/libs/uuid/mod.ts"
+import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts"
 import { Dictionary, Entries, Value } from "@/mods/kdbx/dictionary/mod.ts"
 import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
 import { type CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "@/mods/kdbx/mod.ts"
@@ -550,6 +550,22 @@ export namespace KdfParameters {
   export namespace Argon2d {
 
     export const $UUID = "ef636ddf-8c29-444b-91f7-a9a403e30a0c"
+
+    export function createOrThrow() {
+      const version = new Dictionary.Version(0, 1)
+
+      const $UUID = new Value.Bytes(new Unknown(BytesAsUuid.from(Argon2d.$UUID)))
+
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const P = new Value.UInt32(2)
+      const M = new Value.UInt64(16777216n)
+      const I = new Value.UInt64(12n)
+      const V = new Value.UInt32(0x13)
+
+      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
+
+      return new Argon2d(value)
+    }
 
     export function parseOrThrow(dictionary: Dictionary): Argon2d {
       const { version, entries } = dictionary

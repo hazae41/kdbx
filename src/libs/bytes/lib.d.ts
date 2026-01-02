@@ -4,6 +4,6 @@ interface Uint8Array {
 }
 
 interface Uint8ArrayConstructor {
-  fromBase64(text: string): Uint8Array
-  fromHex(text: string): Uint8Array
+  fromBase64(text: string): Uint8Array<ArrayBuffer>
+  fromHex(text: string): Uint8Array<ArrayBuffer>
 }
