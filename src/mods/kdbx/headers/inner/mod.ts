@@ -1,5 +1,8 @@
 // deno-lint-ignore-file no-namespace
 
+export * from "./cipher/mod.ts"
+export * from "./markup/mod.ts"
+
 import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
@@ -146,6 +149,14 @@ export class Headers {
 
 export namespace Headers {
 
+  export function createOrThrow(cipher: Cipher) {
+    const binary = new Array<Unknown<ArrayBuffer, number>>()
+
+    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+
+    return Headers.initOrThrow({ cipher, key, binary })
+  }
+
   export function initOrThrow(init: HeadersInit): Headers {
     const { cipher, key, binary } = init
 
@@ -164,8 +175,6 @@ export namespace Headers {
     if (vector.value[1].length !== 1)
       throw new Error()
     if (vector.value[2].length !== 1)
-      throw new Error()
-    if (vector.value[3].length === 0)
       throw new Error()
 
     const indexed = {
