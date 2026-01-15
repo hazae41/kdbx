@@ -588,11 +588,11 @@ export namespace KeePassFile {
       this.element.appendChild($string);
 
       const $key = ownerDocument.createElement("Key");
-      $key.innerHTML = key;
+      $key.textContent = key;
       $string.appendChild($key);
 
       const $value = ownerDocument.createElement("Value");
-      $value.innerHTML = value;
+      $value.textContent = value;
       $string.appendChild($value);
 
       this.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
@@ -743,11 +743,11 @@ export namespace KeePassFile {
     ) { }
 
     get(): string {
-      return this.element.innerHTML
+      return this.element.textContent
     }
 
     set(value: string) {
-      this.element.innerHTML = value
+      this.element.textContent = value
     }
 
     get protected(): Nullable<string> {
@@ -852,11 +852,11 @@ export namespace Data {
     ) { }
 
     get(): string {
-      return this.element.innerHTML
+      return this.element.textContent
     }
 
     set(value: string) {
-      this.element.innerHTML = value
+      this.element.textContent = value
     }
 
   }
@@ -868,11 +868,11 @@ export namespace Data {
     ) { }
 
     get(): boolean {
-      return this.element.innerHTML === "True"
+      return this.element.textContent === "True"
     }
 
     set(value: boolean) {
-      this.element.innerHTML = value ? "True" : "False"
+      this.element.textContent = value ? "True" : "False"
     }
 
   }
@@ -884,7 +884,7 @@ export namespace Data {
     ) { }
 
     getOrThrow(): number {
-      const value = this.element.innerHTML
+      const value = this.element.textContent
 
       if (!value)
         throw new Error()
@@ -900,7 +900,7 @@ export namespace Data {
     setOrThrow(value: number) {
       if (!Number.isSafeInteger(value))
         throw new Error()
-      this.element.innerHTML = String(value)
+      this.element.textContent = String(value)
     }
 
     incrementOrThrow() {
@@ -916,7 +916,7 @@ export namespace Data {
     ) { }
 
     getOrThrow(): Date {
-      const value = this.element.innerHTML
+      const value = this.element.textContent
 
       if (!value)
         throw new Error()
@@ -937,7 +937,7 @@ export namespace Data {
       const cursor = new Cursor(new Uint8Array(8))
       cursor.writeBigUint64OrThrow(raw, true)
 
-      this.element.innerHTML = cursor.bytes.toBase64()
+      this.element.textContent = cursor.bytes.toBase64()
     }
 
   }

@@ -154,15 +154,15 @@ export namespace Database {
     async encryptOrThrow(): Promise<Encrypted> {
       const cipher = await this.inner.headers.getCipherOrThrow()
 
-      const $$values = this.inner.content.value.document.querySelectorAll("Value[Protected='True']")
+      const $$values = this.inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
       for (let i = 0; i < $$values.length; i++) {
         const $value = $$values[i]
 
-        const decrypted = new TextEncoder().encode($value.innerHTML)
+        const decrypted = new TextEncoder().encode($value.textContent)
         using encrypted = cipher.applyOrThrow(decrypted)
 
-        $value.innerHTML = encrypted.bytes.toBase64()
+        $value.textContent = encrypted.bytes.toBase64()
       }
 
       {
@@ -243,15 +243,15 @@ export namespace Database {
       {
         const cipher = await inner.headers.getCipherOrThrow()
 
-        const $$values = inner.content.value.document.querySelectorAll("Value[Protected='True']")
+        const $$values = inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
         for (let i = 0; i < $$values.length; i++) {
           const $value = $$values[i]
 
-          const encrypted = Uint8Array.fromBase64($value.innerHTML)
+          const encrypted = Uint8Array.fromBase64($value.textContent)
           using decrypted = cipher.applyOrThrow(encrypted)
 
-          $value.innerHTML = new TextDecoder().decode(decrypted.bytes)
+          $value.textContent = new TextDecoder().decode(decrypted.bytes)
         }
 
         const outer = new Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(this.outer, keys)
