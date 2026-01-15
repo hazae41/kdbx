@@ -1,4 +1,5 @@
 // deno-lint-ignore-file no-namespace
+
 export namespace StringAsUuid {
 
   export function from(bytes: Uint8Array) {

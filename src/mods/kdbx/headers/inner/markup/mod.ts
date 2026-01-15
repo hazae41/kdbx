@@ -4,6 +4,7 @@
 
 import type { Nullable } from "@/libs/nullable/mod.ts";
 import { Cursor } from "@hazae41/cursor";
+import { BytesAsUuid, StringAsUuid } from "../../../../../libs/uuid/mod.ts";
 
 export class KeePassFile {
 
@@ -206,7 +207,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -221,7 +222,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -263,7 +264,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -278,7 +279,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -317,13 +318,13 @@ export namespace KeePassFile {
       return new Data.AsString(element)
     }
 
-    getUuidOrThrow(): Data.AsString {
+    getUuidOrThrow(): Data.AsUuid {
       const element = this.element.querySelector(":scope > UUID")
 
       if (element == null)
         throw new Error()
 
-      return new Data.AsString(element)
+      return new Data.AsUuid(element)
     }
 
     getTimesOrThrow(): Times {
@@ -395,7 +396,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -410,7 +411,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element);
 
-        if (group.getUuidOrThrow().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group;
 
         continue
@@ -452,7 +453,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const entry = new Entry(element);
 
-        if (entry.getUuidOrThrow().get() === uuid)
+        if (entry.getUuidOrThrow().getOrThrow() === uuid)
           return entry;
 
         continue
@@ -467,7 +468,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const entry = new Entry(element);
 
-        if (entry.getUuidOrThrow().get() === uuid)
+        if (entry.getUuidOrThrow().getOrThrow() === uuid)
           return entry;
 
         continue
@@ -600,13 +601,13 @@ export namespace KeePassFile {
       return new String($string)
     }
 
-    getUuidOrThrow(): Data.AsString {
+    getUuidOrThrow(): Data.AsUuid {
       const element = this.element.querySelector(":scope > UUID")
 
       if (element == null)
         throw new Error()
 
-      return new Data.AsString(element)
+      return new Data.AsUuid(element)
     }
 
     getTimesOrThrow(): Times {
@@ -938,6 +939,33 @@ export namespace Data {
       cursor.writeBigUint64OrThrow(raw, true)
 
       this.element.textContent = cursor.bytes.toBase64()
+    }
+
+  }
+
+  export class AsUuid {
+
+    constructor(
+      readonly element: Element
+    ) { }
+
+    getOrThrow(): string {
+      const base64 = this.element.textContent
+
+      if (!base64)
+        throw new Error()
+
+      const bytes = Uint8Array.fromBase64(base64)
+
+      return StringAsUuid.from(bytes)
+    }
+
+    setOrThrow(value: string) {
+      const bytes = BytesAsUuid.from(value)
+
+      const base64 = bytes.toBase64()
+
+      this.element.textContent = base64
     }
 
   }
