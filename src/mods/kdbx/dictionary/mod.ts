@@ -120,7 +120,7 @@ export namespace Entries {
     return new Entries(bytes, value)
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Nullable<Entries<{ [key: string]: Value }>> {
+  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Entries<{ [key: string]: Value }> {
     const start = cursor.offset
 
     const entries = new Array<Entry<Value>>()

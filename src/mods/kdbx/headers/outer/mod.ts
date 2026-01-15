@@ -13,6 +13,7 @@ import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { argon2 } from "@hazae41/argon2"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
+import { Nullable } from "../../../../libs/nullable/mod.ts"
 import { Cipher } from "./cipher/mod.ts"
 import { Compression } from "./compression/mod.ts"
 
@@ -260,7 +261,7 @@ export interface HeadersInit {
   readonly seed: Unknown<ArrayBuffer, 32>
   readonly iv: Unknown<ArrayBuffer>
   readonly kdf: KdfParameters
-  readonly custom?: Dictionary
+  readonly custom?: Nullable<Dictionary>
 }
 
 export class Headers {
@@ -289,7 +290,7 @@ export class Headers {
     return this.value.value[11][0]
   }
 
-  get custom(): Dictionary {
+  get custom(): Nullable<Dictionary> {
     return this.value.value[12]?.[0]
   }
 
