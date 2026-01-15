@@ -582,7 +582,7 @@ export namespace KeePassFile {
       return this.getHistoryOrNew().insertAndCleanOrThrow(this)
     }
 
-    createStringOrThrow(key: string, value: string): String {
+    createStringOrThrow(key: string, value: string, protect = false): String {
       const { ownerDocument } = this.element
 
       const $string = ownerDocument.createElement("String");
@@ -595,6 +595,9 @@ export namespace KeePassFile {
       const $value = ownerDocument.createElement("Value");
       $value.textContent = value;
       $string.appendChild($value);
+
+      if (protect)
+        $value.setAttribute("Protected", "True")
 
       this.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
 
