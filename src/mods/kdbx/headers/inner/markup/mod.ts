@@ -180,13 +180,13 @@ export namespace KeePassFile {
       return new Other.AsBoolean(element)
     }
 
-    getRecycleBinUuidOrThrow(): Other.AsString {
+    getRecycleBinUuidOrThrow(): Other.AsUuid {
       const element = this.element.querySelector(":scope > RecycleBinUUID")
 
       if (element == null)
         throw new Error()
 
-      return new Other.AsString(element)
+      return new Other.AsUuid(element)
     }
 
     getRecycleBinChangedOrThrow(): Other.AsDate {
@@ -656,7 +656,7 @@ export namespace KeePassFile {
       if (!recybleBinEnabled)
         throw new Error("Recycle bin is not enabled")
 
-      const recycleBin = $meta.getRecycleBinUuidOrThrow().get()
+      const recycleBin = $meta.getRecycleBinUuidOrThrow().getOrThrow()
 
       const $recycleBin = $root.getGroupByUuidOrThrow(recycleBin)
 
