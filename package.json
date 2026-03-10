@@ -7,7 +7,7 @@
   "repository": "github:hazae41/kdbx",
   "author": "hazae41",
   "scripts": {
-    "examine": "deno lint ./src && deno check ./src && deno test -RW ./src",
+    "examine": "deno lint ./src && deno check ./src && deno test -RWE ./src",
     "prepack": "rm -rf ./out && tsc && tscousin"
   },
   "files": [
