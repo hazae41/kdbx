@@ -39,7 +39,7 @@ entry0.getDirectStringByKeyOrNull("Title")?.getValueOrThrow().set("Cloned")
 entry0.getDirectStringByKeyOrNull("Password")?.getKeyOrThrow().set("PrivateKey")
 
 entry0.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
-entry0.getTimesOrNew().getLastAccessTimeOrThrow().setOrThrow(new Date())
+entry0.getTimesOrNew().getLastAccessTimeOrNull()?.setOrThrow(new Date())
 entry0.getTimesOrNew().getUsageCountOrThrow().incrementOrThrow()
 
 console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
