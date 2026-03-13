@@ -126,56 +126,60 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    getDatabaseNameOrThrow(): Other.AsString {
+    getDatabaseNameOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > DatabaseName")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getDatabaseNameChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > DatabaseNameChanged")
+    getDatabaseNameChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > DatabaseNameChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("DatabaseNameChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
-    getGeneratorOrThrow(): Other.AsString {
+    getGeneratorOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > Generator")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getHistoryMaxItemsOrThrow(): Other.AsInteger {
+    getHistoryMaxItemsOrNull(): Nullable<Other.AsInteger> {
       const element = this.element.querySelector(":scope > HistoryMaxItems")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsInteger(element)
     }
 
-    getHistoryMaxSizeOrThrow(): Other.AsInteger {
+    getHistoryMaxSizeOrNull(): Nullable<Other.AsInteger> {
       const element = this.element.querySelector(":scope > HistoryMaxSize")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsInteger(element)
     }
 
-    getRecycleBinEnabledOrThrow(): Other.AsBoolean {
+    getRecycleBinEnabledOrNull(): Nullable<Other.AsBoolean> {
       const element = this.element.querySelector(":scope > RecycleBinEnabled")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsBoolean(element)
     }
@@ -189,85 +193,105 @@ export namespace KeePassFile {
       return new Other.AsUuid(element)
     }
 
-    getRecycleBinChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > RecycleBinChanged")
+    getRecycleBinChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > RecycleBinChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("RecycleBinChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
-    getSettingsChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > SettingsChanged")
+    getSettingsChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > SettingsChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("SettingsChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
-    getDatabaseDescriptionOrThrow(): Other.AsString {
+    getDatabaseDescriptionOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > DatabaseDescription")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getDatabaseDescriptionChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > DatabaseDescriptionChanged")
+    getDatabaseDescriptionChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > DatabaseDescriptionChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("DatabaseDescriptionChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
-    getDefaultUserNameOrThrow(): Other.AsString {
+    getDefaultUserNameOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > DefaultUserName")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getDefaultUserNameChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > DefaultUserNameChanged")
+    getDefaultUserNameChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > DefaultUserNameChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("DefaultUserNameChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
-    getColorOrThrow(): Other.AsString {
+    getColorOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > Color")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getDirectEntryTemplatesGroupOrThrow(): Other.AsString {
+    getEntryTemplatesGroupOrNull(): Nullable<Other.AsString> {
       const element = this.element.querySelector(":scope > EntryTemplatesGroup")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsString(element)
     }
 
-    getDirectEntryTemplatesGroupChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
+    getEntryTemplatesGroupChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Other.AsDate(stale)
 
-      return new Other.AsDate(element)
+      const fresh = this.element.ownerDocument.createElement("EntryTemplatesGroupChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
   }
@@ -390,9 +414,9 @@ export namespace KeePassFile {
 
       group.element.appendChild(this.element)
 
-      this.getTimesOrThrow().getLocationChangedOrThrow().setOrThrow(new Date())
+      this.getTimesOrNew().getLocationChangedOrNew().setOrThrow(new Date())
 
-      group.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      group.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
     }
 
     getNameOrThrow(): Other.AsString {
@@ -413,13 +437,19 @@ export namespace KeePassFile {
       return new Other.AsUuid(element)
     }
 
-    getTimesOrThrow(): Times {
-      const element = this.element.querySelector(":scope > Times")
+    getTimesOrNew(): Times {
+      const stale = this.element.querySelector(":scope > Times")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Times(stale)
 
-      return new Times(element)
+      const $file = new KeePassFile(this.element.ownerDocument)
+
+      const $times = $file.createTimesOrThrow()
+
+      this.element.appendChild($times.element)
+
+      return $times
     }
 
     getIconIdOrThrow(): Other.AsInteger {
@@ -571,15 +601,6 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    getLastModificationTimeOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > LastModificationTime")
-
-      if (element == null)
-        throw new Error()
-
-      return new Other.AsDate(element)
-    }
-
     getCreationTimeOrThrow(): Other.AsDate {
       const element = this.element.querySelector(":scope > CreationTime")
 
@@ -589,8 +610,8 @@ export namespace KeePassFile {
       return new Other.AsDate(element)
     }
 
-    getLastAccessTimeOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > LastAccessTime")
+    getLastModificationTimeOrThrow(): Other.AsDate {
+      const element = this.element.querySelector(":scope > LastModificationTime")
 
       if (element == null)
         throw new Error()
@@ -598,11 +619,20 @@ export namespace KeePassFile {
       return new Other.AsDate(element)
     }
 
-    getExpiresOrThrow(): Other.AsBoolean {
+    getLastAccessTimeOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > LastAccessTime")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    getExpiresOrNull(): Nullable<Other.AsBoolean> {
       const element = this.element.querySelector(":scope > Expires")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsBoolean(element)
     }
@@ -616,13 +646,26 @@ export namespace KeePassFile {
       return new Other.AsInteger(element)
     }
 
-    getLocationChangedOrThrow(): Other.AsDate {
-      const element = this.element.querySelector(":scope > LocationChanged")
+    getUsageCountOrNull(): Nullable<Other.AsInteger> {
+      const element = this.element.querySelector(":scope > UsageCount")
 
       if (element == null)
-        throw new Error()
+        return
 
-      return new Other.AsDate(element)
+      return new Other.AsInteger(element)
+    }
+
+    getLocationChangedOrNew(): Other.AsDate {
+      const stale = this.element.querySelector(":scope > LocationChanged")
+
+      if (stale != null)
+        return new Other.AsDate(stale)
+
+      const fresh = this.element.ownerDocument.createElement("LocationChanged")
+
+      this.element.appendChild(fresh)
+
+      return new Other.AsDate(fresh)
     }
 
   }
@@ -633,6 +676,10 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
+    saveOrThrow(): Entry {
+      return this.getHistoryOrNew().pushOrThrow(this)
+    }
+
     moveOrThrow($group: Group): void {
       if (this.element.parentNode === $group.element)
         return
@@ -641,20 +688,23 @@ export namespace KeePassFile {
 
       $group.element.appendChild(this.element)
 
-      this.getTimesOrThrow().getLocationChangedOrThrow().setOrThrow(new Date())
+      this.getTimesOrNew().getLocationChangedOrNew().setOrThrow(new Date())
 
-      $group.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      $group.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
     }
 
-    moveToTrashOrThrow(): void {
+    trashOrThrow(): void {
       const $file = new KeePassFile(this.element.ownerDocument)
       const $meta = $file.getMetaOrThrow()
       const $root = $file.getRootOrThrow()
 
-      const recybleBinEnabled = $meta.getRecycleBinEnabledOrThrow().get()
+      const recybleBinEnabled = $meta.getRecycleBinEnabledOrNull()?.get()
 
-      if (!recybleBinEnabled)
-        throw new Error("Recycle bin is not enabled")
+      if (!recybleBinEnabled) {
+        this.element.parentNode?.removeChild(this.element)
+
+        return
+      }
 
       const recycleBin = $meta.getRecycleBinUuidOrThrow().getOrThrow()
 
@@ -662,11 +712,7 @@ export namespace KeePassFile {
 
       this.moveOrThrow($recycleBin)
 
-      $meta.getRecycleBinChangedOrThrow().setOrThrow(new Date())
-    }
-
-    cloneToHistoryOrThrow(): Entry {
-      return this.getHistoryOrNew().insertAndCleanOrThrow(this)
+      $meta.getRecycleBinChangedOrNew().setOrThrow(new Date())
     }
 
     createStringOrThrow(key: string, value: string, protect = false): String {
@@ -676,7 +722,7 @@ export namespace KeePassFile {
 
       this.element.appendChild($string.element)
 
-      this.getTimesOrThrow().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      this.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
 
       return $string
     }
@@ -690,22 +736,19 @@ export namespace KeePassFile {
       return new Other.AsUuid(element)
     }
 
-    getTimesOrThrow(): Times {
-      const element = this.element.querySelector(":scope > Times")
+    getTimesOrNew(): Times {
+      const stale = this.element.querySelector(":scope > Times")
 
-      if (element == null)
-        throw new Error()
+      if (stale != null)
+        return new Times(stale)
 
-      return new Times(element)
-    }
+      const $file = new KeePassFile(this.element.ownerDocument)
 
-    getHistoryOrThrow(): History {
-      const element = this.element.querySelector(":scope > History")
+      const $times = $file.createTimesOrThrow()
 
-      if (element == null)
-        throw new Error()
+      this.element.appendChild($times.element)
 
-      return new History(element)
+      return $times
     }
 
     getHistoryOrNull(): Nullable<History> {
@@ -739,15 +782,6 @@ export namespace KeePassFile {
       return
     }
 
-    getDirectStringByIndexOrThrow(index: number): String {
-      const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`)
-
-      if (element == null)
-        throw new Error()
-
-      return new String(element)
-    }
-
     getDirectStringByIndexOrNull(index: number): Nullable<String> {
       const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`)
 
@@ -755,21 +789,6 @@ export namespace KeePassFile {
         return
 
       return new String(element)
-    }
-
-    getDirectStringByKeyOrThrow(key: string): String {
-      const elements = this.element.querySelectorAll(`:scope > String`)
-
-      for (const element of elements) {
-        const string = new String(element)
-
-        if (string.getKeyOrThrow().get() === key)
-          return string
-
-        continue
-      }
-
-      throw new Error()
     }
 
     getDirectStringByKeyOrNull(key: string): Nullable<String> {
@@ -848,7 +867,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    insertAndCleanOrThrow($entry: Entry): Entry {
+    pushOrThrow($entry: Entry): Entry {
       const clone = new Entry($entry.element.cloneNode(true) as Element)
 
       const history = clone.getHistoryOrNull()
@@ -867,9 +886,9 @@ export namespace KeePassFile {
       const $file = new KeePassFile(this.element.ownerDocument)
       const $meta = $file.getMetaOrThrow()
 
-      const historyMaxItems = $meta.getHistoryMaxItemsOrThrow().getOrThrow()
+      const historyMaxItems = $meta.getHistoryMaxItemsOrNull()?.getOrThrow()
 
-      if (this.element.children.length > historyMaxItems) {
+      if (historyMaxItems != null && this.element.children.length > historyMaxItems) {
         while (this.element.children.length > historyMaxItems) {
           const last = this.element.lastElementChild
 
@@ -880,15 +899,17 @@ export namespace KeePassFile {
         }
       }
 
-      const historyMaxSize = $meta.getHistoryMaxSizeOrThrow().getOrThrow()
+      const historyMaxSize = $meta.getHistoryMaxSizeOrNull()?.getOrThrow()
 
-      for (let bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element)); bytes.length > historyMaxSize; bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element))) {
-        const last = this.element.lastElementChild
+      if (historyMaxSize != null) {
+        for (let bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element)); bytes.length > historyMaxSize; bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element))) {
+          const last = this.element.lastElementChild
 
-        if (last == null)
-          throw new Error()
+          if (last == null)
+            throw new Error()
 
-        this.element.removeChild(last)
+          this.element.removeChild(last)
+        }
       }
     }
 
@@ -899,15 +920,6 @@ export namespace KeePassFile {
         yield new Entry(element)
 
       return
-    }
-
-    getDirectEntryByIndexOrThrow(index: number): Entry {
-      const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`)
-
-      if (element == null)
-        throw new Error()
-
-      return new Entry(element)
     }
 
     getDirectEntryByIndexOrNull(index: number): Nullable<Entry> {
