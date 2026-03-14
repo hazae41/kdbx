@@ -468,8 +468,6 @@ export namespace KeePassFile {
 
       this.element.appendChild($entry.element)
 
-      this.getTimesOrNew().setLastModificationTime()
-
       return $entry
     }
 
@@ -482,8 +480,6 @@ export namespace KeePassFile {
       group.element.appendChild(this.element)
 
       this.getTimesOrNew().setLocationChanged()
-
-      group.getTimesOrNew().setLastModificationTime()
     }
 
     getNameOrThrow(): Other.AsString {
@@ -829,8 +825,6 @@ export namespace KeePassFile {
       $group.element.appendChild(this.element)
 
       this.getTimesOrNew().setLocationChanged()
-
-      $group.getTimesOrNew().setLastModificationTime()
     }
 
     trashOrThrow(): void {
@@ -870,8 +864,6 @@ export namespace KeePassFile {
       }
 
       this.element.appendChild($string.element)
-
-      this.getTimesOrNew().setLastModificationTime()
 
       return $string
     }
