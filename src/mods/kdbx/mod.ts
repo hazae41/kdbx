@@ -147,14 +147,12 @@ export namespace Database {
       readonly inner: Inner.HeadersAndContentWithBytes
     ) { }
 
-    async rotateOrThrow(composite: CompositeKey): Promise<Decrypted> {
-      return new Decrypted(await this.outer.rotateOrThrow(composite), this.inner.rotateOrThrow())
-    }
+    async encryptOrThrow(composite: CompositeKey): Promise<Encrypted> {
+      const dummy = new Decrypted(await this.outer.rotateOrThrow(composite), this.inner.rotateOrThrow())
 
-    async encryptOrThrow(): Promise<Encrypted> {
-      const cipher = await this.inner.headers.getCipherOrThrow()
+      const cipher = await dummy.inner.headers.getCipherOrThrow()
 
-      const $$values = this.inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
+      const $$values = dummy.inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
       for (let i = 0; i < $$values.length; i++) {
         const $value = $$values[i]
@@ -166,12 +164,12 @@ export namespace Database {
       }
 
       {
-        const { cipher, iv, compression } = this.outer.data.data.value.headers
+        const { cipher, iv, compression } = dummy.outer.data.data.value.headers
 
-        const degzipped = Writable.writeToBytesOrThrow(this.inner.recomputeOrThrow())
+        const degzipped = Writable.writeToBytesOrThrow(dummy.inner)
 
         const engzipped = compression === Compression.Gzip ? new Uint8Array(await gzip(degzipped)) : degzipped
-        const encrypted = await cipher.encryptOrThrow(this.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
+        const encrypted = await cipher.encryptOrThrow(dummy.outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
         const blocks = new Array<BlockWithIndex>()
 
@@ -184,14 +182,14 @@ export namespace Database {
           if (x.done === true)
             break
 
-          blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, x.value))
+          blocks.push(await BlockWithIndex.fromOrThrow(dummy.outer.keys, index, x.value))
 
           continue
         }
 
-        blocks.push(await BlockWithIndex.fromOrThrow(this.outer.keys, index, new Uint8Array(0)))
+        blocks.push(await BlockWithIndex.fromOrThrow(dummy.outer.keys, index, new Uint8Array(0)))
 
-        return new Encrypted(this.outer.data, new Blocks(blocks))
+        return new Encrypted(dummy.outer.data, new Blocks(blocks))
       }
     }
 

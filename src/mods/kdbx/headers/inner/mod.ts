@@ -23,7 +23,7 @@ export class HeadersAndContentWithBytes {
   }
 
   rotateOrThrow(): HeadersAndContentWithBytes {
-    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), this.content)
+    return HeadersAndContentWithBytes.computeOrThrow(this.headers.rotateOrThrow(), this.content.value)
   }
 
   sizeOrThrow(): number {
@@ -33,10 +33,6 @@ export class HeadersAndContentWithBytes {
   writeOrThrow(cursor: Cursor<ArrayBuffer>) {
     this.headers.writeOrThrow(cursor)
     this.content.writeOrThrow(cursor)
-  }
-
-  recomputeOrThrow(): HeadersAndContentWithBytes {
-    return HeadersAndContentWithBytes.computeOrThrow(this.headers, this.content.value)
   }
 
 }
