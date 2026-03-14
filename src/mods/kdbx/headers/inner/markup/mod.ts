@@ -12,92 +12,6 @@ export class KeePassFile {
     readonly document: Document
   ) { }
 
-  createGroupOrThrow(name: string): KeePassFile.Group {
-    const $group = new KeePassFile.Group(this.document.createElement("Group"))
-
-    const $name = this.createNameOrThrow(name)
-    const $uuid = this.createUuidOrThrow()
-    const $times = this.createTimesOrThrow()
-
-    $group.element.appendChild($name.element)
-    $group.element.appendChild($uuid.element)
-    $group.element.appendChild($times.element)
-
-    return $group
-  }
-
-  createEntryOrThrow(): KeePassFile.Entry {
-    const $entry = new KeePassFile.Entry(this.document.createElement("Entry"))
-
-    const $uuid = this.createUuidOrThrow()
-    const $times = this.createTimesOrThrow()
-
-    $entry.element.appendChild($uuid.element)
-    $entry.element.appendChild($times.element)
-
-    return $entry
-  }
-
-  createNameOrThrow(name: string): KeePassFile.Other.AsString {
-    const $name = new KeePassFile.Other.AsString(this.document.createElement("Name"))
-
-    $name.set(name)
-
-    return $name
-  }
-
-  createUuidOrThrow(): KeePassFile.Other.AsUuid {
-    const $uuid = new KeePassFile.Other.AsUuid(this.document.createElement("UUID"))
-
-    $uuid.setOrThrow(crypto.randomUUID())
-
-    return $uuid
-  }
-
-  createTimesOrThrow(): KeePassFile.Times {
-    const $times = new KeePassFile.Times(this.document.createElement("Times"))
-
-    const $lastModificationTime = new KeePassFile.Other.AsDate(this.document.createElement("LastModificationTime"))
-    const $creationTime = new KeePassFile.Other.AsDate(this.document.createElement("CreationTime"))
-    const $lastAccessTime = new KeePassFile.Other.AsDate(this.document.createElement("LastAccessTime"))
-    const $expires = new KeePassFile.Other.AsBoolean(this.document.createElement("Expires"))
-    const $usageCount = new KeePassFile.Other.AsInteger(this.document.createElement("UsageCount"))
-    const $locationChanged = new KeePassFile.Other.AsDate(this.document.createElement("LocationChanged"))
-
-    $lastModificationTime.setOrThrow(new Date())
-    $creationTime.setOrThrow(new Date())
-    $lastAccessTime.setOrThrow(new Date())
-    $expires.set(false)
-    $usageCount.setOrThrow(0)
-    $locationChanged.setOrThrow(new Date())
-
-    $times.element.appendChild($creationTime.element)
-    $times.element.appendChild($lastAccessTime.element)
-    $times.element.appendChild($expires.element)
-    $times.element.appendChild($usageCount.element)
-    $times.element.appendChild($locationChanged.element)
-    $times.element.appendChild($lastModificationTime.element)
-
-    return $times
-  }
-
-  createStringOrThrow(key: string, value: string, protect = false): KeePassFile.String {
-    const $string = new KeePassFile.String(this.document.createElement("String"))
-
-    const $key = new KeePassFile.Other.AsString(this.document.createElement("Key"))
-    const $value = new KeePassFile.Value(this.document.createElement("Value"))
-
-    $key.set(key)
-    $value.set(value)
-
-    $value.protected = protect
-
-    $string.element.appendChild($key.element)
-    $string.element.appendChild($value.element)
-
-    return $string
-  }
-
   getMetaOrThrow(): KeePassFile.Meta {
     const element = this.document.querySelector(":scope > Meta")
 
@@ -135,17 +49,33 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getDatabaseNameChangedOrNew(): Other.AsDate {
+    getDatabaseNameChangedOrNull(): Nullable<Other.AsDate> {
       const stale = this.element.querySelector(":scope > DatabaseNameChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale == null)
+        return
+
+      return new Other.AsDate(stale)
+    }
+
+    setDatabaseNameChanged(date = new Date()): void {
+      const stale = this.element.querySelector(":scope > DatabaseNameChanged")
+
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("DatabaseNameChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
     getGeneratorOrNull(): Nullable<Other.AsString> {
@@ -193,30 +123,62 @@ export namespace KeePassFile {
       return new Other.AsUuid(element)
     }
 
-    getRecycleBinChangedOrNew(): Other.AsDate {
+    getRecycleBinChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > RecycleBinChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setRecycleBinChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > RecycleBinChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("RecycleBinChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
-    getSettingsChangedOrNew(): Other.AsDate {
+    getSettingsChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > SettingsChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setSettingsChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > SettingsChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("SettingsChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
     getDatabaseDescriptionOrNull(): Nullable<Other.AsString> {
@@ -228,17 +190,33 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getDatabaseDescriptionChangedOrNew(): Other.AsDate {
+    getDatabaseDescriptionChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > DatabaseDescriptionChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setDatabaseDescriptionChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > DatabaseDescriptionChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("DatabaseDescriptionChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
     getDefaultUserNameOrNull(): Nullable<Other.AsString> {
@@ -250,17 +228,33 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getDefaultUserNameChangedOrNew(): Other.AsDate {
+    getDefaultUserNameChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > DefaultUserNameChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setDefaultUserNameChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > DefaultUserNameChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("DefaultUserNameChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
     getColorOrNull(): Nullable<Other.AsString> {
@@ -281,17 +275,33 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getEntryTemplatesGroupChangedOrNew(): Other.AsDate {
+    getEntryTemplatesGroupChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setEntryTemplatesGroupChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > EntryTemplatesGroupChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("EntryTemplatesGroupChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
   }
@@ -301,6 +311,35 @@ export namespace KeePassFile {
     constructor(
       readonly element: Element
     ) { }
+
+    addGroupOrThrow(name: string): KeePassFile.Group {
+      const $group = new KeePassFile.Group(this.element.ownerDocument.createElement("Group"))
+
+      {
+        const $name = new KeePassFile.Other.AsString(this.element.ownerDocument.createElement("Name"))
+        const $uuid = new KeePassFile.Other.AsUuid(this.element.ownerDocument.createElement("UUID"))
+        const $times = new KeePassFile.Times(this.element.ownerDocument.createElement("Times"))
+
+        $name.set(name)
+        $uuid.setOrThrow(crypto.randomUUID())
+
+        {
+          const $creationTime = new KeePassFile.Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
+
+          $creationTime.setOrThrow(new Date())
+
+          $times.element.appendChild($creationTime.element)
+        }
+
+        $group.element.appendChild($name.element)
+        $group.element.appendChild($uuid.element)
+        $group.element.appendChild($times.element)
+      }
+
+      this.element.appendChild($group.element)
+
+      return $group
+    }
 
     *getGroups(): Generator<Group> {
       const elements = this.element.querySelectorAll(`Group`)
@@ -406,6 +445,34 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
+    addEntryOrThrow(): KeePassFile.Entry {
+      const $entry = new KeePassFile.Entry(this.element.ownerDocument.createElement("Entry"))
+
+      {
+        const $uuid = new KeePassFile.Other.AsUuid(this.element.ownerDocument.createElement("UUID"))
+        const $times = new KeePassFile.Times(this.element.ownerDocument.createElement("Times"))
+
+        $uuid.setOrThrow(crypto.randomUUID())
+
+        {
+          const $creationTime = new KeePassFile.Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
+
+          $creationTime.setOrThrow(new Date())
+
+          $times.element.appendChild($creationTime.element)
+        }
+
+        $entry.element.appendChild($uuid.element)
+        $entry.element.appendChild($times.element)
+      }
+
+      this.element.appendChild($entry.element)
+
+      this.getTimesOrNew().setLastModificationTime()
+
+      return $entry
+    }
+
     moveOrThrow(group: Group): void {
       if (this.element.parentNode === group.element)
         return
@@ -414,9 +481,9 @@ export namespace KeePassFile {
 
       group.element.appendChild(this.element)
 
-      this.getTimesOrNew().getLocationChangedOrNew().setOrThrow(new Date())
+      this.getTimesOrNew().setLocationChanged()
 
-      group.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      group.getTimesOrNew().setLastModificationTime()
     }
 
     getNameOrThrow(): Other.AsString {
@@ -443,9 +510,15 @@ export namespace KeePassFile {
       if (stale != null)
         return new Times(stale)
 
-      const $file = new KeePassFile(this.element.ownerDocument)
+      const $times = new Times(this.element.ownerDocument.createElement("Times"))
 
-      const $times = $file.createTimesOrThrow()
+      {
+        const $creationTime = new Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
+
+        $creationTime.setOrThrow(new Date())
+
+        $times.element.appendChild($creationTime.element)
+      }
 
       this.element.appendChild($times.element)
 
@@ -610,13 +683,33 @@ export namespace KeePassFile {
       return new Other.AsDate(element)
     }
 
-    getLastModificationTimeOrThrow(): Other.AsDate {
+    getLastModificationTimeOrNull(): Nullable<Other.AsDate> {
       const element = this.element.querySelector(":scope > LastModificationTime")
 
       if (element == null)
-        throw new Error()
+        return
 
       return new Other.AsDate(element)
+    }
+
+    setLastModificationTime(date = new Date()): void {
+      const stale = this.element.querySelector(":scope > LastModificationTime")
+
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
+
+      const fresh = this.element.ownerDocument.createElement("LastModificationTime")
+
+      this.element.appendChild(fresh)
+
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
     getLastAccessTimeOrNull(): Nullable<Other.AsDate> {
@@ -628,6 +721,26 @@ export namespace KeePassFile {
       return new Other.AsDate(element)
     }
 
+    setLastAccessTime(date = new Date()): void {
+      const stale = this.element.querySelector(":scope > LastAccessTime")
+
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
+
+      const fresh = this.element.ownerDocument.createElement("LastAccessTime")
+
+      this.element.appendChild(fresh)
+
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
+    }
+
     getExpiresOrNull(): Nullable<Other.AsBoolean> {
       const element = this.element.querySelector(":scope > Expires")
 
@@ -635,15 +748,6 @@ export namespace KeePassFile {
         return
 
       return new Other.AsBoolean(element)
-    }
-
-    getUsageCountOrThrow(): Other.AsInteger {
-      const element = this.element.querySelector(":scope > UsageCount")
-
-      if (element == null)
-        throw new Error()
-
-      return new Other.AsInteger(element)
     }
 
     getUsageCountOrNull(): Nullable<Other.AsInteger> {
@@ -655,17 +759,53 @@ export namespace KeePassFile {
       return new Other.AsInteger(element)
     }
 
-    getLocationChangedOrNew(): Other.AsDate {
+    incrementUsageCount(): void {
+      const stale = this.element.querySelector(":scope > UsageCount")
+
+      if (stale != null) {
+        const value = new Other.AsInteger(stale)
+
+        value.incrementOrThrow()
+
+        return
+      }
+
+      const fresh = this.element.ownerDocument.createElement("UsageCount")
+
+      this.element.appendChild(fresh)
+
+      const value = new Other.AsInteger(fresh)
+
+      value.setOrThrow(1)
+    }
+
+    getLocationChangedOrNull(): Nullable<Other.AsDate> {
+      const element = this.element.querySelector(":scope > LocationChanged")
+
+      if (element == null)
+        return
+
+      return new Other.AsDate(element)
+    }
+
+    setLocationChanged(date = new Date()): void {
       const stale = this.element.querySelector(":scope > LocationChanged")
 
-      if (stale != null)
-        return new Other.AsDate(stale)
+      if (stale != null) {
+        const value = new Other.AsDate(stale)
+
+        value.setOrThrow(date)
+
+        return
+      }
 
       const fresh = this.element.ownerDocument.createElement("LocationChanged")
 
       this.element.appendChild(fresh)
 
-      return new Other.AsDate(fresh)
+      const value = new Other.AsDate(fresh)
+
+      value.setOrThrow(date)
     }
 
   }
@@ -688,9 +828,9 @@ export namespace KeePassFile {
 
       $group.element.appendChild(this.element)
 
-      this.getTimesOrNew().getLocationChangedOrNew().setOrThrow(new Date())
+      this.getTimesOrNew().setLocationChanged()
 
-      $group.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      $group.getTimesOrNew().setLastModificationTime()
     }
 
     trashOrThrow(): void {
@@ -711,18 +851,27 @@ export namespace KeePassFile {
       const $recycleBin = $root.getGroupByUuidOrThrow(recycleBin)
 
       this.moveOrThrow($recycleBin)
-
-      $meta.getRecycleBinChangedOrNew().setOrThrow(new Date())
     }
 
-    createStringOrThrow(key: string, value: string, protect = false): String {
-      const $file = new KeePassFile(this.element.ownerDocument)
+    addStringOrThrow(key: string, value: string, protect = false): String {
+      const $string = new KeePassFile.String(this.element.ownerDocument.createElement("String"))
 
-      const $string = $file.createStringOrThrow(key, value, protect)
+      {
+        const $key = new KeePassFile.Other.AsString(this.element.ownerDocument.createElement("Key"))
+        const $value = new KeePassFile.Value(this.element.ownerDocument.createElement("Value"))
+
+        $key.set(key)
+        $value.set(value)
+
+        $value.protected = protect
+
+        $string.element.appendChild($key.element)
+        $string.element.appendChild($value.element)
+      }
 
       this.element.appendChild($string.element)
 
-      this.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
+      this.getTimesOrNew().setLastModificationTime()
 
       return $string
     }
@@ -742,9 +891,15 @@ export namespace KeePassFile {
       if (stale != null)
         return new Times(stale)
 
-      const $file = new KeePassFile(this.element.ownerDocument)
+      const $times = new Times(this.element.ownerDocument.createElement("Times"))
 
-      const $times = $file.createTimesOrThrow()
+      {
+        const $creationTime = new Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
+
+        $creationTime.setOrThrow(new Date())
+
+        $times.element.appendChild($creationTime.element)
+      }
 
       this.element.appendChild($times.element)
 
@@ -773,7 +928,7 @@ export namespace KeePassFile {
       return new History(fresh)
     }
 
-    *getDirectStrings(): Generator<String> {
+    *getStrings(): Generator<String> {
       const elements = this.element.querySelectorAll(`:scope > String`)
 
       for (const element of elements)
@@ -782,7 +937,7 @@ export namespace KeePassFile {
       return
     }
 
-    getDirectStringByIndexOrNull(index: number): Nullable<String> {
+    getStringByIndexOrNull(index: number): Nullable<String> {
       const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`)
 
       if (element == null)
@@ -791,7 +946,7 @@ export namespace KeePassFile {
       return new String(element)
     }
 
-    getDirectStringByKeyOrNull(key: string): Nullable<String> {
+    getStringByKeyOrNull(key: string): Nullable<String> {
       const elements = this.element.querySelectorAll(`:scope > String`)
 
       for (const element of elements) {

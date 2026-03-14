@@ -35,12 +35,12 @@ const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
 entry0.saveOrThrow()
 
-entry0.getDirectStringByKeyOrNull("Title")?.getValueOrThrow().set("Cloned")
-entry0.getDirectStringByKeyOrNull("Password")?.getKeyOrThrow().set("PrivateKey")
+entry0.getStringByKeyOrNull("Title")?.getValueOrThrow().set("Cloned")
+entry0.getStringByKeyOrNull("Password")?.getKeyOrThrow().set("PrivateKey")
 
-entry0.getTimesOrNew().getLastModificationTimeOrThrow().setOrThrow(new Date())
-entry0.getTimesOrNew().getLastAccessTimeOrNull()?.setOrThrow(new Date())
-entry0.getTimesOrNew().getUsageCountOrThrow().incrementOrThrow()
+entry0.getTimesOrNew().setLastModificationTime()
+entry0.getTimesOrNew().setLastAccessTime()
+entry0.getTimesOrNew().incrementUsageCount()
 
 console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 
