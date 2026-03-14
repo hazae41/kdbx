@@ -18,12 +18,11 @@ export class HeadersAndContentWithBytes {
   ) { }
 
   static computeOrThrow(headers: Headers, content: KeePassFile): HeadersAndContentWithBytes {
-    const contentWithBytes = ContentWithBytes.computeOrThrow(content)
-    return new HeadersAndContentWithBytes(headers, contentWithBytes)
+    return new HeadersAndContentWithBytes(headers, ContentWithBytes.computeOrThrow(content))
   }
 
   rotateOrThrow(): HeadersAndContentWithBytes {
-    return HeadersAndContentWithBytes.computeOrThrow(this.headers.rotateOrThrow(), this.content.value)
+    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), this.content.rotateOrThrow())
   }
 
   sizeOrThrow(): number {
@@ -59,8 +58,14 @@ export class ContentWithBytes {
     this.bytes.writeOrThrow(cursor)
   }
 
-  recomputeOrThrow(): ContentWithBytes {
-    return ContentWithBytes.computeOrThrow(this.value)
+  rotateOrThrow(): ContentWithBytes {
+    const string = new XMLSerializer().serializeToString(this.value.document)
+    const opaque = new Unknown(new TextEncoder().encode(string))
+
+    const raw = new TextDecoder().decode(opaque.bytes)
+    const xml = new DOMParser().parseFromString(raw, "text/xml")
+
+    return new ContentWithBytes(opaque, new KeePassFile(xml))
   }
 
 }
