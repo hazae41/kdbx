@@ -17,14 +17,6 @@ export class HeadersAndContentWithBytes {
     readonly content: ContentWithBytes
   ) { }
 
-  static computeOrThrow(headers: Headers, content: KeePassFile): HeadersAndContentWithBytes {
-    return new HeadersAndContentWithBytes(headers, ContentWithBytes.computeOrThrow(content))
-  }
-
-  rotateOrThrow(content: KeePassFile): HeadersAndContentWithBytes {
-    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), ContentWithBytes.computeOrThrow(content))
-  }
-
   sizeOrThrow(): number {
     return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
   }

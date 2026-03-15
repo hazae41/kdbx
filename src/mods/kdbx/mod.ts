@@ -8,6 +8,7 @@ import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Cursors } from "../../libs/cursors/mod.ts"
+import { ContentWithBytes } from "./headers/inner/mod.ts"
 import { Inner, Outer } from "./headers/mod.ts"
 import { Compression, MagicAndVersionAndHeadersWithBytesWithHashAndHmac } from "./headers/outer/mod.ts"
 import { PreHmacKey } from "./hmac/mod.ts"
@@ -148,13 +149,15 @@ export namespace Database {
     ) { }
 
     async encryptOrThrow(composite: CompositeKey): Promise<Encrypted> {
+      const headers = this.inner.headers.rotateOrThrow()
+
       const $file = this.inner.content.value.cloneOrThrow()
-      const $values = $file.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
+      const $list = $file.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
-      const cipher = await this.inner.headers.getCipherOrThrow()
+      const cipher = await headers.getCipherOrThrow()
 
-      for (let i = 0; i < $values.length; i++) {
-        const $value = $values[i]
+      for (let i = 0; i < $list.length; i++) {
+        const $value = $list[i]
 
         const decrypted = new TextEncoder().encode($value.textContent)
         using encrypted = cipher.applyOrThrow(decrypted)
@@ -162,7 +165,9 @@ export namespace Database {
         $value.textContent = encrypted.bytes.toBase64()
       }
 
-      const inner = this.inner.rotateOrThrow($file)
+      const content = ContentWithBytes.computeOrThrow($file)
+
+      const inner = new Inner.HeadersAndContentWithBytes(headers, content)
       const outer = await this.outer.rotateOrThrow(composite)
 
       {
