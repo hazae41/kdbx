@@ -249,10 +249,10 @@ export namespace Database {
       {
         const cipher = await inner.headers.getCipherOrThrow()
 
-        const $$values = inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
+        const $list = inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
-        for (let i = 0; i < $$values.length; i++) {
-          const $value = $$values[i]
+        for (let i = 0; i < $list.length; i++) {
+          const $value = $list[i]
 
           const encrypted = Uint8Array.fromBase64($value.textContent)
           using decrypted = cipher.applyOrThrow(encrypted)
