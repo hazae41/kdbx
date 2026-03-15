@@ -21,8 +21,8 @@ export class HeadersAndContentWithBytes {
     return new HeadersAndContentWithBytes(headers, ContentWithBytes.computeOrThrow(content))
   }
 
-  rotateOrThrow(): HeadersAndContentWithBytes {
-    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), this.content.rotateOrThrow())
+  rotateOrThrow(content: KeePassFile): HeadersAndContentWithBytes {
+    return new HeadersAndContentWithBytes(this.headers.rotateOrThrow(), ContentWithBytes.computeOrThrow(content))
   }
 
   sizeOrThrow(): number {
@@ -43,11 +43,8 @@ export class ContentWithBytes {
     readonly value: KeePassFile
   ) { }
 
-  static computeOrThrow(content: KeePassFile): ContentWithBytes {
-    const string = new XMLSerializer().serializeToString(content.document)
-    const opaque = new Unknown(new TextEncoder().encode(string))
-
-    return new ContentWithBytes(opaque, content)
+  static computeOrThrow(value: KeePassFile): ContentWithBytes {
+    return new ContentWithBytes(new Unknown(value.encodeOrThrow()), value)
   }
 
   sizeOrThrow(): number {
@@ -58,27 +55,15 @@ export class ContentWithBytes {
     this.bytes.writeOrThrow(cursor)
   }
 
-  rotateOrThrow(): ContentWithBytes {
-    const string = new XMLSerializer().serializeToString(this.value.document)
-    const opaque = new Unknown(new TextEncoder().encode(string))
-
-    const raw = new TextDecoder().decode(opaque.bytes)
-    const xml = new DOMParser().parseFromString(raw, "text/xml")
-
-    return new ContentWithBytes(opaque, new KeePassFile(xml))
-  }
-
 }
 
 export namespace ContentWithBytes {
 
   export function readOrThrow(cursor: Cursor<ArrayBuffer>): ContentWithBytes {
     const bytes = new Unknown(cursor.readOrThrow(cursor.remaining))
+    const value = KeePassFile.decodeOrThrow(bytes.bytes)
 
-    const raw = new TextDecoder().decode(bytes.bytes)
-    const xml = new DOMParser().parseFromString(raw, "text/xml")
-
-    return new ContentWithBytes(bytes, new KeePassFile(xml))
+    return new ContentWithBytes(bytes, value)
   }
 
 }

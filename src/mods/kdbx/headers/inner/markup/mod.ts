@@ -2,15 +2,27 @@
 
 /// <reference types="./lib.d.ts" />
 
-import type { Nullable } from "@/libs/nullable/mod.ts"
-import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts"
-import { Cursor } from "@hazae41/cursor"
+import type { Nullable } from "@/libs/nullable/mod.ts";
+import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts";
+import { Cursor } from "@hazae41/cursor";
 
 export class KeePassFile {
 
   constructor(
     readonly document: Document
   ) { }
+
+  static decodeOrThrow(bytes: Uint8Array) {
+    return new KeePassFile(new DOMParser().parseFromString(new TextDecoder().decode(bytes), "text/xml"))
+  }
+
+  encodeOrThrow() {
+    return new TextEncoder().encode(new XMLSerializer().serializeToString(this.document))
+  }
+
+  cloneOrThrow(): KeePassFile {
+    return KeePassFile.decodeOrThrow(this.encodeOrThrow())
+  }
 
   getMetaOrThrow(): KeePassFile.Meta {
     const element = this.document.querySelector(":scope > Meta")
