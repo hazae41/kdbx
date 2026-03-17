@@ -11,7 +11,7 @@ import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
 import { type CompositeKey, DerivedKey, MasterKeys, PreHmacMasterKey, PreMasterKey } from "@/mods/kdbx/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { argon2 } from "@hazae41/argon2"
-import { Readable, Unknown, Writable } from "@hazae41/binary"
+import { Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
 import { Nullable } from "../../../../libs/nullable/mod.ts"
 import { Cipher } from "./cipher/mod.ts"
@@ -31,10 +31,6 @@ export class Version {
   writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     cursor.writeUint16OrThrow(this.minor, true)
     cursor.writeUint16OrThrow(this.major, true)
-  }
-
-  cloneOrThrow(): this {
-    return this
   }
 
 }
@@ -111,14 +107,6 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     cursor.writeOrThrow(this.hmac.bytes)
   }
 
-  cloneOrThrow(): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
-    const data = this.data.cloneOrThrow()
-    const hash = this.hash.cloneOrThrow()
-    const hmac = this.hmac.cloneOrThrow()
-
-    return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
-  }
-
   async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
     return await this.data.deriveOrThrow(composite)
   }
@@ -159,13 +147,6 @@ export class MagicAndVersionAndHeadersWithBytes {
 
   writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     cursor.writeOrThrow(this.bytes.bytes)
-  }
-
-  cloneOrThrow(): MagicAndVersionAndHeadersWithBytes {
-    const value = this.value.cloneOrThrow()
-    const bytes = this.bytes.cloneOrThrow()
-
-    return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
   async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
@@ -212,13 +193,6 @@ export class MagicAndVersionAndHeaders {
 
     this.version.writeOrThrow(cursor)
     this.headers.writeOrThrow(cursor)
-  }
-
-  cloneOrThrow(): MagicAndVersionAndHeaders {
-    const version = this.version.cloneOrThrow()
-    const headers = this.headers.cloneOrThrow()
-
-    return new MagicAndVersionAndHeaders(version, headers)
   }
 
   async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
@@ -310,10 +284,6 @@ export class Headers {
 
   writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
     this.value.writeOrThrow(cursor)
-  }
-
-  cloneOrThrow(): Headers {
-    return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
   }
 
   async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {

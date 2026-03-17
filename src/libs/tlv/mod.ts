@@ -21,10 +21,6 @@ export class TLV<T extends number = number, V extends Struct = Struct> {
     this.value.writeOrThrow(cursor)
   }
 
-  cloneOrThrow() {
-    return new TLV(this.type, this.value.cloneOrThrow())
-  }
-
   readIntoOrThrow<W extends Struct>(this: TLV<T, Unknown<ArrayBuffer>>, readable: Readable<W>): TLV<T, W> {
     return new TLV(this.type, this.value.readIntoOrThrow(readable))
   }

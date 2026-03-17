@@ -6,6 +6,4 @@ export interface Struct {
 
   writeOrThrow(cursor: Cursor): void
 
-  cloneOrThrow(): this
-
 }

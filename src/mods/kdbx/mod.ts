@@ -218,10 +218,6 @@ export namespace Database {
       this.inner.writeOrThrow(cursor)
     }
 
-    cloneOrThrow(): Encrypted {
-      return new Encrypted(this.outer.cloneOrThrow(), this.inner.cloneOrThrow())
-    }
-
     async decryptOrThrow(composite: CompositeKey): Promise<Decrypted> {
       const { cipher, iv, compression } = this.outer.data.value.headers
 

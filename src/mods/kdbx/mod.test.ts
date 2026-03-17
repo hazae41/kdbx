@@ -22,7 +22,7 @@ globalThis.XMLSerializer = window.XMLSerializer as any
 
 const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
 
-const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx")).cloneOrThrow()
+const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
 const decrypted = await encrypted.decryptOrThrow(password)
 
 const file = decrypted.inner.content.value
