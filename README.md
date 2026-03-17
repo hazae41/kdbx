@@ -29,14 +29,14 @@ const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThro
 const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
 const decrypted = await encrypted.decryptOrThrow(password)
 
-const file = decrypted.inner.content.value
-const root = file.getRootOrThrow()
-const meta = file.getMetaOrThrow()
+const $file = decrypted.inner.content.value
+const $root = file.getRootOrThrow()
+const $meta = file.getMetaOrThrow()
 
-const group0 = root.getDirectGroupByIndexOrThrow(0)
-const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
+const $group0 = $root.getDirectGroupByIndexOrThrow(0)
+const $entry0 = $group0.getDirectEntryByIndexOrThrow(0)
 
-entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Example")
+$entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Example")
 
 const encrypted2 = await decrypted2.encryptOrThrow(password)
 
