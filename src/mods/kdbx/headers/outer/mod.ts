@@ -4,7 +4,6 @@ export * from "./cipher/mod.ts"
 export * from "./compression/mod.ts"
 
 import { Bytes } from "@/libs/bytes/mod.ts"
-import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts"
 import { Dictionary, Entries, Value } from "@/mods/kdbx/dictionary/mod.ts"
 import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
@@ -66,8 +65,8 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
   constructor(
     readonly data: MagicAndVersionAndHeadersWithBytes,
-    readonly hash: Unknown<ArrayBuffer, 32>,
-    readonly hmac: Unknown<ArrayBuffer, 32>
+    readonly hash: Unknown<ArrayBuffer>,
+    readonly hmac: Unknown<ArrayBuffer>
   ) { }
 
   static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmac> {
@@ -76,8 +75,8 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
     const key = await new PreHmacKey(index, major).digestOrThrow()
 
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
-    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes)) as Uint8Array<ArrayBuffer> & Lengthed<32>
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes))
+    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes))
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Unknown(hash), new Unknown(hmac))
   }
@@ -232,7 +231,7 @@ export namespace MagicAndVersionAndHeaders {
 export interface HeadersInit {
   readonly cipher: Cipher
   readonly compression: Compression
-  readonly seed: Unknown<ArrayBuffer, 32>
+  readonly seed: Unknown<ArrayBuffer>
   readonly iv: Unknown<ArrayBuffer>
   readonly kdf: KdfParameters
   readonly custom?: Nullable<Dictionary>
@@ -241,7 +240,7 @@ export interface HeadersInit {
 export class Headers {
 
   constructor(
-    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Unknown<ArrayBuffer, 32>], 7: readonly [Unknown<ArrayBuffer>], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
+    readonly value: Vector<{ 2: readonly [Cipher], 3: readonly [Compression], 4: readonly [Unknown<ArrayBuffer>], 7: readonly [Unknown<ArrayBuffer>], 11: readonly [KdfParameters], 12?: readonly [Dictionary] }>,
   ) { }
 
   get cipher(): Cipher {
@@ -252,7 +251,7 @@ export class Headers {
     return this.value.value[3][0]
   }
 
-  get seed(): Unknown<ArrayBuffer, 32> {
+  get seed(): Unknown<ArrayBuffer> {
     return this.value.value[4][0]
   }
 
@@ -271,7 +270,7 @@ export class Headers {
   rotateOrThrow(): Headers {
     const { cipher, compression, custom } = this
 
-    const seed = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const seed = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
     const iv = new Unknown(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
     const kdf = this.kdf.rotateOrThrow()
 
@@ -389,7 +388,7 @@ export namespace KdfParameters {
       const $UUID = this.value.entries.value["$UUID"]
 
       const R = this.value.entries.value["R"]
-      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32))))
 
       const value = Dictionary.initOrThrow(version, { $UUID, R, S })
 
@@ -479,7 +478,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32))))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -501,7 +500,7 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes)))
     }
 
     sizeOrThrow(): number {
@@ -527,7 +526,7 @@ export namespace KdfParameters {
 
       const $UUID = new Value.Bytes(new Unknown(BytesAsUuid.from(Argon2d.$UUID)))
 
-      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32))))
       const P = new Value.UInt32(2)
       const M = new Value.UInt64(16777216n)
       const I = new Value.UInt64(12n)
@@ -601,7 +600,7 @@ export namespace KdfParameters {
 
       const $UUID = this.value.entries.value["$UUID"]
 
-      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32))))
       const P = this.value.entries.value.P
       const M = this.value.entries.value.M
       const I = this.value.entries.value.I
@@ -623,7 +622,7 @@ export namespace KdfParameters {
       using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
       using derived = deriver.deriveOrThrow(mkey, msalt)
 
-      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes) as Uint8Array<ArrayBuffer> & Lengthed<32>))
+      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes)))
     }
 
     sizeOrThrow(): number {

@@ -3,7 +3,6 @@
 export * from "./cipher/mod.ts"
 export * from "./markup/mod.ts"
 
-import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
@@ -73,7 +72,7 @@ export namespace HeadersAndContentWithBytes {
 
 export interface HeadersInit {
   readonly cipher: Cipher
-  readonly key: Unknown<ArrayBuffer, 32>
+  readonly key: Unknown<ArrayBuffer>
   readonly binary: readonly Unknown<ArrayBuffer>[]
 }
 
@@ -114,7 +113,7 @@ export class Headers {
   rotateOrThrow(): Headers {
     const { cipher, binary } = this
 
-    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
 
     return Headers.initOrThrow({ cipher, key, binary })
   }
@@ -130,7 +129,7 @@ export namespace Headers {
   export function createOrThrow(cipher: Cipher) {
     const binary = new Array<Unknown<ArrayBuffer, number>>()
 
-    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
 
     return Headers.initOrThrow({ cipher, key, binary })
   }

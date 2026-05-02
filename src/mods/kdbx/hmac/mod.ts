@@ -5,7 +5,7 @@ export class PreHmacKey {
 
   constructor(
     readonly index: bigint,
-    readonly major: Unknown<ArrayBuffer, 64>,
+    readonly major: Unknown<ArrayBuffer>,
   ) { }
 
   sizeOrThrow(): number {

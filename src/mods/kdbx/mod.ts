@@ -4,7 +4,6 @@ export * from "./dictionary/mod.ts"
 export * from "./headers/mod.ts"
 
 import { gunzip, gzip } from "@/libs/gzip/mod.ts"
-import type { Lengthed } from "@/libs/lengthed/mod.ts"
 import { Readable, Unknown, Writable } from "@hazae41/binary"
 import { Cursor } from "@hazae41/cursor"
 import { Cursors } from "../../libs/cursors/mod.ts"
@@ -17,12 +16,12 @@ export class PasswordKey {
   readonly #class = PasswordKey
 
   constructor(
-    readonly value: Unknown<ArrayBuffer, 32>,
+    readonly value: Unknown<ArrayBuffer>,
   ) { }
 
   static async digestOrThrow(password: Uint8Array<ArrayBuffer>): Promise<PasswordKey> {
     const array = await crypto.subtle.digest("SHA-256", password)
-    const bytes = new Uint8Array(array) as Uint8Array<ArrayBuffer> & Lengthed<32>
+    const bytes = new Uint8Array(array)
 
     return new PasswordKey(new Unknown(bytes))
   }
@@ -33,12 +32,12 @@ export class CompositeKey {
   readonly #class = CompositeKey
 
   constructor(
-    readonly value: Unknown<ArrayBuffer, 32>,
+    readonly value: Unknown<ArrayBuffer>,
   ) { }
 
   static async digestOrThrow(password: PasswordKey): Promise<CompositeKey> {
     const array = await crypto.subtle.digest("SHA-256", password.value.bytes)
-    const bytes = new Uint8Array(array) as Uint8Array<ArrayBuffer> & Lengthed<32>
+    const bytes = new Uint8Array(array)
 
     return new CompositeKey(new Unknown(bytes))
   }
@@ -49,7 +48,7 @@ export class DerivedKey {
   readonly #class = DerivedKey
 
   constructor(
-    readonly value: Unknown<ArrayBuffer, 32>
+    readonly value: Unknown<ArrayBuffer>
   ) { }
 
 }
@@ -58,7 +57,7 @@ export class PreMasterKey {
   readonly #class = PreMasterKey
 
   constructor(
-    readonly seed: Unknown<ArrayBuffer, 32>,
+    readonly seed: Unknown<ArrayBuffer>,
     readonly hash: DerivedKey
   ) { }
 
@@ -75,7 +74,7 @@ export class PreMasterKey {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-256", input)
-    const output = new Uint8Array(digest) as Uint8Array<ArrayBuffer> & Lengthed<32>
+    const output = new Uint8Array(digest)
 
     return new MasterKey(new Unknown(output))
   }
@@ -86,7 +85,7 @@ export class MasterKey {
   readonly #class = MasterKey
 
   constructor(
-    readonly value: Unknown<ArrayBuffer, 32>,
+    readonly value: Unknown<ArrayBuffer>,
   ) { }
 
 }
@@ -95,7 +94,7 @@ export class PreHmacMasterKey {
   readonly #class = PreHmacMasterKey
 
   constructor(
-    readonly seed: Unknown<ArrayBuffer, 32>,
+    readonly seed: Unknown<ArrayBuffer>,
     readonly hash: DerivedKey
   ) { }
 
@@ -113,7 +112,7 @@ export class PreHmacMasterKey {
     const input = Writable.writeToBytesOrThrow(this)
 
     const digest = await crypto.subtle.digest("SHA-512", input)
-    const output = new Uint8Array(digest) as Uint8Array<ArrayBuffer> & Lengthed<64>
+    const output = new Uint8Array(digest)
 
     return new HmacMasterKey(new Unknown(output))
   }
@@ -124,7 +123,7 @@ export class HmacMasterKey {
   readonly #class = HmacMasterKey
 
   constructor(
-    readonly bytes: Unknown<ArrayBuffer, 64>,
+    readonly bytes: Unknown<ArrayBuffer>,
   ) { }
 
 }
@@ -381,7 +380,7 @@ export namespace BlockWithIndex {
     const preimage = new BlockWithIndexPreHmacData(index, new Unknown(data))
     const prebytes = Writable.writeToBytesOrThrow(preimage)
 
-    const hmac = new Unknown(await key.signOrThrow(prebytes) as Uint8Array<ArrayBuffer> & Lengthed<32>)
+    const hmac = new Unknown(await key.signOrThrow(prebytes))
 
     const block = new Block(hmac, new Unknown(data))
 
@@ -393,7 +392,7 @@ export namespace BlockWithIndex {
 export class Block {
 
   constructor(
-    readonly hmac: Unknown<ArrayBuffer, 32>,
+    readonly hmac: Unknown<ArrayBuffer>,
     readonly data: Unknown<ArrayBuffer>
   ) { }
 
