@@ -1,7 +1,5 @@
 // deno-lint-ignore-file no-namespace
 
-/// <reference types="./lib.d.ts" />
-
 import { Buffers } from "@/libs/buffers/mod.ts"
 
 export namespace Bytes {
