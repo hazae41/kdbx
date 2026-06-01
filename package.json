@@ -20,12 +20,10 @@
     }
   },
   "devDependencies": {
-    "@hazae41/argon2-wasm": "^2.0.0",
-    "@hazae41/chacha20poly1305-wasm": "^2.0.0",
     "@hazae41/phobos": "^2.0.16",
     "@hazae41/tscousin": "^1.0.28",
-    "@types/node": "^25.6.0",
-    "deno": "^2.7.14",
+    "@types/node": "^25.9.1",
+    "deno": "^2.8.1",
     "happy-dom": "^20.9.0",
     "typescript": "^6.0.3"
   },

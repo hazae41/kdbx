@@ -1,6 +1,6 @@
 # KDBX
 
-Rust-like KeePass (KDBX 4) file format for TypeScript
+KeePass (KDBX 4) file format for the web
 
 ```bash
 npm install @hazae41/kdbx
