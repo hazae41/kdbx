@@ -1,19 +1,9 @@
 // deno-lint-ignore-file no-explicit-any no-unused-vars
 import { XML } from "@/libs/xml/mod.ts"
-import { argon2 } from "@hazae41/argon2"
-import { argon2Wasm } from "@hazae41/argon2-wasm"
 import { Readable, Writable } from "@hazae41/binary"
-import { chaCha20Poly1305 } from "@hazae41/chacha20poly1305"
-import { chaCha20Poly1305Wasm } from "@hazae41/chacha20poly1305-wasm"
 import { Window } from "happy-dom"
 import { readFileSync, writeFileSync } from "node:fs"
 import { CompositeKey, Database, PasswordKey } from "./mod.ts"
-
-await argon2Wasm.load()
-await chaCha20Poly1305Wasm.load()
-
-argon2.set(argon2.fromWasm(argon2Wasm))
-chaCha20Poly1305.set(chaCha20Poly1305.fromWasm(chaCha20Poly1305Wasm))
 
 const window = new Window({})
 

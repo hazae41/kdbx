@@ -4,6 +4,7 @@ export * from "./cipher/mod.ts"
 export * from "./compression/mod.ts"
 
 import { Bytes } from "@/libs/bytes/mod.ts"
+import { Nullable } from "@/libs/nullable/mod.ts"
 import { BytesAsUuid, StringAsUuid } from "@/libs/uuid/mod.ts"
 import { Dictionary, Entries, Value } from "@/mods/kdbx/dictionary/mod.ts"
 import { PreHmacKey } from "@/mods/kdbx/hmac/mod.ts"
@@ -12,7 +13,6 @@ import { Vector } from "@/mods/kdbx/vector/mod.ts"
 import { argon2 } from "@hazae41/argon2"
 import { Unknown, Writable } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
-import { Nullable } from "../../../../libs/nullable/mod.ts"
 import { Cipher } from "./cipher/mod.ts"
 import { Compression } from "./compression/mod.ts"
 
@@ -492,15 +492,10 @@ export namespace KdfParameters {
     deriveOrThrow(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const { Memory, Argon2Deriver } = argon2.get().getOrThrow()
+      const deriver = argon2.Deriver.create("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
+      const derived = deriver.derive(key.value.bytes, salt.bytes)
 
-      using mkey = Memory.fromOrThrow(key.value.bytes)
-      using msalt = Memory.fromOrThrow(salt.bytes)
-
-      using deriver = Argon2Deriver.createOrThrow("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
-      using derived = deriver.deriveOrThrow(mkey, msalt)
-
-      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes)))
+      return new DerivedKey(new Unknown(derived))
     }
 
     sizeOrThrow(): number {
@@ -614,15 +609,10 @@ export namespace KdfParameters {
     deriveOrThrow(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
-      const { Memory, Argon2Deriver } = argon2.get().getOrThrow()
+      const deriver = argon2.Deriver.create("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
+      const derived = deriver.derive(key.value.bytes, salt.bytes)
 
-      using mkey = Memory.fromOrThrow(key.value.bytes)
-      using msalt = Memory.fromOrThrow(salt.bytes)
-
-      using deriver = Argon2Deriver.createOrThrow("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
-      using derived = deriver.deriveOrThrow(mkey, msalt)
-
-      return new DerivedKey(new Unknown(new Uint8Array(derived.bytes)))
+      return new DerivedKey(new Unknown(derived))
     }
 
     sizeOrThrow(): number {

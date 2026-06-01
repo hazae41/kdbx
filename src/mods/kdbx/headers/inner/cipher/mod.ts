@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-namespace
 
-import { chaCha20Poly1305 } from "@hazae41/chacha20poly1305"
+import { chaCha20 } from "@hazae41/chacha20"
 import { Cursor } from "@hazae41/cursor"
 
 export type Cipher =
@@ -70,21 +70,11 @@ export namespace Cipher {
   export class ChaCha20 {
 
     constructor(
-      readonly cipher: chaCha20Poly1305.Abstract.ChaCha20Cipher,
+      readonly cipher: chaCha20.Cipher,
     ) { }
 
-    [Symbol.dispose]() {
-      this.cipher[Symbol.dispose]()
-    }
-
-    applyOrThrow(data: Uint8Array): chaCha20Poly1305.Abstract.Memory {
-      const { Memory } = chaCha20Poly1305.get().getOrThrow()
-
-      const memory = Memory.fromOrThrow(data)
-
-      this.cipher.applyOrThrow(memory)
-
-      return memory
+    feedOrThrow(data: Uint8Array) {
+      return this.cipher.feed(data)
     }
 
   }
@@ -106,15 +96,13 @@ export namespace Cipher {
     }
 
     export async function initOrThrow(seed: Uint8Array<ArrayBuffer>): Promise<ChaCha20> {
-      const { Memory, ChaCha20Cipher } = chaCha20Poly1305.get().getOrThrow()
-
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
       const cursor = new Cursor(hashed)
 
-      using key = Memory.fromOrThrow(cursor.readOrThrow(32))
-      using nonce = Memory.fromOrThrow(cursor.readOrThrow(12))
+      const key = cursor.readOrThrow(32)
+      const nonce = cursor.readOrThrow(12)
 
-      const cipher = ChaCha20Cipher.importOrThrow(key, nonce)
+      const cipher = chaCha20.Cipher.import(key, nonce)
 
       return new ChaCha20(cipher)
     }

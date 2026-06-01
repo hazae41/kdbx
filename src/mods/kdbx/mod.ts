@@ -159,9 +159,9 @@ export namespace Database {
         const $value = $list[i]
 
         const decrypted = new TextEncoder().encode($value.textContent)
-        using encrypted = cipher.applyOrThrow(decrypted)
+        const encrypted = cipher.feedOrThrow(decrypted)
 
-        $value.textContent = encrypted.bytes.toBase64()
+        $value.textContent = encrypted.toBase64()
       }
 
       const content = ContentWithBytes.computeOrThrow($file)
@@ -250,9 +250,9 @@ export namespace Database {
           const $value = $list[i]
 
           const encrypted = Uint8Array.fromBase64($value.textContent)
-          using decrypted = cipher.applyOrThrow(encrypted)
+          const decrypted = cipher.feedOrThrow(encrypted)
 
-          $value.textContent = new TextDecoder().decode(decrypted.bytes)
+          $value.textContent = new TextDecoder().decode(decrypted)
         }
 
         return new Decrypted(outer, inner)
