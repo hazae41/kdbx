@@ -12,16 +12,16 @@ export class KeePassFile {
     readonly document: Document
   ) { }
 
-  static decodeOrThrow(bytes: Uint8Array) {
+  static decode(bytes: Uint8Array) {
     return new KeePassFile(new DOMParser().parseFromString(new TextDecoder().decode(bytes), "text/xml"))
   }
 
-  encodeOrThrow() {
+  encode() {
     return new TextEncoder().encode(new XMLSerializer().serializeToString(this.document))
   }
 
-  cloneOrThrow(): KeePassFile {
-    return KeePassFile.decodeOrThrow(this.encodeOrThrow())
+  clone(): KeePassFile {
+    return KeePassFile.decode(this.encode())
   }
 
   getMetaOrThrow(): KeePassFile.Meta {
@@ -324,7 +324,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    addGroupOrThrow(name: string): KeePassFile.Group {
+    push(name: string): KeePassFile.Group {
       const $group = new KeePassFile.Group(this.element.ownerDocument.createElement("Group"))
 
       {
@@ -457,7 +457,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    addEntryOrThrow(): KeePassFile.Entry {
+    push(): KeePassFile.Entry {
       const $entry = new KeePassFile.Entry(this.element.ownerDocument.createElement("Entry"))
 
       {
@@ -483,7 +483,7 @@ export namespace KeePassFile {
       return $entry
     }
 
-    moveOrThrow(group: Group): void {
+    move(group: Group): void {
       if (this.element.parentNode === group.element)
         return
 
@@ -824,11 +824,11 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    saveOrThrow(): Entry {
-      return this.getHistoryOrNew().pushOrThrow(this)
+    save(): Entry {
+      return this.getHistoryOrNew().push(this)
     }
 
-    moveOrThrow($group: Group): void {
+    move($group: Group): void {
       if (this.element.parentNode === $group.element)
         return
 
@@ -839,7 +839,7 @@ export namespace KeePassFile {
       this.getTimesOrNew().setLocationChanged()
     }
 
-    trashOrThrow(): void {
+    trash(): void {
       const $file = new KeePassFile(this.element.ownerDocument)
       const $meta = $file.getMetaOrThrow()
       const $root = $file.getRootOrThrow()
@@ -856,10 +856,10 @@ export namespace KeePassFile {
 
       const $recycleBin = $root.getGroupByUuidOrThrow(recycleBin)
 
-      this.moveOrThrow($recycleBin)
+      this.move($recycleBin)
     }
 
-    addStringOrThrow(key: string, value: string, protect = false): String {
+    push(key: string, value: string, protect = false): String {
       const $string = new KeePassFile.String(this.element.ownerDocument.createElement("String"))
 
       {
@@ -982,11 +982,29 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
+    getKeyOrNull(): Nullable<Other.AsString> {
+      const element = this.element.querySelector(":scope > Key")
+
+      if (element == null)
+        return
+
+      return new Other.AsString(element)
+    }
+
     getValueOrThrow(): Other.AsString {
       const element = this.element.querySelector(":scope > Value")
 
       if (element == null)
         throw new Error()
+
+      return new Other.AsString(element)
+    }
+
+    getValueOrNull(): Nullable<Other.AsString> {
+      const element = this.element.querySelector(":scope > Value")
+
+      if (element == null)
+        return
 
       return new Other.AsString(element)
     }
@@ -1026,7 +1044,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    pushOrThrow($entry: Entry): Entry {
+    push($entry: Entry): Entry {
       const clone = new Entry($entry.element.cloneNode(true) as Element)
 
       const history = clone.getHistoryOrNull()
@@ -1036,12 +1054,12 @@ export namespace KeePassFile {
 
       this.element.prepend(clone.element)
 
-      this.cleanOrThrow()
+      this.clean()
 
       return clone
     }
 
-    cleanOrThrow(): void {
+    clean(): void {
       const $file = new KeePassFile(this.element.ownerDocument)
       const $meta = $file.getMetaOrThrow()
 
@@ -1173,7 +1191,7 @@ export namespace KeePassFile {
         const binary = Uint8Array.fromBase64(value)
         const cursor = new Cursor(binary)
 
-        const raw = cursor.readBigUint64OrThrow(true)
+        const raw = cursor.readBigUint64(true)
         const fix = raw - 62135596800n
 
         return new Date(Number(fix * 1000n))
@@ -1184,7 +1202,7 @@ export namespace KeePassFile {
         const raw = fix + 62135596800n
 
         const cursor = new Cursor(new Uint8Array(8))
-        cursor.writeBigUint64OrThrow(raw, true)
+        cursor.writeBigUint64(raw, true)
 
         this.element.textContent = cursor.bytes.toBase64()
       }

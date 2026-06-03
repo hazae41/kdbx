@@ -16,17 +16,17 @@ const encrypted = Readable.readFromBytes(Database.Encrypted, readFileSync("./loc
 const decrypted = await encrypted.decrypt(password)
 
 const file = decrypted.inner.content.value
-const root = file.getRoot()
-const meta = file.getMeta()
+const root = file.getRootOrThrow()
+const meta = file.getMetaOrThrow()
 
-const group0 = root.getDirectGroupByIndex(0)
-const subgroup0 = group0.getDirectGroupByIndex(0)
-const entry0 = subgroup0.getDirectEntryByIndex(0)
+const group0 = root.getDirectGroupByIndexOrThrow(0)
+const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
+const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
 
 entry0.save()
 
-entry0.getStringByKeyOrNull("Title")?.getValue().set("Cloned")
-entry0.getStringByKeyOrNull("Password")?.getKey().set("PrivateKey")
+entry0.getStringByKeyOrNull("Title")?.getValueOrThrow().set("Cloned")
+entry0.getStringByKeyOrNull("Password")?.getKeyOrThrow().set("PrivateKey")
 
 entry0.getTimesOrNew().setLastModificationTime()
 entry0.getTimesOrNew().setLastAccessTime()
