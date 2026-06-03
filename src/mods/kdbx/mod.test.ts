@@ -10,23 +10,23 @@ const window = new Window({})
 globalThis.DOMParser = window.DOMParser as any
 globalThis.XMLSerializer = window.XMLSerializer as any
 
-const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
+const password = await CompositeKey.digest(await PasswordKey.digest(new TextEncoder().encode("test")))
 
-const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
-const decrypted = await encrypted.decryptOrThrow(password)
+const encrypted = Readable.readFromBytes(Database.Encrypted, readFileSync("./local/input.kdbx"))
+const decrypted = await encrypted.decrypt(password)
 
 const file = decrypted.inner.content.value
-const root = file.getRootOrThrow()
-const meta = file.getMetaOrThrow()
+const root = file.getRoot()
+const meta = file.getMeta()
 
-const group0 = root.getDirectGroupByIndexOrThrow(0)
-const subgroup0 = group0.getDirectGroupByIndexOrThrow(0)
-const entry0 = subgroup0.getDirectEntryByIndexOrThrow(0)
+const group0 = root.getDirectGroupByIndex(0)
+const subgroup0 = group0.getDirectGroupByIndex(0)
+const entry0 = subgroup0.getDirectEntryByIndex(0)
 
-entry0.saveOrThrow()
+entry0.save()
 
-entry0.getStringByKeyOrNull("Title")?.getValueOrThrow().set("Cloned")
-entry0.getStringByKeyOrNull("Password")?.getKeyOrThrow().set("PrivateKey")
+entry0.getStringByKeyOrNull("Title")?.getValue().set("Cloned")
+entry0.getStringByKeyOrNull("Password")?.getKey().set("PrivateKey")
 
 entry0.getTimesOrNew().setLastModificationTime()
 entry0.getTimesOrNew().setLastAccessTime()
@@ -36,6 +36,6 @@ console.log(entry0.getHistoryOrNull()?.getDirectEntries().reduce(x => x + 1, 0))
 
 console.log(XML.format(decrypted.inner.content.value.document))
 
-const encrypted2 = await decrypted.encryptOrThrow(password)
+const encrypted2 = await decrypted.encrypt(password)
 
-writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))
+writeFileSync("./local/output.kdbx", Writable.writeToBytes(encrypted2))

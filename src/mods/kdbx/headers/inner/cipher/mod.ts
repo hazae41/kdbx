@@ -18,20 +18,20 @@ export namespace Cipher {
 
     export const type = 0x01
 
-    export function cloneOrThrow(): typeof ArcFourVariant {
+    export function clone(): typeof ArcFourVariant {
       return ArcFourVariant
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint32OrThrow(type, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint32(type, true)
     }
 
     // deno-lint-ignore require-await
-    export async function initOrThrow(seed: Uint8Array): Promise<never> {
+    export async function init(seed: Uint8Array): Promise<never> {
       throw new Error("ArcFourVariant is not implemented yet")
     }
 
@@ -48,20 +48,20 @@ export namespace Cipher {
 
     export const type = 0x02
 
-    export function cloneOrThrow(): typeof Salsa20 {
+    export function clone(): typeof Salsa20 {
       return Salsa20
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint32OrThrow(type, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint32(type, true)
     }
 
     // deno-lint-ignore require-await
-    export async function initOrThrow(seed: Uint8Array): Promise<never> {
+    export async function init(seed: Uint8Array): Promise<never> {
       throw new Error("Salsa20 is not implemented yet")
     }
 
@@ -73,7 +73,7 @@ export namespace Cipher {
       readonly cipher: chaCha20.Cipher,
     ) { }
 
-    feedOrThrow(data: Uint8Array) {
+    feed(data: Uint8Array) {
       return this.cipher.feed(data)
     }
 
@@ -83,24 +83,24 @@ export namespace Cipher {
 
     export const type = 0x03
 
-    export function cloneOrThrow(): typeof ChaCha20 {
+    export function clone(): typeof ChaCha20 {
       return ChaCha20
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint32OrThrow(type, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint32(type, true)
     }
 
-    export async function initOrThrow(seed: Uint8Array<ArrayBuffer>): Promise<ChaCha20> {
+    export async function init(seed: Uint8Array<ArrayBuffer>): Promise<ChaCha20> {
       const hashed = new Uint8Array(await crypto.subtle.digest("SHA-512", seed))
       const cursor = new Cursor(hashed)
 
-      const key = cursor.readOrThrow(32)
-      const nonce = cursor.readOrThrow(12)
+      const key = cursor.read(32)
+      const nonce = cursor.read(12)
 
       const cipher = chaCha20.Cipher.import(key, nonce)
 
@@ -113,8 +113,8 @@ export namespace Cipher {
 
 export namespace Cipher {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Cipher {
-    const value = cursor.readUint32OrThrow(true)
+  export function read(cursor: Cursor<ArrayBuffer>): Cipher {
+    const value = cursor.readUint32(true)
 
     if (value === Cipher.ArcFourVariant.type)
       return Cipher.ArcFourVariant

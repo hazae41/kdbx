@@ -24,21 +24,21 @@ import { Readable, Writable } from "@hazae41/binary"
 import { CompositeKey, Database, PasswordKey } from "@hazae41/kdbx"
 import { readFileSync, writeFileSync } from "node:fs"
 
-const password = await CompositeKey.digestOrThrow(await PasswordKey.digestOrThrow(new TextEncoder().encode("test")))
+const password = await CompositeKey.digest(await PasswordKey.digest(new TextEncoder().encode("test")))
 
-const encrypted = Readable.readFromBytesOrThrow(Database.Encrypted, readFileSync("./local/input.kdbx"))
-const decrypted = await encrypted.decryptOrThrow(password)
+const encrypted = Readable.readFromBytes(Database.Encrypted, readFileSync("./local/input.kdbx"))
+const decrypted = await encrypted.decrypt(password)
 
 const $file = decrypted.inner.content.value
-const $root = file.getRootOrThrow()
-const $meta = file.getMetaOrThrow()
+const $root = file.getRoot()
+const $meta = file.getMeta()
 
-const $group0 = $root.getDirectGroupByIndexOrThrow(0)
-const $entry0 = $group0.getDirectEntryByIndexOrThrow(0)
+const $group0 = $root.getDirectGroupByIndex(0)
+const $entry0 = $group0.getDirectEntryByIndex(0)
 
-$entry0.getStringByKeyOrThrow("Title").getValueOrThrow().set("Example")
+$entry0.getStringByKey("Title").getValue().set("Example")
 
-const encrypted2 = await decrypted2.encryptOrThrow(password)
+const encrypted2 = await decrypted2.encrypt(password)
 
-writeFileSync("./local/output.kdbx", Writable.writeToBytesOrThrow(encrypted2))
+writeFileSync("./local/output.kdbx", Writable.writeToBytes(encrypted2))
 ```

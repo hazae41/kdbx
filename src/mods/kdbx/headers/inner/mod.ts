@@ -16,13 +16,13 @@ export class HeadersAndContentWithBytes {
     readonly content: ContentWithBytes
   ) { }
 
-  sizeOrThrow(): number {
-    return this.headers.sizeOrThrow() + this.content.sizeOrThrow()
+  size(): number {
+    return this.headers.size() + this.content.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    this.headers.writeOrThrow(cursor)
-    this.content.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    this.headers.write(cursor)
+    this.content.write(cursor)
   }
 
 }
@@ -34,25 +34,25 @@ export class ContentWithBytes {
     readonly value: KeePassFile
   ) { }
 
-  static computeOrThrow(value: KeePassFile): ContentWithBytes {
-    return new ContentWithBytes(new Unknown(value.encodeOrThrow()), value)
+  static compute(value: KeePassFile): ContentWithBytes {
+    return new ContentWithBytes(new Unknown(value.encode()), value)
   }
 
-  sizeOrThrow(): number {
-    return this.bytes.sizeOrThrow()
+  size(): number {
+    return this.bytes.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    this.bytes.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    this.bytes.write(cursor)
   }
 
 }
 
 export namespace ContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): ContentWithBytes {
-    const bytes = new Unknown(cursor.readOrThrow(cursor.remaining))
-    const value = KeePassFile.decodeOrThrow(bytes.bytes)
+  export function read(cursor: Cursor<ArrayBuffer>): ContentWithBytes {
+    const bytes = new Unknown(cursor.read(cursor.remaining))
+    const value = KeePassFile.decode(bytes.bytes)
 
     return new ContentWithBytes(bytes, value)
   }
@@ -61,9 +61,9 @@ export namespace ContentWithBytes {
 
 export namespace HeadersAndContentWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): HeadersAndContentWithBytes {
-    const headers = Headers.readOrThrow(cursor)
-    const content = ContentWithBytes.readOrThrow(cursor)
+  export function read(cursor: Cursor<ArrayBuffer>): HeadersAndContentWithBytes {
+    const headers = Headers.read(cursor)
+    const content = ContentWithBytes.read(cursor)
 
     return new HeadersAndContentWithBytes(headers, content)
   }
@@ -98,43 +98,43 @@ export class Headers {
     return this.value.value[3]
   }
 
-  sizeOrThrow(): number {
-    return this.value.sizeOrThrow()
+  size(): number {
+    return this.value.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    this.value.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    this.value.write(cursor)
   }
 
-  cloneOrThrow(): Headers {
-    return Readable.readFromBytesOrThrow(Headers, Writable.writeToBytesOrThrow(this))
+  clone(): Headers {
+    return Readable.readFromBytes(Headers, Writable.writeToBytes(this))
   }
 
-  rotateOrThrow(): Headers {
+  rotate(): Headers {
     const { cipher, binary } = this
 
     const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
 
-    return Headers.initOrThrow({ cipher, key, binary })
+    return Headers.init({ cipher, key, binary })
   }
 
-  async getCipherOrThrow(): Promise<Cipher.ChaCha20> {
-    return await this.cipher.initOrThrow(this.key.bytes)
+  async getCipher(): Promise<Cipher.ChaCha20> {
+    return await this.cipher.init(this.key.bytes)
   }
 
 }
 
 export namespace Headers {
 
-  export function createOrThrow(cipher: Cipher) {
-    const binary = new Array<Unknown<ArrayBuffer, number>>()
+  export function create(cipher: Cipher) {
+    const binary = new Array<Unknown<ArrayBuffer>>()
 
     const key = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
 
-    return Headers.initOrThrow({ cipher, key, binary })
+    return Headers.init({ cipher, key, binary })
   }
 
-  export function initOrThrow(init: HeadersInit): Headers {
+  export function init(init: HeadersInit): Headers {
     const { cipher, key, binary } = init
 
     const indexed = {
@@ -143,11 +143,11 @@ export namespace Headers {
       3: binary
     } as const
 
-    return new Headers(Vector.initOrThrow(indexed))
+    return new Headers(Vector.init(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Headers {
-    const vector = Vector.readOrThrow(cursor)
+  export function read(cursor: Cursor<ArrayBuffer>): Headers {
+    const vector = Vector.read(cursor)
 
     if (vector.value[1].length !== 1)
       throw new Error()
@@ -155,7 +155,7 @@ export namespace Headers {
       throw new Error()
 
     const indexed = {
-      1: [vector.value[1][0].readIntoOrThrow(Cipher)],
+      1: [vector.value[1][0].into(Cipher)],
       2: [vector.value[2][0]],
       3: vector.value[3]
     } as const

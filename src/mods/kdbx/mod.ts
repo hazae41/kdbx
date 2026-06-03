@@ -19,7 +19,7 @@ export class PasswordKey {
     readonly value: Unknown<ArrayBuffer>,
   ) { }
 
-  static async digestOrThrow(password: Uint8Array<ArrayBuffer>): Promise<PasswordKey> {
+  static async digest(password: Uint8Array<ArrayBuffer>): Promise<PasswordKey> {
     const array = await crypto.subtle.digest("SHA-256", password)
     const bytes = new Uint8Array(array)
 
@@ -35,7 +35,7 @@ export class CompositeKey {
     readonly value: Unknown<ArrayBuffer>,
   ) { }
 
-  static async digestOrThrow(password: PasswordKey): Promise<CompositeKey> {
+  static async digest(password: PasswordKey): Promise<CompositeKey> {
     const array = await crypto.subtle.digest("SHA-256", password.value.bytes)
     const bytes = new Uint8Array(array)
 
@@ -61,17 +61,17 @@ export class PreMasterKey {
     readonly hash: DerivedKey
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 32 + 32
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeOrThrow(this.seed.bytes)
-    cursor.writeOrThrow(this.hash.value.bytes)
+  write(cursor: Cursor<ArrayBuffer>) {
+    cursor.write(this.seed.bytes)
+    cursor.write(this.hash.value.bytes)
   }
 
-  async digestOrThrow(): Promise<MasterKey> {
-    const input = Writable.writeToBytesOrThrow(this)
+  async digest(): Promise<MasterKey> {
+    const input = Writable.writeToBytes(this)
 
     const digest = await crypto.subtle.digest("SHA-256", input)
     const output = new Uint8Array(digest)
@@ -98,18 +98,18 @@ export class PreHmacMasterKey {
     readonly hash: DerivedKey
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 32 + 32 + 1
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeOrThrow(this.seed.bytes)
-    cursor.writeOrThrow(this.hash.value.bytes)
-    cursor.writeUint8OrThrow(1)
+  write(cursor: Cursor<ArrayBuffer>) {
+    cursor.write(this.seed.bytes)
+    cursor.write(this.hash.value.bytes)
+    cursor.writeUint8(1)
   }
 
-  async digestOrThrow(): Promise<HmacMasterKey> {
-    const input = Writable.writeToBytesOrThrow(this)
+  async digest(): Promise<HmacMasterKey> {
+    const input = Writable.writeToBytes(this)
 
     const digest = await crypto.subtle.digest("SHA-512", input)
     const output = new Uint8Array(digest)
@@ -147,40 +147,40 @@ export namespace Database {
       readonly inner: Inner.HeadersAndContentWithBytes
     ) { }
 
-    async encryptOrThrow(composite: CompositeKey): Promise<Encrypted> {
-      const headers = this.inner.headers.rotateOrThrow()
+    async encrypt(composite: CompositeKey): Promise<Encrypted> {
+      const headers = this.inner.headers.rotate()
 
-      const $file = this.inner.content.value.cloneOrThrow()
+      const $file = this.inner.content.value.clone()
       const $list = $file.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
-      const cipher = await headers.getCipherOrThrow()
+      const cipher = await headers.getCipher()
 
       for (let i = 0; i < $list.length; i++) {
         const $value = $list[i]
 
         const decrypted = new TextEncoder().encode($value.textContent)
-        const encrypted = cipher.feedOrThrow(decrypted)
+        const encrypted = cipher.feed(decrypted)
 
         $value.textContent = encrypted.toBase64()
       }
 
-      const content = ContentWithBytes.computeOrThrow($file)
+      const content = ContentWithBytes.compute($file)
 
       const inner = new Inner.HeadersAndContentWithBytes(headers, content)
-      const outer = await this.outer.rotateOrThrow(composite)
+      const outer = await this.outer.rotate(composite)
 
       {
         const { cipher, iv, compression } = outer.data.data.value.headers
 
-        const degzipped = Writable.writeToBytesOrThrow(inner)
+        const degzipped = Writable.writeToBytes(inner)
 
         const engzipped = compression === Compression.Gzip ? new Uint8Array(await gzip(degzipped)) : degzipped
-        const encrypted = await cipher.encryptOrThrow(outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
+        const encrypted = await cipher.encrypt(outer.keys.encrypter.value.bytes, iv.bytes, engzipped)
 
         const blocks = new Array<BlockWithIndex>()
 
         const cursor = new Cursor(encrypted)
-        const splits = Cursors.splitOrThrow(cursor, 1048576)
+        const splits = Cursors.split(cursor, 1048576)
 
         let index = 0n
 
@@ -188,12 +188,12 @@ export namespace Database {
           if (x.done === true)
             break
 
-          blocks.push(await BlockWithIndex.fromOrThrow(outer.keys, index, x.value))
+          blocks.push(await BlockWithIndex.from(outer.keys, index, x.value))
 
           continue
         }
 
-        blocks.push(await BlockWithIndex.fromOrThrow(outer.keys, index, new Uint8Array(0)))
+        blocks.push(await BlockWithIndex.from(outer.keys, index, new Uint8Array(0)))
 
         return new Encrypted(outer.data, new Blocks(blocks))
       }
@@ -208,41 +208,41 @@ export namespace Database {
       readonly inner: Blocks
     ) { }
 
-    sizeOrThrow(): number {
-      return this.outer.sizeOrThrow() + this.inner.sizeOrThrow()
+    size(): number {
+      return this.outer.size() + this.inner.size()
     }
 
-    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      this.outer.writeOrThrow(cursor)
-      this.inner.writeOrThrow(cursor)
+    write(cursor: Cursor<ArrayBuffer>) {
+      this.outer.write(cursor)
+      this.inner.write(cursor)
     }
 
-    async decryptOrThrow(composite: CompositeKey): Promise<Decrypted> {
+    async decrypt(composite: CompositeKey): Promise<Decrypted> {
       const { cipher, iv, compression } = this.outer.data.value.headers
 
-      const keys = await this.outer.deriveOrThrow(composite)
+      const keys = await this.outer.derive(composite)
 
-      await this.outer.verifyOrThrow(keys)
+      await this.outer.verify(keys)
 
       const length = this.inner.blocks.reduce((a, b) => a + b.block.data.bytes.length, 0)
       const cursor = new Cursor(new Uint8Array(length))
 
       for (const block of this.inner.blocks) {
-        await block.verifyOrThrow(keys)
+        await block.verify(keys)
 
-        cursor.writeOrThrow(block.block.data.bytes)
+        cursor.write(block.block.data.bytes)
 
         continue
       }
 
-      const decrypted = await cipher.decryptOrThrow(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
+      const decrypted = await cipher.decrypt(keys.encrypter.value.bytes, iv.bytes, cursor.bytes)
       const degzipped = compression === Compression.Gzip ? await gunzip(decrypted) : decrypted
 
-      const inner = Readable.readFromBytesOrThrow(Inner.HeadersAndContentWithBytes, degzipped)
+      const inner = Readable.readFromBytes(Inner.HeadersAndContentWithBytes, degzipped)
       const outer = new Outer.MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(this.outer, keys)
 
       {
-        const cipher = await inner.headers.getCipherOrThrow()
+        const cipher = await inner.headers.getCipher()
 
         const $list = inner.content.value.document.querySelectorAll<HTMLElement>("Value[Protected='True']")
 
@@ -250,7 +250,7 @@ export namespace Database {
           const $value = $list[i]
 
           const encrypted = Uint8Array.fromBase64($value.textContent)
-          const decrypted = cipher.feedOrThrow(encrypted)
+          const decrypted = cipher.feed(encrypted)
 
           $value.textContent = new TextDecoder().decode(decrypted)
         }
@@ -263,9 +263,9 @@ export namespace Database {
 
   export namespace Encrypted {
 
-    export function readOrThrow(cursor: Cursor<ArrayBuffer>): Encrypted {
-      const head = MagicAndVersionAndHeadersWithBytesWithHashAndHmac.readOrThrow(cursor)
-      const body = Blocks.readOrThrow(cursor)
+    export function read(cursor: Cursor<ArrayBuffer>): Encrypted {
+      const head = MagicAndVersionAndHeadersWithBytesWithHashAndHmac.read(cursor)
+      const body = Blocks.read(cursor)
 
       return new Encrypted(head, body)
     }
@@ -280,29 +280,29 @@ export class Blocks {
     readonly blocks: BlockWithIndex[]
   ) { }
 
-  sizeOrThrow(): number {
-    return this.blocks.reduce((a, b) => a + b.sizeOrThrow(), 0)
+  size(): number {
+    return this.blocks.reduce((a, b) => a + b.size(), 0)
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
+  write(cursor: Cursor<ArrayBuffer>) {
     for (const block of this.blocks)
-      block.writeOrThrow(cursor)
+      block.write(cursor)
     return
   }
 
-  cloneOrThrow(): Blocks {
-    return new Blocks(this.blocks.map(block => block.cloneOrThrow()))
+  clone(): Blocks {
+    return new Blocks(this.blocks.map(block => block.clone()))
   }
 
 }
 
 export namespace Blocks {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Blocks {
+  export function read(cursor: Cursor<ArrayBuffer>): Blocks {
     const blocks = new Array<BlockWithIndex>()
 
     for (let index = 0n; true; index++) {
-      const block = Block.readOrThrow(cursor)
+      const block = Block.read(cursor)
 
       blocks.push(new BlockWithIndex(index, block))
 
@@ -324,14 +324,14 @@ export class BlockWithIndexPreHmacData {
     readonly block: Unknown<ArrayBuffer>,
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 8 + 4 + this.block.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeBigUint64OrThrow(this.index, true)
-    cursor.writeUint32OrThrow(this.block.bytes.length, true)
-    cursor.writeOrThrow(this.block.bytes)
+  write(cursor: Cursor<ArrayBuffer>) {
+    cursor.writeBigUint64(this.index, true)
+    cursor.writeUint32(this.block.bytes.length, true)
+    cursor.write(this.block.bytes)
   }
 
 }
@@ -343,44 +343,44 @@ export class BlockWithIndex {
     readonly block: Block
   ) { }
 
-  sizeOrThrow(): number {
-    return this.block.sizeOrThrow()
+  size(): number {
+    return this.block.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    this.block.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    this.block.write(cursor)
   }
 
-  cloneOrThrow(): BlockWithIndex {
-    return new BlockWithIndex(this.index, this.block.cloneOrThrow())
+  clone(): BlockWithIndex {
+    return new BlockWithIndex(this.index, this.block.clone())
   }
 
-  async verifyOrThrow(keys: MasterKeys) {
+  async verify(keys: MasterKeys) {
     const { index } = this
 
     const major = keys.authifier.bytes
 
-    const key = await new PreHmacKey(index, major).digestOrThrow()
+    const key = await new PreHmacKey(index, major).digest()
 
     const preimage = new BlockWithIndexPreHmacData(this.index, this.block.data)
-    const prebytes = Writable.writeToBytesOrThrow(preimage)
+    const prebytes = Writable.writeToBytes(preimage)
 
-    await key.verifyOrThrow(prebytes, this.block.hmac.bytes)
+    await key.verify(prebytes, this.block.hmac.bytes)
   }
 
 }
 
 export namespace BlockWithIndex {
 
-  export async function fromOrThrow(keys: MasterKeys, index: bigint, data: Uint8Array<ArrayBuffer>): Promise<BlockWithIndex> {
+  export async function from(keys: MasterKeys, index: bigint, data: Uint8Array<ArrayBuffer>): Promise<BlockWithIndex> {
     const major = keys.authifier.bytes
 
-    const key = await new PreHmacKey(index, major).digestOrThrow()
+    const key = await new PreHmacKey(index, major).digest()
 
     const preimage = new BlockWithIndexPreHmacData(index, new Unknown(data))
-    const prebytes = Writable.writeToBytesOrThrow(preimage)
+    const prebytes = Writable.writeToBytes(preimage)
 
-    const hmac = new Unknown(await key.signOrThrow(prebytes))
+    const hmac = new Unknown(await key.sign(prebytes))
 
     const block = new Block(hmac, new Unknown(data))
 
@@ -396,28 +396,28 @@ export class Block {
     readonly data: Unknown<ArrayBuffer>
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 32 + 4 + this.data.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeOrThrow(this.hmac.bytes)
-    cursor.writeUint32OrThrow(this.data.bytes.length, true)
-    cursor.writeOrThrow(this.data.bytes)
+  write(cursor: Cursor<ArrayBuffer>) {
+    cursor.write(this.hmac.bytes)
+    cursor.writeUint32(this.data.bytes.length, true)
+    cursor.write(this.data.bytes)
   }
 
-  cloneOrThrow(): Block {
-    return new Block(this.hmac.cloneOrThrow(), this.data.cloneOrThrow())
+  clone(): Block {
+    return new Block(this.hmac.clone(), this.data.clone())
   }
 
 }
 
 export namespace Block {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Block {
-    const hmac = new Unknown(cursor.readOrThrow(32))
-    const size = cursor.readUint32OrThrow(true)
-    const data = new Unknown(cursor.readOrThrow(size))
+  export function read(cursor: Cursor<ArrayBuffer>): Block {
+    const hmac = new Unknown(cursor.read(32))
+    const size = cursor.readUint32(true)
+    const data = new Unknown(cursor.read(size))
 
     return new Block(hmac, data)
   }

@@ -13,23 +13,23 @@ export class Vector<T extends { [index: number]: Optional<readonly Struct[]> }> 
     readonly value: T
   ) { }
 
-  sizeOrThrow(): number {
-    return this.bytes.sizeOrThrow();
+  size(): number {
+    return this.bytes.size();
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    this.bytes.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    this.bytes.write(cursor)
   }
 
-  cloneOrThrow(): Vector<T> {
-    return Readable.readFromBytesOrThrow(Vector, Writable.writeToBytesOrThrow(this)) as unknown as Vector<T>
+  clone(): Vector<T> {
+    return Readable.readFromBytes(Vector, Writable.writeToBytes(this)) as unknown as Vector<T>
   }
 
 }
 
 export namespace Vector {
 
-  export function initOrThrow<T extends { [index: number]: Optional<readonly Struct[]> }>(indexed: T): Vector<T> {
+  export function init<T extends { [index: number]: Optional<readonly Struct[]> }>(indexed: T): Vector<T> {
     const entries = new Array<TLV>();
 
     for (const key of Object.keys(indexed)) {
@@ -45,27 +45,27 @@ export namespace Vector {
       continue
     }
 
-    const sized = entries.reduce((x, r) => x + r.sizeOrThrow(), 0) + TLV.Empty.sizeOrThrow()
+    const sized = entries.reduce((x, r) => x + r.size(), 0) + TLV.Empty.size()
     const bytes = new Unknown(new Uint8Array(sized))
 
     const cursor = new Cursor(bytes.bytes)
 
     for (const entry of entries)
-      entry.writeOrThrow(cursor)
+      entry.write(cursor)
 
-    TLV.Empty.writeOrThrow(cursor)
+    TLV.Empty.write(cursor)
 
     return new Vector(bytes, indexed);
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Vector<{ [index: number]: Unknown<ArrayBuffer>[] }> {
+  export function read(cursor: Cursor<ArrayBuffer>): Vector<{ [index: number]: Unknown<ArrayBuffer>[] }> {
     const start = cursor.offset
 
     const entries = new Array<TLV>();
     const indexed: { [index: number]: Unknown<ArrayBuffer>[] } = {};
 
     while (true) {
-      const tlv = TLV.readOrThrow(cursor)
+      const tlv = TLV.read(cursor)
 
       if (tlv.type === 0)
         break

@@ -4,12 +4,12 @@ import { Cursor } from "@hazae41/cursor";
 
 export namespace Cursors {
 
-  export function* splitOrThrow<T extends ArrayBufferLike = ArrayBufferLike>(cursor: Cursor<T>, length: number): Generator<Uint8Array<T>, void> {
+  export function* split<T extends ArrayBufferLike = ArrayBufferLike>(cursor: Cursor<T>, length: number): Generator<Uint8Array<T>, void> {
     while (cursor.remaining >= length)
-      yield cursor.readOrThrow(length)
+      yield cursor.read(length)
 
     if (cursor.remaining)
-      yield cursor.readOrThrow(cursor.remaining)
+      yield cursor.read(cursor.remaining)
 
     return
   }

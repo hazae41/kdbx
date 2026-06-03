@@ -12,16 +12,16 @@ export namespace Compression {
 
     export const type = 0x00
 
-    export function cloneOrThrow(): typeof None {
+    export function clone(): typeof None {
       return None
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint32OrThrow(type, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint32(type, true)
     }
 
   }
@@ -30,16 +30,16 @@ export namespace Compression {
 
     export const type = 0x01
 
-    export function cloneOrThrow(): typeof Gzip {
+    export function clone(): typeof Gzip {
       return Gzip
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint32OrThrow(type, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint32(type, true)
     }
 
   }
@@ -48,8 +48,8 @@ export namespace Compression {
 
 export namespace Compression {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Compression {
-    const value = cursor.readUint32OrThrow(true)
+  export function read(cursor: Cursor<ArrayBuffer>): Compression {
+    const value = cursor.readUint32(true)
 
     if (value === Compression.None.type)
       return Compression.None

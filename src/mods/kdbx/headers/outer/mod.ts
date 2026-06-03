@@ -23,13 +23,13 @@ export class Version {
     readonly minor: number,
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 2 + 2
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    cursor.writeUint16OrThrow(this.minor, true)
-    cursor.writeUint16OrThrow(this.major, true)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    cursor.writeUint16(this.minor, true)
+    cursor.writeUint16(this.major, true)
   }
 
 }
@@ -41,19 +41,19 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys {
     readonly keys: MasterKeys
   ) { }
 
-  sizeOrThrow(): number {
-    return this.data.sizeOrThrow()
+  size(): number {
+    return this.data.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    this.data.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    this.data.write(cursor)
   }
 
-  async rotateOrThrow(composite: CompositeKey): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys> {
-    const data = this.data.data.rotateOrThrow()
-    const keys = await data.deriveOrThrow(composite)
+  async rotate(composite: CompositeKey): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys> {
+    const data = this.data.data.rotate()
+    const keys = await data.derive(composite)
 
-    const hash = await MagicAndVersionAndHeadersWithBytesWithHashAndHmac.computeOrThrow(data, keys)
+    const hash = await MagicAndVersionAndHeadersWithBytesWithHashAndHmac.compute(data, keys)
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmacWithKeys(hash, keys)
   }
@@ -69,19 +69,19 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     readonly hmac: Unknown<ArrayBuffer>
   ) { }
 
-  static async computeOrThrow(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmac> {
+  static async compute(data: MagicAndVersionAndHeadersWithBytes, keys: MasterKeys): Promise<MagicAndVersionAndHeadersWithBytesWithHashAndHmac> {
     const index = 0xFFFFFFFFFFFFFFFFn
     const major = keys.authifier.bytes
 
-    const key = await new PreHmacKey(index, major).digestOrThrow()
+    const key = await new PreHmacKey(index, major).digest()
 
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", data.bytes.bytes))
-    const hmac = new Uint8Array(await key.signOrThrow(data.bytes.bytes))
+    const hmac = new Uint8Array(await key.sign(data.bytes.bytes))
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, new Unknown(hash), new Unknown(hmac))
   }
 
-  async verifyOrThrow(keys: MasterKeys): Promise<void> {
+  async verify(keys: MasterKeys): Promise<void> {
     const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", this.data.bytes.bytes))
 
     if (!Bytes.equals(hash, this.hash.bytes))
@@ -90,34 +90,34 @@ export class MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
     const index = 0xFFFFFFFFFFFFFFFFn
     const major = keys.authifier.bytes
 
-    const key = await new PreHmacKey(index, major).digestOrThrow()
+    const key = await new PreHmacKey(index, major).digest()
 
-    await key.verifyOrThrow(this.data.bytes.bytes, this.hmac.bytes)
+    await key.verify(this.data.bytes.bytes, this.hmac.bytes)
   }
 
-  sizeOrThrow(): number {
-    return this.data.sizeOrThrow() + 32 + 32
+  size(): number {
+    return this.data.size() + 32 + 32
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    this.data.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    this.data.write(cursor)
 
-    cursor.writeOrThrow(this.hash.bytes)
-    cursor.writeOrThrow(this.hmac.bytes)
+    cursor.write(this.hash.bytes)
+    cursor.write(this.hmac.bytes)
   }
 
-  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
-    return await this.data.deriveOrThrow(composite)
+  async derive(composite: CompositeKey): Promise<MasterKeys> {
+    return await this.data.derive(composite)
   }
 
 }
 
 export namespace MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
-    const data = MagicAndVersionAndHeadersWithBytes.readOrThrow(cursor)
-    const hash = new Unknown(cursor.readOrThrow(32))
-    const hmac = new Unknown(cursor.readOrThrow(32))
+  export function read(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytesWithHashAndHmac {
+    const data = MagicAndVersionAndHeadersWithBytes.read(cursor)
+    const hash = new Unknown(cursor.read(32))
+    const hmac = new Unknown(cursor.read(32))
 
     return new MagicAndVersionAndHeadersWithBytesWithHashAndHmac(data, hash, hmac)
   }
@@ -131,35 +131,35 @@ export class MagicAndVersionAndHeadersWithBytes {
     readonly bytes: Unknown<ArrayBuffer>,
   ) { }
 
-  static computeOrThrow(value: MagicAndVersionAndHeaders): MagicAndVersionAndHeadersWithBytes {
-    const bytes = new Unknown(Writable.writeToBytesOrThrow(value))
+  static compute(value: MagicAndVersionAndHeaders): MagicAndVersionAndHeadersWithBytes {
+    const bytes = new Unknown(Writable.writeToBytes(value))
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
   }
 
-  rotateOrThrow(): MagicAndVersionAndHeadersWithBytes {
-    return MagicAndVersionAndHeadersWithBytes.computeOrThrow(this.value.rotateOrThrow())
+  rotate(): MagicAndVersionAndHeadersWithBytes {
+    return MagicAndVersionAndHeadersWithBytes.compute(this.value.rotate())
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     return this.bytes.bytes.length
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    cursor.writeOrThrow(this.bytes.bytes)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    cursor.write(this.bytes.bytes)
   }
 
-  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
-    return await this.value.deriveOrThrow(composite)
+  async derive(composite: CompositeKey): Promise<MasterKeys> {
+    return await this.value.derive(composite)
   }
 
 }
 
 export namespace MagicAndVersionAndHeadersWithBytes {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytes {
+  export function read(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeadersWithBytes {
     const start = cursor.offset
 
-    const value = MagicAndVersionAndHeaders.readOrThrow(cursor)
+    const value = MagicAndVersionAndHeaders.read(cursor)
     const bytes = new Unknown(cursor.bytes.subarray(start, cursor.offset))
 
     return new MagicAndVersionAndHeadersWithBytes(value, bytes)
@@ -174,54 +174,54 @@ export class MagicAndVersionAndHeaders {
     readonly headers: Headers
   ) { }
 
-  rotateOrThrow(): MagicAndVersionAndHeaders {
+  rotate(): MagicAndVersionAndHeaders {
     const { version } = this
 
-    const headers = this.headers.rotateOrThrow()
+    const headers = this.headers.rotate()
 
     return new MagicAndVersionAndHeaders(version, headers)
   }
 
-  sizeOrThrow(): number {
-    return 4 + 4 + this.version.sizeOrThrow() + this.headers.sizeOrThrow()
+  size(): number {
+    return 4 + 4 + this.version.size() + this.headers.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    cursor.writeUint32OrThrow(0x9AA2D903, true)
-    cursor.writeUint32OrThrow(0xB54BFB67, true)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    cursor.writeUint32(0x9AA2D903, true)
+    cursor.writeUint32(0xB54BFB67, true)
 
-    this.version.writeOrThrow(cursor)
-    this.headers.writeOrThrow(cursor)
+    this.version.write(cursor)
+    this.headers.write(cursor)
   }
 
-  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
-    return await this.headers.deriveOrThrow(composite)
+  async derive(composite: CompositeKey): Promise<MasterKeys> {
+    return await this.headers.derive(composite)
   }
 
 }
 
 export namespace MagicAndVersionAndHeaders {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeaders {
-    const alpha = cursor.readUint32OrThrow(true)
+  export function read(cursor: Cursor<ArrayBuffer>): MagicAndVersionAndHeaders {
+    const alpha = cursor.readUint32(true)
 
     if (alpha !== 0x9AA2D903)
       throw new Error()
 
-    const beta = cursor.readUint32OrThrow(true)
+    const beta = cursor.readUint32(true)
 
     if (beta !== 0xB54BFB67)
       throw new Error()
 
-    const minor = cursor.readUint16OrThrow(true)
-    const major = cursor.readUint16OrThrow(true)
+    const minor = cursor.readUint16(true)
+    const major = cursor.readUint16(true)
 
     const version = new Version(major, minor)
 
     if (major !== 4)
       throw new Error()
 
-    const headers = Headers.readOrThrow(cursor)
+    const headers = Headers.read(cursor)
 
     return new MagicAndVersionAndHeaders(version, headers)
   }
@@ -267,31 +267,31 @@ export class Headers {
     return this.value.value[12]?.[0]
   }
 
-  rotateOrThrow(): Headers {
+  rotate(): Headers {
     const { cipher, compression, custom } = this
 
     const seed = new Unknown(crypto.getRandomValues(new Uint8Array(32)))
     const iv = new Unknown(crypto.getRandomValues(new Uint8Array(cipher.IV.length)))
-    const kdf = this.kdf.rotateOrThrow()
+    const kdf = this.kdf.rotate()
 
-    return Headers.initOrThrow({ cipher, compression, seed, iv, kdf, custom })
+    return Headers.init({ cipher, compression, seed, iv, kdf, custom })
   }
 
-  sizeOrThrow(): number {
-    return this.value.sizeOrThrow()
+  size(): number {
+    return this.value.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>): void {
-    this.value.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>): void {
+    this.value.write(cursor)
   }
 
-  async deriveOrThrow(composite: CompositeKey): Promise<MasterKeys> {
+  async derive(composite: CompositeKey): Promise<MasterKeys> {
     const { seed } = this
 
-    const derived = this.kdf.deriveOrThrow(composite)
+    const derived = this.kdf.derive(composite)
 
-    const encrypter = await new PreMasterKey(seed, derived).digestOrThrow()
-    const authifier = await new PreHmacMasterKey(seed, derived).digestOrThrow()
+    const encrypter = await new PreMasterKey(seed, derived).digest()
+    const authifier = await new PreHmacMasterKey(seed, derived).digest()
 
     return new MasterKeys(encrypter, authifier)
   }
@@ -300,7 +300,7 @@ export class Headers {
 
 export namespace Headers {
 
-  export function initOrThrow(init: HeadersInit): Headers {
+  export function init(init: HeadersInit): Headers {
     const { cipher, compression, seed, iv, kdf, custom } = init
 
     if (iv.bytes.length !== cipher.IV.length)
@@ -315,11 +315,11 @@ export namespace Headers {
       12: custom != null ? [custom] as const : undefined
     } as const
 
-    return new Headers(Vector.initOrThrow(indexed))
+    return new Headers(Vector.init(indexed))
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Headers {
-    const vector = Vector.readOrThrow(cursor)
+  export function read(cursor: Cursor<ArrayBuffer>): Headers {
+    const vector = Vector.read(cursor)
 
     if (vector.value[2].length !== 1)
       throw new Error()
@@ -337,12 +337,12 @@ export namespace Headers {
       throw new Error()
 
     const indexed = {
-      2: [vector.value[2][0].readIntoOrThrow(Cipher)],
-      3: [vector.value[3][0].readIntoOrThrow(Compression)],
-      4: [vector.value[4][0] as Unknown<ArrayBuffer, 32>],
+      2: [vector.value[2][0].into(Cipher)],
+      3: [vector.value[3][0].into(Compression)],
+      4: [vector.value[4][0]],
       7: [vector.value[7][0]],
-      11: [vector.value[11][0].readIntoOrThrow(KdfParameters)],
-      12: vector.value[12] != null ? [vector.value[12][0].readIntoOrThrow(Dictionary)] as const : undefined
+      11: [vector.value[11][0].into(KdfParameters)],
+      12: vector.value[12] != null ? [vector.value[12][0].into(Dictionary)] as const : undefined
     } as const
 
     return new Headers(new Vector(vector.bytes, indexed))
@@ -352,11 +352,11 @@ export namespace Headers {
 export class Seed {
 
   constructor(
-    readonly bytes: Unknown<ArrayBuffer, 32>
+    readonly bytes: Unknown<ArrayBuffer>
   ) { }
 
-  static readOrThrow(cursor: Cursor<ArrayBuffer>): Seed {
-    return new Seed(new Unknown(cursor.readOrThrow(32)))
+  static read(cursor: Cursor<ArrayBuffer>): Seed {
+    return new Seed(new Unknown(cursor.read(32)))
   }
 
 }
@@ -382,7 +382,7 @@ export namespace KdfParameters {
       return this.value.entries.value["R"].value
     }
 
-    rotateOrThrow(): AesKdf {
+    rotate(): AesKdf {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -390,25 +390,25 @@ export namespace KdfParameters {
       const R = this.value.entries.value["R"]
       const S = new Value.Bytes(new Unknown(crypto.getRandomValues(new Uint8Array(32))))
 
-      const value = Dictionary.initOrThrow(version, { $UUID, R, S })
+      const value = Dictionary.init(version, { $UUID, R, S })
 
       return new AesKdf(value)
     }
 
-    deriveOrThrow(key: CompositeKey): never {
+    derive(key: CompositeKey): never {
       throw new Error()
     }
 
-    sizeOrThrow(): number {
-      return this.value.sizeOrThrow()
+    size(): number {
+      return this.value.size()
     }
 
-    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      this.value.writeOrThrow(cursor)
+    write(cursor: Cursor<ArrayBuffer>) {
+      this.value.write(cursor)
     }
 
-    cloneOrThrow(): AesKdf {
-      return new AesKdf(this.value.cloneOrThrow())
+    clone(): AesKdf {
+      return new AesKdf(this.value.clone())
     }
 
   }
@@ -417,7 +417,7 @@ export namespace KdfParameters {
 
     export const $UUID = "c9d9f39a-628a-4460-bf74-0d08c18a4fea"
 
-    export function parseOrThrow(dictionary: Dictionary): AesKdf {
+    export function parse(dictionary: Dictionary): AesKdf {
       const { version, entries } = dictionary
 
       if (entries.value["$UUID"] instanceof Value.Bytes === false)
@@ -473,7 +473,7 @@ export namespace KdfParameters {
       return this.value.entries.value["V"].value
     }
 
-    rotateOrThrow(): Argon2d {
+    rotate(): Argon2d {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -484,12 +484,12 @@ export namespace KdfParameters {
       const I = this.value.entries.value.I
       const V = this.value.entries.value.V
 
-      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
+      const value = Dictionary.init(version, { $UUID, S, P, M, I, V })
 
       return new Argon2d(value)
     }
 
-    deriveOrThrow(key: CompositeKey): DerivedKey {
+    derive(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
       const deriver = argon2.Deriver.create("argon2d", version, Number(memory) / 1024, Number(iterations), parallelism)
@@ -498,16 +498,16 @@ export namespace KdfParameters {
       return new DerivedKey(new Unknown(derived))
     }
 
-    sizeOrThrow(): number {
-      return this.value.sizeOrThrow()
+    size(): number {
+      return this.value.size()
     }
 
-    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      this.value.writeOrThrow(cursor)
+    write(cursor: Cursor<ArrayBuffer>) {
+      this.value.write(cursor)
     }
 
-    cloneOrThrow(): Argon2d {
-      return new Argon2d(this.value.cloneOrThrow())
+    clone(): Argon2d {
+      return new Argon2d(this.value.clone())
     }
 
   }
@@ -516,7 +516,7 @@ export namespace KdfParameters {
 
     export const $UUID = "ef636ddf-8c29-444b-91f7-a9a403e30a0c"
 
-    export function createOrThrow() {
+    export function create() {
       const version = new Dictionary.Version(0, 1)
 
       const $UUID = new Value.Bytes(new Unknown(BytesAsUuid.from(Argon2d.$UUID)))
@@ -527,12 +527,12 @@ export namespace KdfParameters {
       const I = new Value.UInt64(12n)
       const V = new Value.UInt32(0x13)
 
-      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
+      const value = Dictionary.init(version, { $UUID, S, P, M, I, V })
 
       return new Argon2d(value)
     }
 
-    export function parseOrThrow(dictionary: Dictionary): Argon2d {
+    export function parse(dictionary: Dictionary): Argon2d {
       const { version, entries } = dictionary
 
       if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
@@ -590,7 +590,7 @@ export namespace KdfParameters {
       return this.value.entries.value["V"].value
     }
 
-    rotateOrThrow(): Argon2d {
+    rotate(): Argon2d {
       const { version } = this.value
 
       const $UUID = this.value.entries.value["$UUID"]
@@ -601,12 +601,12 @@ export namespace KdfParameters {
       const I = this.value.entries.value.I
       const V = this.value.entries.value.V
 
-      const value = Dictionary.initOrThrow(version, { $UUID, S, P, M, I, V })
+      const value = Dictionary.init(version, { $UUID, S, P, M, I, V })
 
       return new Argon2d(value)
     }
 
-    deriveOrThrow(key: CompositeKey): DerivedKey {
+    derive(key: CompositeKey): DerivedKey {
       const { version, iterations, parallelism, memory, salt } = this
 
       const deriver = argon2.Deriver.create("argon2id", version, Number(memory) / 1024, Number(iterations), parallelism)
@@ -615,16 +615,16 @@ export namespace KdfParameters {
       return new DerivedKey(new Unknown(derived))
     }
 
-    sizeOrThrow(): number {
-      return this.value.sizeOrThrow()
+    size(): number {
+      return this.value.size()
     }
 
-    writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      this.value.writeOrThrow(cursor)
+    write(cursor: Cursor<ArrayBuffer>) {
+      this.value.write(cursor)
     }
 
-    cloneOrThrow(): Argon2id {
-      return new Argon2id(this.value.cloneOrThrow())
+    clone(): Argon2id {
+      return new Argon2id(this.value.clone())
     }
 
   }
@@ -633,7 +633,7 @@ export namespace KdfParameters {
 
     export const $UUID = "9e298b19-56db-4773-b23d-fc3ec6f0a1e6"
 
-    export function parseOrThrow(dictionary: Dictionary): Argon2id {
+    export function parse(dictionary: Dictionary): Argon2id {
       const { version, entries } = dictionary
 
       if (entries.value["$UUID"] instanceof Value.Bytes === false)
@@ -665,8 +665,8 @@ export namespace KdfParameters {
 
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): KdfParameters {
-    const dictionary = Dictionary.readOrThrow(cursor)
+  export function read(cursor: Cursor<ArrayBuffer>): KdfParameters {
+    const dictionary = Dictionary.read(cursor)
 
     if (dictionary.entries.value["$UUID"] instanceof Value.Bytes === false)
       throw new Error()
@@ -677,13 +677,13 @@ export namespace KdfParameters {
       throw new Error()
 
     if ($UUID === KdfParameters.AesKdf.$UUID)
-      return KdfParameters.AesKdf.parseOrThrow(dictionary)
+      return KdfParameters.AesKdf.parse(dictionary)
 
     if ($UUID === KdfParameters.Argon2d.$UUID)
-      return KdfParameters.Argon2d.parseOrThrow(dictionary)
+      return KdfParameters.Argon2d.parse(dictionary)
 
     if ($UUID === KdfParameters.Argon2id.$UUID)
-      return KdfParameters.Argon2id.parseOrThrow(dictionary)
+      return KdfParameters.Argon2id.parse(dictionary)
 
     throw new Error()
   }

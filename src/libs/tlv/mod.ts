@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-namespace
 
 import type { Struct } from "@/libs/struct/mod.ts"
-import { type Readable, Unknown } from "@hazae41/binary"
+import { Readable, Unknown } from "@hazae41/binary"
 import type { Cursor } from "@hazae41/cursor"
 
 export class TLV<T extends number = number, V extends Struct = Struct> {
@@ -11,18 +11,18 @@ export class TLV<T extends number = number, V extends Struct = Struct> {
     readonly value: V
   ) { }
 
-  sizeOrThrow(): number {
-    return 1 + 4 + this.value.sizeOrThrow()
+  size(): number {
+    return 1 + 4 + this.value.size()
   }
 
-  writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-    cursor.writeUint8OrThrow(this.type)
-    cursor.writeUint32OrThrow(this.value.sizeOrThrow(), true)
-    this.value.writeOrThrow(cursor)
+  write(cursor: Cursor<ArrayBuffer>) {
+    cursor.writeUint8(this.type)
+    cursor.writeUint32(this.value.size(), true)
+    this.value.write(cursor)
   }
 
-  readIntoOrThrow<W extends Struct>(this: TLV<T, Unknown<ArrayBuffer>>, readable: Readable<W>): TLV<T, W> {
-    return new TLV(this.type, this.value.readIntoOrThrow(readable))
+  into<W extends Struct>(this: TLV<T, Unknown<ArrayBuffer>>, readable: Readable<W>): TLV<T, W> {
+    return new TLV(this.type, this.value.into(readable))
   }
 
 }
@@ -33,21 +33,21 @@ export namespace TLV {
 
     export const type = 0x00
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 1 + 4
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeUint8OrThrow(type)
-      cursor.writeUint32OrThrow(0, true)
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.writeUint8(type)
+      cursor.writeUint32(0, true)
     }
 
   }
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>) {
-    const type = cursor.readUint8OrThrow()
-    const length = cursor.readUint32OrThrow(true)
-    const bytes = new Unknown(cursor.readOrThrow(length))
+  export function read(cursor: Cursor<ArrayBuffer>) {
+    const type = cursor.readUint8()
+    const length = cursor.readUint32(true)
+    const bytes = new Unknown(cursor.read(length))
 
     return new TLV(type, bytes)
   }

@@ -15,16 +15,16 @@ export namespace Cipher {
 
     export const uuid = "61ab05a1-9464-41c3-8d74-3a563df8dd35"
 
-    export function cloneOrThrow(): typeof Aes128Cbc {
+    export function clone(): typeof Aes128Cbc {
       return Aes128Cbc
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.write(BytesAsUuid.from(uuid))
     }
 
     export namespace IV {
@@ -33,14 +33,14 @@ export namespace Cipher {
 
     }
 
-    export async function encryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    export async function encrypt(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
       const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
       const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
 
       return encrypted
     }
 
-    export async function decryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    export async function decrypt(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
       const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
       const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
 
@@ -53,16 +53,16 @@ export namespace Cipher {
 
     export const uuid = "31c1f2e6-bf71-4350-be58-05216afc5aff"
 
-    export function cloneOrThrow(): typeof Aes256Cbc {
+    export function clone(): typeof Aes256Cbc {
       return Aes256Cbc
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.write(BytesAsUuid.from(uuid))
     }
 
     export namespace IV {
@@ -71,14 +71,14 @@ export namespace Cipher {
 
     }
 
-    export async function encryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    export async function encrypt(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
       const encrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["encrypt"])
       const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-CBC", iv }, encrypter, data))
 
       return encrypted
     }
 
-    export async function decryptOrThrow(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+    export async function decrypt(key: Uint8Array<ArrayBuffer>, iv: Uint8Array<ArrayBuffer>, data: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
       const decrypter = await crypto.subtle.importKey("raw", key, { name: "AES-CBC" }, false, ["decrypt"])
       const decrypted = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-CBC", iv }, decrypter, data))
 
@@ -91,16 +91,16 @@ export namespace Cipher {
 
     export const uuid = "ad68f29f-576f-4bb9-a36a-d47af965346c"
 
-    export function cloneOrThrow(): typeof TwoFishCbc {
+    export function clone(): typeof TwoFishCbc {
       return TwoFishCbc
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.write(BytesAsUuid.from(uuid))
     }
 
     export namespace IV {
@@ -110,12 +110,12 @@ export namespace Cipher {
     }
 
     // deno-lint-ignore require-await
-    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+    export async function encrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
       throw new Error("TwoFishCbc encryption is not implemented")
     }
 
     // deno-lint-ignore require-await
-    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+    export async function decrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
       throw new Error("TwoFishCbc decryption is not implemented")
     }
 
@@ -125,16 +125,16 @@ export namespace Cipher {
 
     export const uuid = "d6038a2b-8b6f-4cb5-a524-339a31dbb59a"
 
-    export function cloneOrThrow(): typeof ChaCha20 {
+    export function clone(): typeof ChaCha20 {
       return ChaCha20
     }
 
-    export function sizeOrThrow(): number {
+    export function size(): number {
       return 16
     }
 
-    export function writeOrThrow(cursor: Cursor<ArrayBuffer>) {
-      cursor.writeOrThrow(BytesAsUuid.from(uuid))
+    export function write(cursor: Cursor<ArrayBuffer>) {
+      cursor.write(BytesAsUuid.from(uuid))
     }
 
     export namespace IV {
@@ -144,12 +144,12 @@ export namespace Cipher {
     }
 
     // deno-lint-ignore require-await
-    export async function encryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+    export async function encrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
       throw new Error("ChaCha20 encryption is not implemented")
     }
 
     // deno-lint-ignore require-await
-    export async function decryptOrThrow(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
+    export async function decrypt(key: Uint8Array, iv: Uint8Array, data: Uint8Array): Promise<never> {
       throw new Error("ChaCha20 decryption is not implemented")
     }
 
@@ -159,8 +159,8 @@ export namespace Cipher {
 
 export namespace Cipher {
 
-  export function readOrThrow(cursor: Cursor<ArrayBuffer>): Cipher {
-    const bytes = cursor.readOrThrow(16)
+  export function read(cursor: Cursor<ArrayBuffer>): Cipher {
+    const bytes = cursor.read(16)
     const uuid = StringAsUuid.from(bytes)
 
     if (uuid === Cipher.Aes256Cbc.uuid)
