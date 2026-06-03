@@ -12,19 +12,19 @@ export class KeePassFile {
     readonly document: Document
   ) { }
 
-  static decode(bytes: Uint8Array) {
+  static decodeOrThrow(bytes: Uint8Array) {
     return new KeePassFile(new DOMParser().parseFromString(new TextDecoder().decode(bytes), "text/xml"))
   }
 
-  encode() {
+  encodeOrThrow() {
     return new TextEncoder().encode(new XMLSerializer().serializeToString(this.document))
   }
 
-  clone(): KeePassFile {
-    return KeePassFile.decode(this.encode())
+  cloneOrThrow(): KeePassFile {
+    return KeePassFile.decodeOrThrow(this.encodeOrThrow())
   }
 
-  getMeta(): KeePassFile.Meta {
+  getMetaOrThrow(): KeePassFile.Meta {
     const element = this.document.querySelector(":scope > Meta")
 
     if (element == null)
@@ -33,7 +33,7 @@ export class KeePassFile {
     return new KeePassFile.Meta(element)
   }
 
-  getRoot(): KeePassFile.Root {
+  getRootOrThrow(): KeePassFile.Root {
     const element = this.document.querySelector(":scope > Root")
 
     if (element == null)
@@ -76,7 +76,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -87,7 +87,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getGeneratorOrNull(): Nullable<Other.AsString> {
@@ -126,7 +126,7 @@ export namespace KeePassFile {
       return new Other.AsBoolean(element)
     }
 
-    getRecycleBinUuid(): Other.AsUuid {
+    getRecycleBinUuidOrThrow(): Other.AsUuid {
       const element = this.element.querySelector(":scope > RecycleBinUUID")
 
       if (element == null)
@@ -150,7 +150,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -161,7 +161,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getSettingsChangedOrNull(): Nullable<Other.AsDate> {
@@ -179,7 +179,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -190,7 +190,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getDatabaseDescriptionOrNull(): Nullable<Other.AsString> {
@@ -217,7 +217,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -228,7 +228,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getDefaultUserNameOrNull(): Nullable<Other.AsString> {
@@ -255,7 +255,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -266,7 +266,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getColorOrNull(): Nullable<Other.AsString> {
@@ -302,7 +302,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -313,7 +313,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
   }
@@ -324,7 +324,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    addGroup(name: string): KeePassFile.Group {
+    addGroupOrThrow(name: string): KeePassFile.Group {
       const $group = new KeePassFile.Group(this.element.ownerDocument.createElement("Group"))
 
       {
@@ -333,12 +333,12 @@ export namespace KeePassFile {
         const $times = new KeePassFile.Times(this.element.ownerDocument.createElement("Times"))
 
         $name.set(name)
-        $uuid.set(crypto.randomUUID())
+        $uuid.setOrThrow(crypto.randomUUID())
 
         {
           const $creationTime = new KeePassFile.Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
 
-          $creationTime.set(new Date())
+          $creationTime.setOrThrow(new Date())
 
           $times.element.appendChild($creationTime.element)
         }
@@ -362,13 +362,13 @@ export namespace KeePassFile {
       return
     }
 
-    getGroupByUuid(uuid: string): Group {
+    getGroupByUuidOrThrow(uuid: string): Group {
       const elements = this.element.querySelectorAll(`Group`)
 
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -383,7 +383,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -401,7 +401,7 @@ export namespace KeePassFile {
       return
     }
 
-    getDirectGroupByIndex(index: number): Group {
+    getDirectGroupByIndexOrThrow(index: number): Group {
       const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`)
 
       if (element == null)
@@ -419,13 +419,13 @@ export namespace KeePassFile {
       return new Group(element)
     }
 
-    getDirectGroupByUuid(uuid: string): Group {
+    getDirectGroupByUuidOrThrow(uuid: string): Group {
       const elements = this.element.querySelectorAll(`:scope > Group`)
 
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -440,7 +440,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -457,19 +457,19 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    addEntry(): KeePassFile.Entry {
+    addEntryOrThrow(): KeePassFile.Entry {
       const $entry = new KeePassFile.Entry(this.element.ownerDocument.createElement("Entry"))
 
       {
         const $uuid = new KeePassFile.Other.AsUuid(this.element.ownerDocument.createElement("UUID"))
         const $times = new KeePassFile.Times(this.element.ownerDocument.createElement("Times"))
 
-        $uuid.set(crypto.randomUUID())
+        $uuid.setOrThrow(crypto.randomUUID())
 
         {
           const $creationTime = new KeePassFile.Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
 
-          $creationTime.set(new Date())
+          $creationTime.setOrThrow(new Date())
 
           $times.element.appendChild($creationTime.element)
         }
@@ -483,7 +483,7 @@ export namespace KeePassFile {
       return $entry
     }
 
-    move(group: Group): void {
+    moveOrThrow(group: Group): void {
       if (this.element.parentNode === group.element)
         return
 
@@ -494,7 +494,7 @@ export namespace KeePassFile {
       this.getTimesOrNew().setLocationChanged()
     }
 
-    getName(): Other.AsString {
+    getNameOrThrow(): Other.AsString {
       const element = this.element.querySelector(":scope > Name")
 
       if (element == null)
@@ -503,7 +503,7 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getUuid(): Other.AsUuid {
+    getUuidOrThrow(): Other.AsUuid {
       const element = this.element.querySelector(":scope > UUID")
 
       if (element == null)
@@ -523,7 +523,7 @@ export namespace KeePassFile {
       {
         const $creationTime = new Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
 
-        $creationTime.set(new Date())
+        $creationTime.setOrThrow(new Date())
 
         $times.element.appendChild($creationTime.element)
       }
@@ -533,7 +533,7 @@ export namespace KeePassFile {
       return $times
     }
 
-    getIconId(): Other.AsInteger {
+    getIconIdOrThrow(): Other.AsInteger {
       const element = this.element.querySelector(":scope > IconID")
 
       if (element == null)
@@ -542,7 +542,7 @@ export namespace KeePassFile {
       return new Other.AsInteger(element)
     }
 
-    getEnableAutoType(): Other.AsBoolean {
+    getEnableAutoTypeOrThrow(): Other.AsBoolean {
       const element = this.element.querySelector(":scope > EnableAutoType")
 
       if (element == null)
@@ -551,7 +551,7 @@ export namespace KeePassFile {
       return new Other.AsBoolean(element)
     }
 
-    getEnableSearching(): Other.AsBoolean {
+    getEnableSearchingOrThrow(): Other.AsBoolean {
       const element = this.element.querySelector(":scope > EnableSearching")
 
       if (element == null)
@@ -569,7 +569,7 @@ export namespace KeePassFile {
       return
     }
 
-    getDirectGroupByIndex(index: number): Group {
+    getDirectGroupByIndexOrThrow(index: number): Group {
       const element = this.element.querySelector(`:scope > Group:nth-of-type(${index + 1})`)
 
       if (element == null)
@@ -587,13 +587,13 @@ export namespace KeePassFile {
       return new Group(element)
     }
 
-    getDirectGroupByUuid(uuid: string): Group {
+    getDirectGroupByUuidOrThrow(uuid: string): Group {
       const elements = this.element.querySelectorAll(`:scope > Group`)
 
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -608,7 +608,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const group = new Group(element)
 
-        if (group.getUuid().get() === uuid)
+        if (group.getUuidOrThrow().getOrThrow() === uuid)
           return group
 
         continue
@@ -626,7 +626,7 @@ export namespace KeePassFile {
       return
     }
 
-    getDirectEntryByIndex(index: number): Entry {
+    getDirectEntryByIndexOrThrow(index: number): Entry {
       const element = this.element.querySelector(`:scope > Entry:nth-of-type(${index + 1})`)
 
       if (element == null)
@@ -644,13 +644,13 @@ export namespace KeePassFile {
       return new Entry(element)
     }
 
-    getDirectEntryByUuid(uuid: string): Entry {
+    getDirectEntryByUuidOrThrow(uuid: string): Entry {
       const elements = this.element.querySelectorAll(`:scope > Entry`)
 
       for (const element of elements) {
         const entry = new Entry(element)
 
-        if (entry.getUuid().get() === uuid)
+        if (entry.getUuidOrThrow().getOrThrow() === uuid)
           return entry
 
         continue
@@ -665,7 +665,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const entry = new Entry(element)
 
-        if (entry.getUuid().get() === uuid)
+        if (entry.getUuidOrThrow().getOrThrow() === uuid)
           return entry
 
         continue
@@ -682,7 +682,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    getCreationTime(): Other.AsDate {
+    getCreationTimeOrThrow(): Other.AsDate {
       const element = this.element.querySelector(":scope > CreationTime")
 
       if (element == null)
@@ -706,7 +706,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -717,7 +717,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getLastAccessTimeOrNull(): Nullable<Other.AsDate> {
@@ -735,7 +735,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -746,7 +746,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
     getExpiresOrNull(): Nullable<Other.AsBoolean> {
@@ -773,7 +773,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsInteger(stale)
 
-        value.increment()
+        value.incrementOrThrow()
 
         return
       }
@@ -784,7 +784,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsInteger(fresh)
 
-      value.set(1)
+      value.setOrThrow(1)
     }
 
     getLocationChangedOrNull(): Nullable<Other.AsDate> {
@@ -802,7 +802,7 @@ export namespace KeePassFile {
       if (stale != null) {
         const value = new Other.AsDate(stale)
 
-        value.set(date)
+        value.setOrThrow(date)
 
         return
       }
@@ -813,7 +813,7 @@ export namespace KeePassFile {
 
       const value = new Other.AsDate(fresh)
 
-      value.set(date)
+      value.setOrThrow(date)
     }
 
   }
@@ -824,11 +824,11 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    save(): Entry {
-      return this.getHistoryOrNew().push(this)
+    saveOrThrow(): Entry {
+      return this.getHistoryOrNew().pushOrThrow(this)
     }
 
-    move($group: Group): void {
+    moveOrThrow($group: Group): void {
       if (this.element.parentNode === $group.element)
         return
 
@@ -839,10 +839,10 @@ export namespace KeePassFile {
       this.getTimesOrNew().setLocationChanged()
     }
 
-    trash(): void {
+    trashOrThrow(): void {
       const $file = new KeePassFile(this.element.ownerDocument)
-      const $meta = $file.getMeta()
-      const $root = $file.getRoot()
+      const $meta = $file.getMetaOrThrow()
+      const $root = $file.getRootOrThrow()
 
       const recybleBinEnabled = $meta.getRecycleBinEnabledOrNull()?.get()
 
@@ -852,14 +852,14 @@ export namespace KeePassFile {
         return
       }
 
-      const recycleBin = $meta.getRecycleBinUuid().get()
+      const recycleBin = $meta.getRecycleBinUuidOrThrow().getOrThrow()
 
-      const $recycleBin = $root.getGroupByUuid(recycleBin)
+      const $recycleBin = $root.getGroupByUuidOrThrow(recycleBin)
 
-      this.move($recycleBin)
+      this.moveOrThrow($recycleBin)
     }
 
-    addString(key: string, value: string, protect = false): String {
+    addStringOrThrow(key: string, value: string, protect = false): String {
       const $string = new KeePassFile.String(this.element.ownerDocument.createElement("String"))
 
       {
@@ -880,7 +880,7 @@ export namespace KeePassFile {
       return $string
     }
 
-    getUuid(): Other.AsUuid {
+    getUuidOrThrow(): Other.AsUuid {
       const element = this.element.querySelector(":scope > UUID")
 
       if (element == null)
@@ -900,7 +900,7 @@ export namespace KeePassFile {
       {
         const $creationTime = new Other.AsDate(this.element.ownerDocument.createElement("CreationTime"))
 
-        $creationTime.set(new Date())
+        $creationTime.setOrThrow(new Date())
 
         $times.element.appendChild($creationTime.element)
       }
@@ -956,7 +956,7 @@ export namespace KeePassFile {
       for (const element of elements) {
         const string = new String(element)
 
-        if (string.getKey().get() === key)
+        if (string.getKeyOrThrow().get() === key)
           return string
 
         continue
@@ -973,7 +973,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    getKey(): Other.AsString {
+    getKeyOrThrow(): Other.AsString {
       const element = this.element.querySelector(":scope > Key")
 
       if (element == null)
@@ -982,7 +982,7 @@ export namespace KeePassFile {
       return new Other.AsString(element)
     }
 
-    getValue(): Other.AsString {
+    getValueOrThrow(): Other.AsString {
       const element = this.element.querySelector(":scope > Value")
 
       if (element == null)
@@ -1026,7 +1026,7 @@ export namespace KeePassFile {
       readonly element: Element
     ) { }
 
-    push($entry: Entry): Entry {
+    pushOrThrow($entry: Entry): Entry {
       const clone = new Entry($entry.element.cloneNode(true) as Element)
 
       const history = clone.getHistoryOrNull()
@@ -1036,16 +1036,16 @@ export namespace KeePassFile {
 
       this.element.prepend(clone.element)
 
-      this.clean()
+      this.cleanOrThrow()
 
       return clone
     }
 
-    clean(): void {
+    cleanOrThrow(): void {
       const $file = new KeePassFile(this.element.ownerDocument)
-      const $meta = $file.getMeta()
+      const $meta = $file.getMetaOrThrow()
 
-      const historyMaxItems = $meta.getHistoryMaxItemsOrNull()?.get()
+      const historyMaxItems = $meta.getHistoryMaxItemsOrNull()?.getOrThrow()
 
       if (historyMaxItems != null && this.element.children.length > historyMaxItems) {
         while (this.element.children.length > historyMaxItems) {
@@ -1058,7 +1058,7 @@ export namespace KeePassFile {
         }
       }
 
-      const historyMaxSize = $meta.getHistoryMaxSizeOrNull()?.get()
+      const historyMaxSize = $meta.getHistoryMaxSizeOrNull()?.getOrThrow()
 
       if (historyMaxSize != null) {
         for (let bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element)); bytes.length > historyMaxSize; bytes = new TextEncoder().encode(new XMLSerializer().serializeToString(this.element))) {
@@ -1132,7 +1132,7 @@ export namespace KeePassFile {
         readonly element: Element
       ) { }
 
-      get(): number {
+      getOrThrow(): number {
         const value = this.element.textContent
 
         if (!value)
@@ -1146,14 +1146,14 @@ export namespace KeePassFile {
         return number
       }
 
-      set(value: number) {
+      setOrThrow(value: number) {
         if (!Number.isSafeInteger(value))
           throw new Error()
         this.element.textContent = globalThis.String(value)
       }
 
-      increment() {
-        this.set(this.get() + 1)
+      incrementOrThrow() {
+        this.setOrThrow(this.getOrThrow() + 1)
       }
 
     }
@@ -1164,7 +1164,7 @@ export namespace KeePassFile {
         readonly element: Element
       ) { }
 
-      get(): Date {
+      getOrThrow(): Date {
         const value = this.element.textContent
 
         if (!value)
@@ -1173,18 +1173,18 @@ export namespace KeePassFile {
         const binary = Uint8Array.fromBase64(value)
         const cursor = new Cursor(binary)
 
-        const raw = cursor.readBigUint64(true)
+        const raw = cursor.readBigUint64OrThrow(true)
         const fix = raw - 62135596800n
 
         return new Date(Number(fix * 1000n))
       }
 
-      set(value: Date) {
+      setOrThrow(value: Date) {
         const fix = BigInt(value.getTime()) / 1000n
         const raw = fix + 62135596800n
 
         const cursor = new Cursor(new Uint8Array(8))
-        cursor.writeBigUint64(raw, true)
+        cursor.writeBigUint64OrThrow(raw, true)
 
         this.element.textContent = cursor.bytes.toBase64()
       }
@@ -1197,7 +1197,7 @@ export namespace KeePassFile {
         readonly element: Element
       ) { }
 
-      get(): string {
+      getOrThrow(): string {
         const base64 = this.element.textContent
 
         if (!base64)
@@ -1208,7 +1208,7 @@ export namespace KeePassFile {
         return StringAsUuid.from(bytes)
       }
 
-      set(value: string) {
+      setOrThrow(value: string) {
         const bytes = BytesAsUuid.from(value)
 
         const base64 = bytes.toBase64()
