@@ -950,6 +950,15 @@ export namespace KeePassFile {
       return new String(element)
     }
 
+    getStringByIndexOrThrow(index: number): String {
+      const element = this.element.querySelector(`:scope > String:nth-of-type(${index + 1})`)
+
+      if (element == null)
+        throw new Error()
+
+      return new String(element)
+    }
+
     getStringByKeyOrNull(key: string): Nullable<String> {
       const elements = this.element.querySelectorAll(`:scope > String`)
 
@@ -963,6 +972,21 @@ export namespace KeePassFile {
       }
 
       return
+    }
+
+    getStringByKeyOrThrow(key: string): String {
+      const elements = this.element.querySelectorAll(`:scope > String`)
+
+      for (const element of elements) {
+        const string = new String(element)
+
+        if (string.getKeyOrThrow().get() === key)
+          return string
+
+        continue
+      }
+
+      throw new Error()
     }
 
   }
